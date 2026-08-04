@@ -6,7 +6,9 @@ import { Item } from '../items/entities/item.entity';
 import { Member } from '../members/entities/member.entity';
 
 export function typeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
-  const isProduction = config.get<string>('NODE_ENV') === 'production';
+  const env = config.get<string>('NODE_ENV');
+  const isProduction = env === 'production';
+  const isTest = env === 'test';
 
   return {
     type: 'postgres',
@@ -21,6 +23,7 @@ export function typeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
     // Itération rapide en dev. Les migrations prendront le relais avant le
     // déploiement — le SQL du §3 de la spec fait référence.
     synchronize: !isProduction,
-    logging: !isProduction,
+    // Le log SQL est précieux en dev, illisible dans la sortie des tests.
+    logging: !isProduction && !isTest,
   };
 }
