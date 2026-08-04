@@ -5,7 +5,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { typeOrmConfig } from './config/typeorm.config';
+import { ActionHistoryModule } from './action-history/action-history.module';
 import { GroupsModule } from './groups/groups.module';
+import { ItemsModule } from './items/items.module';
 import { MembersModule } from './members/members.module';
 
 @Module({
@@ -20,6 +22,8 @@ import { MembersModule } from './members/members.module';
     AuthModule,
     GroupsModule,
     MembersModule,
+    ItemsModule,
+    ActionHistoryModule,
   ],
 })
 export class AppModule {}
