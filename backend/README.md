@@ -49,7 +49,7 @@ docker exec restock-postgres psql -U restock -d restock -c '\dt'
       soft-delete, auth register/login JWT
 - [x] **Étape 2 — Groupes** : création + code d'invitation, jointure, membres, guards admin
 - [x] **Étape 3 — Items** : CRUD, state machine, `action_history`
-- [ ] **Étape 4 — Events & notifications** : EventEmitter, listener, Expo Push, cron
+- [x] **Étape 4 — Events & notifications** : EventEmitter, listener, Expo Push, cron
 - [ ] **Étape 5 — Mobile**
 - [ ] **Étape 6 — Finitions**
 
@@ -147,3 +147,55 @@ La spec n'a pas de champ pour ça, et la stratégie du §4 renvoie
 `quantity: item.quantity` inchangée au rachat : un item vidé serait repassé
 « disponible » avec une quantité toujours à 0. Le statut est ici toujours déduit
 de la quantité, dans les deux sens.
+
+## Notifications
+
+`ItemsModule` n'importe pas `NotificationsModule`, et l'inverse est vrai aussi :
+le listener reçoit tout ce dont il a besoin dans le payload de l'event. Le seul
+lien est le nom de l'event.
+
+Quand notifier :
+
+| Transition | Message |
+|---|---|
+| `… → out_of_stock` | *X épuisé — quelqu'un doit racheter* |
+| sortie de `to_restock` | *X racheté* |
+| tout le reste | silence |
+
+Le §5 déclenche le second cas sur `newStatus === 'available'`, ce qui **rate un
+rachat partiel** qui laisse l'item en stock bas. La condition porte ici sur la
+sortie de l'état « à racheter », pas sur l'état d'arrivée.
+
+Vider un item émet deux events (`… → out_of_stock` puis `out_of_stock →
+to_restock`), mais une seule notification part : le second est silencieux.
+
+### Provider push
+
+`NotificationsService` dépend de l'interface `PushProvider`, jamais d'Expo.
+Basculer sur FCM ou des emails ne touche que le binding `PUSH_PROVIDER` dans le
+module.
+
+Trois durcissements par rapport au §6 :
+
+- **Lots de 100 max.** Expo refuse au-delà, et le §1 cible aussi les
+  associations, pas seulement des colocs de 6.
+- **Un ticket manquant est un échec.** Le §6 teste `receipt?.status !== 'error'`,
+  ce qui déclare réussi un envoi dont on n'a aucune trace — une réponse vide ou
+  un 503 passaient pour un succès.
+- **Seul `DeviceNotRegistered` efface un token.** Un échec réseau ne dit rien
+  sur sa validité ; l'effacer perdrait définitivement un destinataire joignable.
+
+`EXPO_PUSH_URL` permet de pointer un stub en test ou en staging au lieu de
+l'API publique.
+
+### Job de relance
+
+`@Cron('0 9 * * *')` sur les items en `to_restock` depuis plus de 3 jours,
+groupés par groupe — un foyer reçoit une notification, pas cinq.
+
+**Limite connue** : la relance repart **tous les jours** à partir du 3ᵉ, sans
+condition d'arrêt. Rien n'enregistre qu'un rappel a déjà été envoyé, et
+`updated_at` ne bouge pas pour une notification. Un item oublié pendant trois
+semaines produit 18 notifications. La spec décrit une « relance automatique »
+sans dire quand s'arrêter ; la corriger demande une colonne
+`last_reminded_at` sur `item`, hors périmètre du MVP.

@@ -9,6 +9,7 @@ import { ActionHistoryModule } from './action-history/action-history.module';
 import { GroupsModule } from './groups/groups.module';
 import { ItemsModule } from './items/items.module';
 import { MembersModule } from './members/members.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MembersModule } from './members/members.module';
     MembersModule,
     ItemsModule,
     ActionHistoryModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
