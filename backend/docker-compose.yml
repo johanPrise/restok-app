@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: restock-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-restock}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-restock}
+      POSTGRES_DB: ${DB_NAME:-restock}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - restock-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-restock} -d ${DB_NAME:-restock}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  restock-pgdata:
