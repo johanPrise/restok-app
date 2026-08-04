@@ -47,7 +47,7 @@ docker exec restock-postgres psql -U restock -d restock -c '\dt'
 
 - [x] **Étape 1 — Fondations** : setup NestJS, PostgreSQL, TypeORM, entités avec
       soft-delete, auth register/login JWT
-- [ ] **Étape 2 — Groupes** : création + code d'invitation, jointure, membres, guards admin
+- [x] **Étape 2 — Groupes** : création + code d'invitation, jointure, membres, guards admin
 - [ ] **Étape 3 — Items** : CRUD, state machine, `action_history`
 - [ ] **Étape 4 — Events & notifications** : EventEmitter, listener, Expo Push, cron
 - [ ] **Étape 5 — Mobile**
@@ -59,6 +59,42 @@ docker exec restock-postgres psql -U restock -d restock -c '\dt'
 |---|---|---|---|
 | POST | `/auth/register` | public | Inscription — crée un membre sans groupe |
 | POST | `/auth/login` | public | Connexion |
+| POST | `/groups` | authentifié | Créer un groupe — le créateur devient admin |
+| POST | `/groups/join` | authentifié | Rejoindre via code d'invitation |
+| GET | `/groups/me` | membre | Détail du groupe + nombre de membres |
+| PATCH | `/groups/me` | admin | Renommer le groupe |
+| DELETE | `/groups/me` | admin | Supprimer (soft-delete) |
+| GET | `/members` | membre | Lister les membres du groupe |
+| PATCH | `/members/me/push-token` | membre | Enregistrer le push token |
+| DELETE | `/members/:id` | admin | Retirer un membre du groupe |
 
-Le JWT porte `sub`, `groupId` et `role` (voir §7 de la spec pour le compromis
-assumé sur la propagation des changements de rôle).
+Trois niveaux d'accès, appliqués par des guards composables :
+`JwtAuthGuard` (authentifié) → `GroupMemberGuard` (rattaché à un groupe) →
+`AdminGuard` (rôle admin).
+
+### Le token ne porte que l'identité
+
+**Écart assumé avec le §7 de la spec.** La spec place `groupId` et `role` dans le
+payload du JWT pour éviter une requête DB par appel. Ce sont des droits, pas une
+identité : les signer dans un conteneur non révocable en fait un cache sans
+invalidation. Conséquence mesurée sur la première implémentation — un membre
+exclu de son groupe gardait l'accès en lecture jusqu'à 1h.
+
+Le payload se limite donc à `sub`, et [`JwtStrategy`](src/auth/strategies/jwt.strategy.ts)
+relit `groupId` et `role` en base à chaque requête — un `SELECT` sur clé
+primaire. C'est le pattern Passport-JWT par défaut.
+
+Ce que ça change :
+
+| | Avant | Maintenant |
+|---|---|---|
+| Retrait d'un membre | effectif ≤ 1h | immédiat |
+| Changement de rôle | effectif ≤ 1h | immédiat |
+| Compte soft-deleted | token encore valide | token mort |
+| `POST /groups` / `/groups/join` | renvoyaient un token réémis | renvoient le groupe seul |
+| Coût par requête authentifiée | 0 requête | 1 `SELECT` par clé primaire |
+
+Le client mobile n'a donc **jamais** à remplacer son token en cours de session.
+
+Si la charge le justifiait un jour, l'optimisation se fait par un cache court
+(quelques secondes) devant ce lookup — pas en remettant les droits dans le token.

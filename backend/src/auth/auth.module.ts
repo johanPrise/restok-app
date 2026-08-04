@@ -7,8 +7,10 @@ import { Member } from '../members/entities/member.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AdminGuard } from './guards/admin.guard';
+import { GroupMemberGuard } from './guards/group-member.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { TokenService } from './token.service';
 
 @Module({
   imports: [
@@ -31,7 +33,21 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, AdminGuard],
-  exports: [JwtAuthGuard, AdminGuard, PassportModule, JwtModule],
+  providers: [
+    AuthService,
+    TokenService,
+    JwtStrategy,
+    JwtAuthGuard,
+    AdminGuard,
+    GroupMemberGuard,
+  ],
+  exports: [
+    TokenService,
+    JwtAuthGuard,
+    AdminGuard,
+    GroupMemberGuard,
+    PassportModule,
+    JwtModule,
+  ],
 })
 export class AuthModule {}

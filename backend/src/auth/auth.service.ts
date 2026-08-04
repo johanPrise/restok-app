@@ -3,14 +3,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Member, MemberRole } from '../members/entities/member.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { JwtPayload } from './types/jwt-payload.type';
+import { TokenService } from './token.service';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -30,7 +29,7 @@ export class AuthService {
   constructor(
     @InjectRepository(Member)
     private readonly memberRepo: Repository<Member>,
-    private readonly jwtService: JwtService,
+    private readonly tokenService: TokenService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponse> {
@@ -79,15 +78,8 @@ export class AuthService {
   }
 
   private buildAuthResponse(member: Member): AuthResponse {
-    const payload: JwtPayload = {
-      sub: member.id,
-      groupId: member.groupId,
-      role: member.role,
-    };
-
     return {
-      // expiresIn est configuré une fois pour toutes dans AuthModule.
-      accessToken: this.jwtService.sign(payload),
+      accessToken: this.tokenService.issue(member.id),
       member: {
         id: member.id,
         name: member.name,

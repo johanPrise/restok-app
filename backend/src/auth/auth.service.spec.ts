@@ -1,17 +1,16 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Member, MemberRole } from '../members/entities/member.entity';
 import { AuthService } from './auth.service';
-import { JwtPayload } from './types/jwt-payload.type';
+import { TokenService } from './token.service';
 
 describe('AuthService', () => {
   let service: AuthService;
   let memberRepo: jest.Mocked<Repository<Member>>;
-  let jwtService: jest.Mocked<JwtService>;
+  let tokenService: jest.Mocked<TokenService>;
 
   const buildMember = (overrides: Partial<Member> = {}): Member =>
     ({
@@ -38,15 +37,15 @@ describe('AuthService', () => {
           },
         },
         {
-          provide: JwtService,
-          useValue: { sign: jest.fn(() => 'signed.jwt') },
+          provide: TokenService,
+          useValue: { issue: jest.fn(() => 'signed.jwt') },
         },
       ],
     }).compile();
 
     service = moduleRef.get(AuthService);
     memberRepo = moduleRef.get(getRepositoryToken(Member));
-    jwtService = moduleRef.get(JwtService);
+    tokenService = moduleRef.get(TokenService);
   });
 
   describe('register', () => {
@@ -148,15 +147,11 @@ describe('AuthService', () => {
     });
   });
 
-  describe('payload du JWT', () => {
-    it('porte sub, groupId et role', async () => {
+  describe('émission du token', () => {
+    it("ne transmet que l'identifiant du membre", async () => {
       const password = await bcrypt.hash('motdepasse123', 10);
       memberRepo.findOne.mockResolvedValue(
-        buildMember({
-          password,
-          groupId: 'group-1',
-          role: MemberRole.ADMIN,
-        }),
+        buildMember({ password, groupId: 'group-1', role: MemberRole.ADMIN }),
       );
 
       await service.login({
@@ -164,11 +159,8 @@ describe('AuthService', () => {
         password: 'motdepasse123',
       });
 
-      expect(jwtService.sign).toHaveBeenCalledWith<[JwtPayload]>({
-        sub: 'member-1',
-        groupId: 'group-1',
-        role: MemberRole.ADMIN,
-      });
+      // Ni groupId ni role : ils sont relus en base par JwtStrategy.
+      expect(tokenService.issue).toHaveBeenCalledWith('member-1');
     });
   });
 });

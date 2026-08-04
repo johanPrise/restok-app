@@ -5,6 +5,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { typeOrmConfig } from './config/typeorm.config';
+import { GroupsModule } from './groups/groups.module';
+import { MembersModule } from './members/members.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { typeOrmConfig } from './config/typeorm.config';
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     AuthModule,
+    GroupsModule,
+    MembersModule,
   ],
 })
 export class AppModule {}
