@@ -16,7 +16,7 @@ export function Screen({
   padded = true,
   edges = ['top', 'bottom'],
   style,
-}: ScreenProps) {
+}: Readonly<ScreenProps>) {
   const { colors } = useTheme();
 
   return (

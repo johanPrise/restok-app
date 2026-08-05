@@ -16,7 +16,7 @@ export function Text({
   color = 'ink',
   style,
   ...props
-}: TextProps) {
+}: Readonly<TextProps>) {
   const { colors } = useTheme();
 
   return (

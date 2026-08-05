@@ -28,7 +28,7 @@ export function Button({
   loading = false,
   disabled,
   ...props
-}: ButtonProps) {
+}:   Readonly<ButtonProps>) {
   const { colors } = useTheme();
   const isDisabled = disabled === true || loading;
 
