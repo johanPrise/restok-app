@@ -59,6 +59,10 @@ export class ItemsService {
         trackingType,
         quantity,
         lowThreshold,
+        // Faute de mieux, la quantité initiale fait référence : « plein, c'est
+        // ce que j'ai en créant l'item ».
+        targetQuantity:
+          quantity === null ? null : (dto.targetQuantity ?? quantity),
         groupId,
         status:
           quantity === null
@@ -92,9 +96,12 @@ export class ItemsService {
         );
       }
       item.quantity = quantity;
+      item.targetQuantity =
+        dto.targetQuantity ?? item.targetQuantity ?? quantity;
       item.status = settle(statusForQuantity(quantity, item.lowThreshold));
     } else {
       item.quantity = null;
+      item.targetQuantity = null;
       // `low` n'existe pas en suivi binaire : on le ramène à disponible.
       if (item.status === ItemStatus.LOW) item.status = ItemStatus.AVAILABLE;
     }

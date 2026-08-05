@@ -27,4 +27,9 @@ export class UpdateItemDto {
   @IsInt()
   @Min(1)
   lowThreshold?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  targetQuantity?: number;
 }

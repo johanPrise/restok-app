@@ -148,6 +148,30 @@ La spec n'a pas de champ pour ça, et la stratégie du §4 renvoie
 « disponible » avec une quantité toujours à 0. Le statut est ici toujours déduit
 de la quantité, dans les deux sens.
 
+### `targetQuantity` — la référence de la jauge
+
+La maquette affiche un **pourcentage** sur chaque jauge. Un pourcentage suppose
+un dénominateur, que ni la spec ni le schéma d'origine ne fournissaient :
+`quantity` est une valeur absolue.
+
+`target_quantity` est cette référence — « combien quand c'est plein ». Elle vaut
+la quantité initiale par défaut, se règle explicitement à la création ou à
+l'édition, et reste nulle en mode `threshold`, qui ne compte rien.
+
+À ne pas confondre avec `low_threshold` :
+
+| Colonne | Répond à |
+|---|---|
+| `low_threshold` | à partir de quand alerter — une valeur absolue |
+| `target_quantity` | pourcentage de quoi — le dénominateur d'affichage |
+
+2 sur 3 et 2 sur 24 déclenchent la même alerte et ne se lisent pas du tout
+pareil.
+
+Elle n'est jamais modifiée automatiquement : un rachat au-delà de la référence
+donne un ratio supérieur à 1, que le client plafonne à 100 %. Relever la
+référence toute seule ferait dériver l'échelle à chaque gros achat.
+
 ## Notifications
 
 `ItemsModule` n'importe pas `NotificationsModule`, et l'inverse est vrai aussi :

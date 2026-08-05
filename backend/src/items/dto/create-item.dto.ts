@@ -27,4 +27,10 @@ export class CreateItemDto {
   @IsInt()
   @Min(1)
   lowThreshold?: number;
+
+  /** Quantité « plein », référence de la jauge. Défaut : la quantité initiale. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  targetQuantity?: number;
 }

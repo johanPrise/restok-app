@@ -53,12 +53,24 @@ export class Item {
   })
   trackingType: TrackingType;
 
-  // quantity et lowThreshold ne servent qu'en mode `quantity`.
+  // quantity, lowThreshold et targetQuantity ne servent qu'en mode `quantity`.
   @Column({ type: 'int', nullable: true })
   quantity: number | null;
 
   @Column({ name: 'low_threshold', type: 'int', nullable: true, default: 1 })
   lowThreshold: number | null;
+
+  /**
+   * Quantité quand l'item est plein — la référence de la jauge, qui s'affiche
+   * en pourcentage sur l'étagère.
+   *
+   * Distinct de `lowThreshold` : celui-ci dit à partir de quand alerter (une
+   * valeur absolue), celui-là dit de quoi on affiche un pourcentage. Un stock
+   * de 2 sur 3 et un stock de 2 sur 24 déclenchent la même alerte mais ne se
+   * lisent pas pareil.
+   */
+  @Column({ name: 'target_quantity', type: 'int', nullable: true })
+  targetQuantity: number | null;
 
   @Column({ name: 'group_id', type: 'uuid' })
   groupId: string;

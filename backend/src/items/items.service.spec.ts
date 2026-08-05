@@ -67,6 +67,56 @@ describe('ItemsService', () => {
       expect(item.status).toBe(ItemStatus.LOW);
     });
 
+    describe('quantité de référence', () => {
+      it('prend la quantité initiale par défaut', async () => {
+        const item = await service.create(
+          { name: 'Café', trackingType: TrackingType.QUANTITY, quantity: 12 },
+          'group-1',
+        );
+
+        expect(item.targetQuantity).toBe(12);
+      });
+
+      it('accepte une référence explicite différente du stock initial', async () => {
+        // On crée l'item à moitié vide : plein, c'est 24.
+        const item = await service.create(
+          {
+            name: 'Café',
+            trackingType: TrackingType.QUANTITY,
+            quantity: 12,
+            targetQuantity: 24,
+          },
+          'group-1',
+        );
+
+        expect(item).toMatchObject({ quantity: 12, targetQuantity: 24 });
+      });
+
+      it('reste nulle en mode binaire, qui ne compte rien', async () => {
+        const item = await service.create({ name: 'Papier' }, 'group-1');
+
+        expect(item.targetQuantity).toBeNull();
+      });
+
+      it('ne se confond pas avec le seuil bas', async () => {
+        // lowThreshold dit quand alerter, targetQuantity de quoi on affiche un
+        // pourcentage — 2 sur 3 et 2 sur 24 alertent pareil, se lisent
+        // différemment.
+        const item = await service.create(
+          {
+            name: 'Café',
+            trackingType: TrackingType.QUANTITY,
+            quantity: 24,
+            lowThreshold: 2,
+          },
+          'group-1',
+        );
+
+        expect(item.lowThreshold).toBe(2);
+        expect(item.targetQuantity).toBe(24);
+      });
+    });
+
     it('crée un item vide directement en to_restock', async () => {
       // out_of_stock n'est jamais un état de repos : un item créé à zéro doit
       // atterrir au même endroit qu'un item vidé par une prise.
@@ -129,6 +179,47 @@ describe('ItemsService', () => {
           trackingType: TrackingType.QUANTITY,
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('pose une référence en passant en mode quantité', async () => {
+      itemRepo.findOne.mockResolvedValue(buildItem());
+
+      const item = await service.update('item-1', 'group-1', {
+        trackingType: TrackingType.QUANTITY,
+        quantity: 6,
+      });
+
+      expect(item.targetQuantity).toBe(6);
+    });
+
+    it('conserve la référence quand seul le stock change', async () => {
+      itemRepo.findOne.mockResolvedValue(
+        buildItem({
+          trackingType: TrackingType.QUANTITY,
+          quantity: 12,
+          targetQuantity: 24,
+        }),
+      );
+
+      const item = await service.update('item-1', 'group-1', { quantity: 6 });
+
+      expect(item).toMatchObject({ quantity: 6, targetQuantity: 24 });
+    });
+
+    it('vide aussi la référence au retour en mode binaire', async () => {
+      itemRepo.findOne.mockResolvedValue(
+        buildItem({
+          trackingType: TrackingType.QUANTITY,
+          quantity: 4,
+          targetQuantity: 12,
+        }),
+      );
+
+      const item = await service.update('item-1', 'group-1', {
+        trackingType: TrackingType.THRESHOLD,
+      });
+
+      expect(item.targetQuantity).toBeNull();
     });
 
     it('vide la quantité au retour en mode binaire', async () => {

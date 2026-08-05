@@ -24,7 +24,12 @@ describe('Items (e2e)', () => {
 
   const createItem = async (body: Record<string, unknown>) => {
     const res = await auth(app, alice).post('/items').send(body).expect(201);
-    return res.body as { id: string; status: string; quantity: number | null };
+    return res.body as {
+      id: string;
+      status: string;
+      quantity: number | null;
+      targetQuantity: number | null;
+    };
   };
 
   describe('POST /items', () => {
@@ -63,6 +68,28 @@ describe('Items (e2e)', () => {
         .post(`/items/${item.id}/restock`)
         .send({ quantity: 5 })
         .expect(200);
+    });
+
+    it('pose une quantité de référence pour la jauge', async () => {
+      const item = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: 12,
+        targetQuantity: 24,
+      });
+
+      // La jauge de l'étagère se lit quantity / targetQuantity.
+      expect(item).toMatchObject({ quantity: 12, targetQuantity: 24 });
+    });
+
+    it('fait de la quantité initiale la référence par défaut', async () => {
+      const item = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: 8,
+      });
+
+      expect(item.targetQuantity).toBe(8);
     });
 
     it('exige une quantité initiale en mode quantité', async () => {
