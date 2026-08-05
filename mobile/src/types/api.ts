@@ -46,7 +46,10 @@ export interface Item {
   trackingType: TrackingType;
   /** `null` en mode `threshold`, qui ne compte rien. */
   quantity: number | null;
+  /** À partir de quand alerter — valeur absolue. */
   lowThreshold: number | null;
+  /** Le « plein » : dénominateur de la jauge, pas un seuil d'alerte. */
+  targetQuantity: number | null;
   groupId: string;
   createdAt: string;
   updatedAt: string;
@@ -65,6 +68,7 @@ export interface CreateItemInput {
   trackingType?: TrackingType;
   quantity?: number;
   lowThreshold?: number;
+  targetQuantity?: number;
 }
 
 export interface UpdateItemInput {
@@ -72,4 +76,5 @@ export interface UpdateItemInput {
   trackingType?: TrackingType;
   quantity?: number;
   lowThreshold?: number;
+  targetQuantity?: number;
 }
