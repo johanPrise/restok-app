@@ -38,7 +38,7 @@ function useJoinedGroup() {
     // getState() au moment de l'appel, pas au rendu : sinon `member` est figé
     // dans une closure créée avant la connexion.
     const { member, setMember } = useSession.getState();
-    if (member) setMember({ ...member, groupId: group.id, role });
+    if (member) void setMember({ ...member, groupId: group.id, role });
     void queryClient.invalidateQueries();
   };
 }
@@ -85,7 +85,7 @@ export function useDeleteGroup() {
     onSuccess: () => {
       // Le backend détache tous les membres, y compris l'admin.
       const { member, setMember } = useSession.getState();
-      if (member) setMember({ ...member, groupId: null, role: 'member' });
+      if (member) void setMember({ ...member, groupId: null, role: 'member' });
       queryClient.clear();
     },
   });
