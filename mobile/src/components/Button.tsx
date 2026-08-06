@@ -6,13 +6,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import {
-  border,
-  MIN_TOUCH_TARGET,
-  radius,
-  spacing,
-  useTheme,
-} from '@/theme';
+import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
 import { Text } from './Text';
 
 type Variant = 'primary' | 'secondary' | 'danger';
@@ -41,7 +35,8 @@ export function Button({
     // couleur du statut « disponible ». Le §1 réserve les couleurs de statut
     // au statut : l'inactif passe donc par un gris de la palette, jamais par
     // une teinte de marque atténuée.
-    if (isDisabled) return variant === 'secondary' ? 'transparent' : colors.thread;
+    if (isDisabled)
+      return variant === 'secondary' ? 'transparent' : colors.thread;
     if (variant === 'secondary') return 'transparent';
     if (variant === 'danger') return colors.rustClay;
     // L'état pressed a sa propre couleur dans la palette (§1).

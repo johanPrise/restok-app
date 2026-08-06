@@ -56,7 +56,10 @@ export async function apiRequest<T>(
   const parsed: unknown = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    throw new ApiError(response.status, readErrorMessage(parsed, response.status));
+    throw new ApiError(
+      response.status,
+      readErrorMessage(parsed, response.status),
+    );
   }
 
   return parsed as T;

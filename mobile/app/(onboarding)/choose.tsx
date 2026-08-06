@@ -14,7 +14,13 @@ interface ChoiceProps {
   onPress: () => void;
 }
 
-function Choice({ badge, title, description, action, onPress }: Readonly<ChoiceProps>) {
+function Choice({
+  badge,
+  title,
+  description,
+  action,
+  onPress,
+}: Readonly<ChoiceProps>) {
   const { colors } = useTheme();
 
   return (

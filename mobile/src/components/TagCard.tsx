@@ -20,7 +20,11 @@ interface TagCardProps {
  * La profondeur vient de l'écart `paper` / `paperRaised` plus le fil, jamais
  * d'une ombre portée.
  */
-export function TagCard({ children, accentColor, style }: Readonly<TagCardProps>) {
+export function TagCard({
+  children,
+  accentColor,
+  style,
+}: Readonly<TagCardProps>) {
   const { colors } = useTheme();
 
   return (

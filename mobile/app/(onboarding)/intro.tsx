@@ -46,7 +46,8 @@ export default function Intro() {
               styles.dot,
               index === 0 && styles.dotActive,
               {
-                backgroundColor: index === 0 ? colors.pantryTeal : colors.thread,
+                backgroundColor:
+                  index === 0 ? colors.pantryTeal : colors.thread,
               },
             ]}
           />

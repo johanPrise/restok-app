@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { useJoinGroup } from '@/api/groups';
 import { Button } from '@/components/Button';
 import { CodeInput, INVITE_CODE_LENGTH } from '@/components/CodeInput';
-import { Screen } from '@/components/Screen';
+import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
@@ -28,55 +28,52 @@ export default function Join() {
   };
 
   return (
-    <Screen>
+    <FormScreen>
       <BackLink onPress={() => router.back()} />
 
-      <View style={styles.body}>
-        <TagCard>
-          <Text variant="tagName">Rejoindre un groupe</Text>
-          <Text variant="body" color="inkSoft" style={styles.intro}>
-            Saisissez le code d&apos;invitation à {INVITE_CODE_LENGTH}{' '}
-            caractères pour accéder à l&apos;inventaire partagé.
+      <TagCard>
+        <Text variant="tagName">Rejoindre un groupe</Text>
+        <Text variant="body" color="inkSoft" style={styles.intro}>
+          Saisissez le code d&apos;invitation à {INVITE_CODE_LENGTH} caractères
+          pour accéder à l&apos;inventaire partagé.
+        </Text>
+
+        <Text variant="monoLabel" color="inkSoft" style={styles.label}>
+          Code d&apos;invitation
+        </Text>
+        <CodeInput value={code} onChange={setCode} autoFocus />
+
+        {join.isError && (
+          <Text variant="caption" color="rustClay" style={styles.error}>
+            {join.error.message}
           </Text>
+        )}
 
-          <Text variant="monoLabel" color="inkSoft" style={styles.label}>
-            Code d&apos;invitation
-          </Text>
-          <CodeInput value={code} onChange={setCode} autoFocus />
-
-          {join.isError && (
-            <Text variant="caption" color="rustClay" style={styles.error}>
-              {join.error.message}
-            </Text>
-          )}
-
-          <View style={styles.actions}>
-            <Button
-              label="Rejoindre"
-              onPress={submit}
-              disabled={!isComplete}
-              loading={join.isPending}
-            />
-            <Button
-              label="Créer un nouveau groupe"
-              variant="secondary"
-              onPress={() => router.replace('/create-group')}
-            />
-          </View>
-
-          <View style={[styles.rule, { backgroundColor: colors.thread }]} />
-          <SystemFooter
-            left={`Statut: ${isComplete ? 'prêt' : 'attente_entrée'}`}
-            right={`${code.length}/${INVITE_CODE_LENGTH}`}
+        <View style={styles.actions}>
+          <Button
+            label="Rejoindre"
+            onPress={submit}
+            disabled={!isComplete}
+            loading={join.isPending}
           />
-        </TagCard>
-      </View>
-    </Screen>
+          <Button
+            label="Créer un nouveau groupe"
+            variant="secondary"
+            onPress={() => router.replace('/create-group')}
+          />
+        </View>
+
+        <View style={[styles.rule, { backgroundColor: colors.thread }]} />
+        <SystemFooter
+          left={`Statut: ${isComplete ? 'prêt' : 'attente_entrée'}`}
+          right={`${code.length}/${INVITE_CODE_LENGTH}`}
+        />
+      </TagCard>
+    </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, justifyContent: 'center' },
   intro: { marginTop: spacing.sm },
   label: { marginTop: spacing.md, marginBottom: spacing.xs },
   error: { marginTop: spacing.sm },

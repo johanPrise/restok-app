@@ -12,7 +12,8 @@ const CRITICAL_RATIO = 0.1;
  * supérieur, et le backend ne relève jamais la référence tout seul.
  */
 export function fillRatio(item: Item): number {
-  const isEmpty = item.status === 'out_of_stock' || item.status === 'to_restock';
+  const isEmpty =
+    item.status === 'out_of_stock' || item.status === 'to_restock';
   if (isEmpty) return 0;
 
   if (item.quantity === null || !item.targetQuantity) return 1;

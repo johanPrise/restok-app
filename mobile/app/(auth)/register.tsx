@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRegister } from '@/api/auth';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
-import { Screen } from '@/components/Screen';
+import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
@@ -39,81 +39,72 @@ export default function Register() {
     password.length >= MIN_PASSWORD_LENGTH;
 
   return (
-    <Screen>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.flex}
-      >
-        <BackLink onPress={() => router.back()} />
+    <FormScreen>
+      <BackLink onPress={() => router.back()} />
 
-        <View style={styles.body}>
-          <TagCard>
-            <Text variant="tagName">Créer un compte</Text>
-            <Text variant="body" color="inkSoft" style={styles.intro}>
-              Vous rejoindrez ou créerez un groupe juste après.
-            </Text>
+      <TagCard>
+        <Text variant="tagName">Créer un compte</Text>
+        <Text variant="body" color="inkSoft" style={styles.intro}>
+          Vous rejoindrez ou créerez un groupe juste après.
+        </Text>
 
-            <View style={styles.form}>
-              <Field
-                label="Nom"
-                value={name}
-                onChangeText={setName}
-                placeholder="Sam"
-                autoComplete="name"
-                maxLength={100}
-              />
-              <Field
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                placeholder="vous@exemple.fr"
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                inputMode="email"
-              />
-              <Field
-                label="Mot de passe"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoComplete="new-password"
-                // Annoncer la règle avant l'envoi plutôt que de laisser le
-                // serveur la refuser.
-                error={
-                  passwordTooShort
-                    ? `${MIN_PASSWORD_LENGTH} caractères minimum`
-                    : undefined
-                }
-              />
-            </View>
-
-            {register.isError && (
-              <Text variant="caption" color="rustClay" style={styles.error}>
-                {register.error.message}
-              </Text>
-            )}
-
-            <Button
-              label="Créer le compte"
-              onPress={submit}
-              disabled={!isValid}
-              loading={register.isPending}
-              style={styles.submit}
-            />
-
-            <View style={[styles.rule, { backgroundColor: colors.thread }]} />
-            <SystemFooter left="Statut: création_compte" />
-          </TagCard>
+        <View style={styles.form}>
+          <Field
+            label="Nom"
+            value={name}
+            onChangeText={setName}
+            placeholder="Sam"
+            autoComplete="name"
+            maxLength={100}
+          />
+          <Field
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="vous@exemple.fr"
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            inputMode="email"
+          />
+          <Field
+            label="Mot de passe"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="new-password"
+            // Annoncer la règle avant l'envoi plutôt que de laisser le
+            // serveur la refuser.
+            error={
+              passwordTooShort
+                ? `${MIN_PASSWORD_LENGTH} caractères minimum`
+                : undefined
+            }
+          />
         </View>
-      </KeyboardAvoidingView>
-    </Screen>
+
+        {register.isError && (
+          <Text variant="caption" color="rustClay" style={styles.error}>
+            {register.error.message}
+          </Text>
+        )}
+
+        <Button
+          label="Créer le compte"
+          onPress={submit}
+          disabled={!isValid}
+          loading={register.isPending}
+          style={styles.submit}
+        />
+
+        <View style={[styles.rule, { backgroundColor: colors.thread }]} />
+        <SystemFooter left="Statut: création_compte" />
+      </TagCard>
+    </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  body: { flex: 1, justifyContent: 'center' },
   intro: { marginTop: spacing.sm },
   form: { gap: spacing.md, marginTop: spacing.md },
   error: { marginTop: spacing.sm },

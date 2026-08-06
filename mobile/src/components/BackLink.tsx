@@ -7,7 +7,10 @@ interface BackLinkProps {
   label?: string;
 }
 
-export function BackLink({ onPress, label = 'Retour' }: Readonly<BackLinkProps>) {
+export function BackLink({
+  onPress,
+  label = 'Retour',
+}: Readonly<BackLinkProps>) {
   return (
     <Pressable
       accessibilityRole="button"
