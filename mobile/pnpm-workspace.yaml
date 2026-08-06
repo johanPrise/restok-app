@@ -1,5 +1,0 @@
-# @expo/metro-runtime (le paquet web) tire @expo/log-box en 57 alors qu'expo 56
-# en attend la 56. Deux copies d'un module natif dans un même build cassent la
-# compilation : on tranche pour la version du SDK du projet.
-overrides:
-  '@expo/log-box': 56.0.14
