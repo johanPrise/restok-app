@@ -11,3 +11,9 @@ coverage-e2e/
 .DS_Store
 
 .expo/
+
+# Firebase — clé de compte de service FCM. Secret : quiconque l'a peut envoyer
+# des notifications à l'app. Ne jamais committer.
+**/service-account*.json
+**/*-firebase-adminsdk-*.json
+google-service-account*.json

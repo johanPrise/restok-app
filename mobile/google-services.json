@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "999572976187",
+    "project_id": "restock-cbb74",
+    "storage_bucket": "restock-cbb74.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:999572976187:android:31e49854b902264ccc221e",
+        "android_client_info": {
+          "package_name": "dev.yoricksenpai.restock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnC-AWSmt00_QuSmHMyELeBQGho64tCdw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
