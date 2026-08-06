@@ -1,9 +1,5 @@
-minimumReleaseAgeExclude:
-  - '@expo/cli@57.0.12'
-  - '@expo/router-server@57.0.5'
-  - expo-constants@57.0.9
-  - expo-modules-core@57.0.9
-  - expo@57.0.10
-  - '@expo/ui@57.0.9'
-  - expo-linking@57.0.5
-  - expo-router@57.0.10
+# @expo/metro-runtime (le paquet web) tire @expo/log-box en 57 alors qu'expo 56
+# en attend la 56. Deux copies d'un module natif dans un même build cassent la
+# compilation : on tranche pour la version du SDK du projet.
+overrides:
+  '@expo/log-box': 56.0.14

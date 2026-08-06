@@ -29,7 +29,6 @@
       "expo-splash-screen"
     ],
     "scheme": "restock",
-    "newArchEnabled": true,
     "experiments": {
       "typedRoutes": true
     }
