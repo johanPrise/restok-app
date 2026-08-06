@@ -24,6 +24,18 @@ export interface Palette {
   sage: string;
   /** Bordures et séparateurs — le « fil » du tag. */
   thread: string;
+
+  /**
+   * Traitement des grandes cartes de choix (onboarding), relevé sur les
+   * maquettes. Ces valeurs ne viennent pas du §1 : le Figma y emploie un teal
+   * plus saturé que `pantryTeal`, et remplit la carte d'un cran depuis le
+   * fond — `thread` en clair, `paperRaised` en sombre.
+   */
+  choiceSurface: string;
+  choiceBorder: string;
+  /** Rabat du coin plié : la face cachée du papier, plus sombre. */
+  choiceFold: string;
+  choiceTitle: string;
 }
 
 export const lightPalette: Palette = {
@@ -37,6 +49,10 @@ export const lightPalette: Palette = {
   rustClay: '#C4502C',
   sage: '#7FA687',
   thread: '#D8DED9',
+  choiceSurface: '#D8DED9',
+  choiceBorder: '#095347',
+  choiceFold: '#BCC3BC',
+  choiceTitle: '#155C50',
 };
 
 export const darkPalette: Palette = {
@@ -54,4 +70,10 @@ export const darkPalette: Palette = {
   mustard: '#E3B54A',
   rustClay: '#D96A45',
   sage: '#93BA9B',
+  choiceSurface: '#1E2620',
+  choiceBorder: '#2E3A33',
+  choiceTitle: '#3A6F61',
+  // Relevé sur une capture basse résolution du variant sombre : le rabat s'y
+  // distingue à peine du fond. Valeur approchée, à recaler si besoin.
+  choiceFold: '#2A332C',
 };

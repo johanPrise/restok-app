@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { SystemFooter } from '@/components/SystemFooter';
@@ -27,14 +28,11 @@ export default function Intro() {
       </View>
 
       <View style={styles.illustrationSlot}>
-        <View
-          style={[
-            styles.illustration,
-            {
-              backgroundColor: colors.paperRaised,
-              borderColor: colors.thread,
-            },
-          ]}
+        <Image
+          source={require('../../assets/illustrations/etagere.png')}
+          style={styles.illustration}
+          contentFit="contain"
+          accessibilityLabel="Une étagère d'inventaire vue de face, ses rayons étiquetés"
         />
       </View>
 
@@ -65,13 +63,10 @@ const styles = StyleSheet.create({
   rule: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   line: { flex: 1, height: border.hairline },
   illustrationSlot: { flex: 1, justifyContent: 'center' },
-  // Emplacement de l'illustration d'étagère. L'asset n'est pas encore exporté
-  // du Figma : le cadre tient la mise en page en attendant.
-  illustration: {
-    aspectRatio: 16 / 10,
-    borderWidth: border.hairline,
-    borderRadius: radius.button,
-  },
+  // Ratio de l'illustration (320×175). Son fond clair est cuit dans l'image et
+  // c'est voulu : la maquette sombre garde ce panneau clair sur fond noir, le
+  // dessin s'y lit comme une planche imprimée.
+  illustration: { width: '100%', aspectRatio: 320 / 175 },
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',

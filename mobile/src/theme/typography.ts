@@ -6,6 +6,11 @@ export const fontFamily = {
   display: 'ArchivoBlack_400Regular',
   body: 'WorkSans_400Regular',
   bodySemibold: 'WorkSans_600SemiBold',
+  /**
+   * Archivo Bold — moins gras et plus étroit qu'Archivo Black. Employé sur les
+   * titres des cartes de choix, où la maquette ne veut pas du poids du Black.
+   */
+  displayBold: 'Archivo_700Bold',
   /** Quantités, dates, codes d'invitation, historique. */
   mono: 'IBMPlexMono_500Medium',
 } as const;
@@ -44,6 +49,14 @@ export const textStyles = {
     letterSpacing: fontSize.subtitle * 0.04,
     textTransform: 'uppercase',
   },
+  /** Titre d'une carte de choix : capitales, interlettrage large. */
+  choiceTitle: {
+    fontFamily: fontFamily.displayBold,
+    fontSize: fontSize.subtitle,
+    lineHeight: fontSize.subtitle * DISPLAY_LINE_HEIGHT,
+    letterSpacing: fontSize.subtitle * 0.03,
+    textTransform: 'uppercase',
+  },
   body: {
     fontFamily: fontFamily.body,
     fontSize: fontSize.body,
@@ -58,6 +71,12 @@ export const textStyles = {
     fontFamily: fontFamily.body,
     fontSize: fontSize.caption,
     lineHeight: fontSize.caption * BODY_LINE_HEIGHT,
+  },
+  /** Corps en monospace — la maquette y passe les descriptions de carte. */
+  monoBody: {
+    fontFamily: fontFamily.mono,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * BODY_LINE_HEIGHT,
   },
   mono: {
     fontFamily: fontFamily.mono,
