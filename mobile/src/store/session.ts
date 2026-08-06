@@ -1,17 +1,24 @@
 import { create } from 'zustand';
-import { secureStorage } from './secure-storage';
 import type { AuthenticatedMember } from '@/types/api';
+import { secureStorage } from './secure-storage';
 
 const SESSION_KEY = 'restock.session';
 
 interface PersistedSession {
   token: string;
   member: AuthenticatedMember;
+  /**
+   * L'utilisateur a-t-il déjà vu l'écran de permission des notifications ?
+   * Persisté avec la session, donc par compte : changer de compte redemande,
+   * ce qui est le comportement voulu.
+   */
+  notificationsPrompted: boolean;
 }
 
 interface SessionState {
   token: string | null;
   member: AuthenticatedMember | null;
+  notificationsPrompted: boolean;
   /** Faux tant que la session n'a pas été relue du stockage sécurisé. */
   isHydrated: boolean;
 
@@ -23,7 +30,14 @@ interface SessionState {
    * d'un groupe, ou quand le serveur révèle que l'appartenance a changé.
    */
   setMember: (member: AuthenticatedMember) => Promise<void>;
+  markNotificationsPrompted: () => Promise<void>;
 }
+
+const EMPTY = {
+  token: null,
+  member: null,
+  notificationsPrompted: false,
+} as const;
 
 /**
  * Session : uniquement ce qui est vraiment global. Tout l'état serveur (items,
@@ -34,48 +48,61 @@ interface SessionState {
  * alors qu'il a déjà un groupe. C'est un cache, pas une source de vérité — le
  * serveur reste seul juge, et un 401 ou un 403 le corrige.
  */
-export const useSession = create<SessionState>((set, get) => ({
-  token: null,
-  member: null,
-  isHydrated: false,
+export const useSession = create<SessionState>((set, get) => {
+  /** Écrit l'état courant dans le stockage sécurisé, token présent ou non. */
+  const persist = async (next: Partial<PersistedSession>) => {
+    const { token, member, notificationsPrompted } = { ...get(), ...next };
+    if (!token || !member) return;
 
-  hydrate: async () => {
-    try {
-      const raw = await secureStorage.get(SESSION_KEY);
-      const session = raw ? (JSON.parse(raw) as PersistedSession) : null;
-      set({
-        token: session?.token ?? null,
-        member: session?.member ?? null,
-        isHydrated: true,
-      });
-    } catch {
-      // Trousseau illisible ou JSON corrompu : on repart déconnecté plutôt
-      // que de bloquer l'app au démarrage.
-      set({ token: null, member: null, isHydrated: true });
-    }
-  },
-
-  signIn: async (token, member) => {
     await secureStorage.set(
       SESSION_KEY,
-      JSON.stringify({ token, member } satisfies PersistedSession),
+      JSON.stringify({
+        token,
+        member,
+        notificationsPrompted,
+      } satisfies PersistedSession),
     );
-    set({ token, member });
-  },
+  };
 
-  signOut: async () => {
-    await secureStorage.remove(SESSION_KEY);
-    set({ token: null, member: null });
-  },
+  return {
+    ...EMPTY,
+    isHydrated: false,
 
-  setMember: async (member) => {
-    const { token } = get();
-    if (token) {
-      await secureStorage.set(
-        SESSION_KEY,
-        JSON.stringify({ token, member } satisfies PersistedSession),
-      );
-    }
-    set({ member });
-  },
-}));
+    hydrate: async () => {
+      try {
+        const raw = await secureStorage.get(SESSION_KEY);
+        const session = raw ? (JSON.parse(raw) as PersistedSession) : null;
+        set({
+          token: session?.token ?? null,
+          member: session?.member ?? null,
+          notificationsPrompted: session?.notificationsPrompted ?? false,
+          isHydrated: true,
+        });
+      } catch {
+        // Trousseau illisible ou JSON corrompu : on repart déconnecté plutôt
+        // que de bloquer l'app au démarrage.
+        set({ ...EMPTY, isHydrated: true });
+      }
+    },
+
+    signIn: async (token, member) => {
+      await persist({ token, member, notificationsPrompted: false });
+      set({ token, member, notificationsPrompted: false });
+    },
+
+    signOut: async () => {
+      await secureStorage.remove(SESSION_KEY);
+      set({ ...EMPTY });
+    },
+
+    setMember: async (member) => {
+      await persist({ member });
+      set({ member });
+    },
+
+    markNotificationsPrompted: async () => {
+      await persist({ notificationsPrompted: true });
+      set({ notificationsPrompted: true });
+    },
+  };
+});

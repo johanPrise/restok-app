@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
+import * as Notifications from 'expo-notifications';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -6,12 +7,27 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createQueryClient } from '@/api/query-client';
+import { useNotificationSync } from '@/lib/useNotificationSync';
 import { useSession } from '@/store/session';
 import { appFonts } from '@/theme/fonts';
 
 // Le splash reste visible tant que les polices ne sont pas prêtes : sans ça
 // l'app affiche un premier rendu en police système, puis saute.
 void SplashScreen.preventAutoHideAsync();
+
+// Sans ce gestionnaire, une notification reçue app ouverte n'affiche rien du
+// tout : le système la remet à l'app, qui doit dire quoi en faire.
+Notifications.setNotificationHandler({
+  handleNotification: () =>
+    Promise.resolve({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      // Le badge est piloté par le nombre d'items à racheter, pas par le
+      // cumul des notifications reçues.
+      shouldSetBadge: false,
+    }),
+});
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
@@ -40,8 +56,15 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} />
+        <NavigationTree />
       </SafeAreaProvider>
     </QueryClientProvider>
   );
+}
+
+/** Enfant du provider : `useNotificationSync` a besoin du QueryClient. */
+function NavigationTree() {
+  useNotificationSync();
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
