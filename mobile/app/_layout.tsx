@@ -3,11 +3,11 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { createQueryClient } from '@/api/query-client';
+import { queryClient } from '@/api/query-client';
 import { useNotificationSync } from '@/lib/useNotificationSync';
 import { useSession } from '@/store/session';
 import { appFonts } from '@/theme/fonts';
@@ -17,7 +17,6 @@ import { appFonts } from '@/theme/fonts';
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [queryClient] = useState(createQueryClient);
   const [fontsLoaded, fontError] = useFonts(appFonts);
 
   const hydrate = useSession((s) => s.hydrate);

@@ -35,13 +35,20 @@ export function useItemActions(item: Item): ItemActions {
     busy: take.isPending || restock.isPending,
     failed: take.isError || restock.isError,
 
-    take: ({ onError, settleDelayMs } = {}) =>
-      take.mutate({ itemId: item.id, settleDelayMs }, { onError }),
+    // `mutate` efface l'erreur de sa propre mutation, pas celle de l'autre :
+    // sans ce `reset`, un rachat réussi s'affichait sous le message d'échec
+    // d'une prise précédente.
+    take: ({ onError, settleDelayMs } = {}) => {
+      restock.reset();
+      take.mutate({ itemId: item.id, settleDelayMs }, { onError });
+    },
 
-    restock: ({ onError } = {}) =>
+    restock: ({ onError } = {}) => {
+      take.reset();
       restock.mutate(
         { itemId: item.id, quantity: restockQuantity(item) },
         { onError },
-      ),
+      );
+    },
   };
 }

@@ -17,7 +17,7 @@ export const queryKeys = {
   itemHistory: (itemId: string) => ['item-history', itemId] as const,
 };
 
-export function createQueryClient(): QueryClient {
+function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -33,3 +33,13 @@ export function createQueryClient(): QueryClient {
     },
   });
 }
+
+/**
+ * Instance unique, exportée plutôt que créée dans un composant.
+ *
+ * `authedRequest` doit pouvoir vider le cache quand le serveur invalide une
+ * session — or ce n'est pas un hook, et l'appel arrive hors de tout rendu. Sans
+ * ce point d'accès, une déconnexion automatique laissait l'étagère du compte
+ * précédent en mémoire, visible par le suivant le temps d'un refetch.
+ */
+export const queryClient = createQueryClient();

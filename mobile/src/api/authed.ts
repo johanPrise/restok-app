@@ -1,5 +1,6 @@
 import { useSession } from '@/store/session';
 import { ApiError, apiRequest, RequestOptions } from './client';
+import { queryClient } from './query-client';
 
 /**
  * Requête authentifiée, avec correction du cache de session.
@@ -31,10 +32,17 @@ async function reconcileSession(error: ApiError): Promise<void> {
 
   if (error.isUnauthenticated) {
     await signOut();
+    // Le cache appartient au compte qui vient de sauter. Sans ce vidage, le
+    // prochain à se connecter voyait l'étagère du précédent le temps d'un
+    // refetch — `staleTime` la tient trente secondes.
+    queryClient.clear();
     return;
   }
 
   if (error.status === 403 && member?.groupId) {
     await setMember({ ...member, groupId: null, role: 'member' });
+    // Idem pour un membre retiré de son groupe : les items, l'historique et la
+    // liste des membres ne le regardent plus.
+    queryClient.clear();
   }
 }

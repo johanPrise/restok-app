@@ -15,6 +15,7 @@ import { AdminGuard } from '../auth/guards/admin.guard';
 import { GroupMemberGuard } from '../auth/guards/group-member.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/types/jwt-payload.type';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { UpdatePushTokenDto } from './dto/update-push-token.dto';
 import { MembersService } from './members.service';
 
@@ -35,6 +36,31 @@ export class MembersController {
     @CurrentUser('id') memberId: string,
   ) {
     return this.membersService.updatePushToken(memberId, dto.pushToken);
+  }
+
+  /**
+   * Déclarée **avant** `:id` : Nest résout les routes dans l'ordre, et
+   * `ParseUUIDPipe` rejetterait « me » avec un 400.
+   */
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  leave(@CurrentUser() user: AuthenticatedUser) {
+    return this.membersService.leaveGroup(user.id, user.groupId!);
+  }
+
+  @Patch(':id/role')
+  @UseGuards(AdminGuard)
+  setRole(
+    @Param('id', ParseUUIDPipe) targetId: string,
+    @Body() dto: UpdateMemberRoleDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.membersService.setRole(
+      targetId,
+      user.id,
+      user.groupId!,
+      dto.role,
+    );
   }
 
   @Delete(':id')

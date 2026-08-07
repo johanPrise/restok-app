@@ -208,6 +208,128 @@ describe('Groups & members (e2e)', () => {
     });
   });
 
+  describe('DELETE /members/me', () => {
+    it('laisse un membre partir de lui-même', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob).delete('/members/me').expect(204);
+
+      await auth(app, bob).get('/members').expect(403);
+      // L'admin, lui, reste en place.
+      await auth(app, alice).get('/members').expect(200);
+    });
+
+    it("n'est pas confondue avec la suppression d'un membre par son id", async () => {
+      // `me` n'est pas un UUID : déclarée après `:id`, la route se ferait
+      // intercepter par ParseUUIDPipe et répondrait 400.
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob).delete('/members/me').expect(204);
+    });
+
+    it('retient le dernier admin quand il laisse du monde derrière lui', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice).delete('/members/me').expect(409);
+      await auth(app, alice).get('/members').expect(200);
+    });
+
+    it('laisse partir un admin seul dans son groupe', async () => {
+      await createGroupWith(app, alice);
+
+      await auth(app, alice).delete('/members/me').expect(204);
+      await auth(app, alice).get('/members').expect(403);
+    });
+
+    it('libère le dernier admin une fois quelqu’un promu', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(200);
+      await auth(app, alice).delete('/members/me').expect(204);
+
+      // Bob tient le groupe : il peut désormais créer un item.
+      await auth(app, bob).post('/items').send({ name: 'Éponges' }).expect(201);
+    });
+
+    it('refuse à quelqu’un sans groupe', async () => {
+      await auth(app, alice).delete('/members/me').expect(403);
+    });
+  });
+
+  describe('PATCH /members/:id/role', () => {
+    it('promeut un membre, qui gagne les droits admin', async () => {
+      await createGroupWith(app, alice, [bob]);
+      await auth(app, bob).post('/items').send({ name: 'Pirate' }).expect(403);
+
+      const res = await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ id: bob.id, role: 'admin' });
+      await auth(app, bob).post('/items').send({ name: 'Éponges' }).expect(201);
+    });
+
+    it('rétrograde un admin, qui perd les siens', async () => {
+      await createGroupWith(app, alice, [bob]);
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(200);
+
+      await auth(app, bob)
+        .patch(`/members/${alice.id}/role`)
+        .send({ role: 'member' })
+        .expect(200);
+
+      await auth(app, alice)
+        .post('/items')
+        .send({ name: 'Pirate' })
+        .expect(403);
+    });
+
+    it('refuse à un simple membre', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob)
+        .patch(`/members/${alice.id}/role`)
+        .send({ role: 'member' })
+        .expect(403);
+    });
+
+    it('refuse de changer son propre rôle', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${alice.id}/role`)
+        .send({ role: 'member' })
+        .expect(400);
+    });
+
+    it('rejette un rôle inconnu', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'sudo' })
+        .expect(400);
+    });
+
+    it("traite un membre d'un autre groupe comme introuvable", async () => {
+      await createGroupWith(app, alice);
+      const carol = await signUp(app, 'Carol');
+      await createGroupWith(app, carol, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(404);
+    });
+  });
+
   describe('DELETE /groups/me', () => {
     it('détache les membres et libère le code', async () => {
       const group = await createGroupWith(app, alice, [bob]);

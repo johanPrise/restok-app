@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/store/session';
-import type { Group, GroupDetail, GroupType, MemberSummary } from '@/types/api';
+import type {
+  Group,
+  GroupDetail,
+  GroupType,
+  MemberRole,
+  MemberSummary,
+} from '@/types/api';
 import { authedRequest } from './authed';
 import { queryKeys } from './query-client';
 
@@ -88,6 +94,39 @@ export function useDeleteGroup() {
       if (member) void setMember({ ...member, groupId: null, role: 'member' });
       queryClient.clear();
     },
+  });
+}
+
+/**
+ * Sortie volontaire. Le backend retient le dernier admin qui laisserait du
+ * monde derrière lui — son message dit quoi faire, on le laisse remonter tel
+ * quel plutôt que d'en réécrire un approximatif ici.
+ */
+export function useLeaveGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => authedRequest<void>('/members/me', { method: 'DELETE' }),
+    onSuccess: () => {
+      const { member, setMember } = useSession.getState();
+      if (member) void setMember({ ...member, groupId: null, role: 'member' });
+      queryClient.clear();
+    },
+  });
+}
+
+/** Promeut ou rétrograde un autre membre — réservé aux admins. */
+export function useSetMemberRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: MemberRole }) =>
+      authedRequest<MemberSummary>(`/members/${memberId}/role`, {
+        method: 'PATCH',
+        body: { role },
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.members }),
   });
 }
 
