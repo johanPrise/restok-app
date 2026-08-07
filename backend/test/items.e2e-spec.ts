@@ -202,6 +202,57 @@ describe('Items (e2e)', () => {
     });
   });
 
+  describe('dernière action sur la liste', () => {
+    it("porte l'auteur et la nature de la dernière action", async () => {
+      const item = await createItem({ name: 'Papier toilette' });
+      await auth(app, bob).post(`/items/${item.id}/take`).expect(200);
+
+      const res = await auth(app, alice).get('/items').expect(200);
+      const listed = res.body.find((i: { id: string }) => i.id === item.id);
+
+      expect(listed.lastAction).toMatchObject({
+        actionType: 'taken',
+        memberName: 'Bob',
+      });
+      expect(Date.parse(listed.lastAction.at as string)).not.toBeNaN();
+    });
+
+    it('retient la plus récente, pas la première', async () => {
+      const item = await createItem({ name: 'Papier toilette' });
+      await auth(app, bob).post(`/items/${item.id}/take`).expect(200);
+      await auth(app, alice).post(`/items/${item.id}/restock`).expect(200);
+
+      const res = await auth(app, alice).get('/items').expect(200);
+      const listed = res.body.find((i: { id: string }) => i.id === item.id);
+
+      expect(listed.lastAction).toMatchObject({
+        actionType: 'restocked',
+        memberName: 'Alice',
+      });
+    });
+
+    it("vaut null tant que rien ne s'est passé", async () => {
+      const item = await createItem({ name: 'Ampoules' });
+
+      const res = await auth(app, alice).get('/items').expect(200);
+      const listed = res.body.find((i: { id: string }) => i.id === item.id);
+
+      expect(listed.lastAction).toBeNull();
+    });
+
+    it('ne mélange pas les items entre eux', async () => {
+      const pq = await createItem({ name: 'Papier toilette' });
+      const cafe = await createItem({ name: 'Café' });
+      await auth(app, bob).post(`/items/${pq.id}/take`).expect(200);
+
+      const res = await auth(app, alice).get('/items').expect(200);
+      const rows = res.body as { id: string; lastAction: unknown }[];
+
+      expect(rows.find((i) => i.id === pq.id)?.lastAction).not.toBeNull();
+      expect(rows.find((i) => i.id === cafe.id)?.lastAction).toBeNull();
+    });
+  });
+
   describe('GET /items/:id/history', () => {
     it("journalise chaque action avec son auteur, plus récente d'abord", async () => {
       const item = await createItem({ name: 'Papier toilette' });

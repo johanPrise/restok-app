@@ -2,12 +2,15 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { Repository } from 'typeorm';
+import { ActionHistoryService } from '../action-history/action-history.service';
+import { ActionType } from '../action-history/entities/action-history.entity';
 import { Item, ItemStatus, TrackingType } from './entities/item.entity';
 import { ItemsService } from './items.service';
 
 describe('ItemsService', () => {
   let service: ItemsService;
   let itemRepo: jest.Mocked<Repository<Item>>;
+  let historyService: { findLastActionByItem: jest.Mock };
 
   const buildItem = (overrides: Partial<Item> = {}): Item =>
     ({
@@ -35,11 +38,18 @@ describe('ItemsService', () => {
             softRemove: jest.fn(),
           },
         },
+        {
+          provide: ActionHistoryService,
+          useValue: {
+            findLastActionByItem: jest.fn().mockResolvedValue(new Map()),
+          },
+        },
       ],
     }).compile();
 
     service = moduleRef.get(ItemsService);
     itemRepo = moduleRef.get(getRepositoryToken(Item));
+    historyService = moduleRef.get(ActionHistoryService);
   });
 
   describe('create', () => {
@@ -307,6 +317,51 @@ describe('ItemsService', () => {
         where: { groupId: 'group-1' },
         order: { status: 'DESC', name: 'ASC' },
       });
+    });
+
+    it('joint la dernière action de chaque item', async () => {
+      const at = new Date('2026-08-01T10:00:00Z');
+      itemRepo.find.mockResolvedValue([buildItem()]);
+      historyService.findLastActionByItem.mockResolvedValue(
+        new Map([
+          ['item-1', { actionType: ActionType.TAKEN, at, memberName: 'Sam' }],
+        ]),
+      );
+
+      const [item] = await service.findAllInGroup('group-1');
+
+      expect(item.lastAction).toEqual({
+        actionType: ActionType.TAKEN,
+        at,
+        memberName: 'Sam',
+      });
+    });
+
+    it("n'interroge l'historique qu'une fois pour toute l'étagère", async () => {
+      // Le point de la manœuvre : pas une requête par tag.
+      itemRepo.find.mockResolvedValue([
+        buildItem({ id: 'item-1' }),
+        buildItem({ id: 'item-2' }),
+        buildItem({ id: 'item-3' }),
+      ]);
+
+      await service.findAllInGroup('group-1');
+
+      expect(historyService.findLastActionByItem).toHaveBeenCalledTimes(1);
+      expect(historyService.findLastActionByItem).toHaveBeenCalledWith([
+        'item-1',
+        'item-2',
+        'item-3',
+      ]);
+    });
+
+    it("laisse lastAction à null quand rien ne s'est passé", async () => {
+      itemRepo.find.mockResolvedValue([buildItem()]);
+      historyService.findLastActionByItem.mockResolvedValue(new Map());
+
+      const [item] = await service.findAllInGroup('group-1');
+
+      expect(item.lastAction).toBeNull();
     });
   });
 

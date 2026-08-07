@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ActionHistoryService } from '../action-history/action-history.service';
+import type { LastAction } from '../action-history/action-history.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { Item, ItemStatus, TrackingType } from './entities/item.entity';
@@ -20,12 +22,18 @@ function settle(status: ItemStatus): ItemStatus {
   return autoTransition(status) ?? status;
 }
 
+export interface ItemWithLastAction extends Item {
+  /** `null` tant que personne n'a rien pris ni racheté. */
+  lastAction: LastAction | null;
+}
+
 /** CRUD pur. Les actions take/restock passent par ItemActionsFacade. */
 @Injectable()
 export class ItemsService {
   constructor(
     @InjectRepository(Item)
     private readonly itemRepo: Repository<Item>,
+    private readonly actionHistoryService: ActionHistoryService,
   ) {}
 
   /**
@@ -33,11 +41,21 @@ export class ItemsService {
    * déclaration (`available`, `low`, `out_of_stock`, `to_restock`), donc DESC
    * fait remonter ce qui demande une action en haut de l'étagère.
    */
-  findAllInGroup(groupId: string): Promise<Item[]> {
-    return this.itemRepo.find({
+  async findAllInGroup(groupId: string): Promise<ItemWithLastAction[]> {
+    const items = await this.itemRepo.find({
       where: { groupId },
       order: { status: 'DESC', name: 'ASC' },
     });
+
+    // Une requête pour toute l'étagère, pas une par tag.
+    const lastActions = await this.actionHistoryService.findLastActionByItem(
+      items.map((item) => item.id),
+    );
+
+    return items.map((item) => ({
+      ...item,
+      lastAction: lastActions.get(item.id) ?? null,
+    }));
   }
 
   async create(dto: CreateItemDto, groupId: string): Promise<Item> {
