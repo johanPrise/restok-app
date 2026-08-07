@@ -1,53 +1,215 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSignOut } from '@/api/auth';
-import { useGroup, useLeaveGroup } from '@/api/groups';
+import {
+  useDeleteGroup,
+  useGroup,
+  useLeaveGroup,
+  useMembers,
+  useRemoveMember,
+  useSetMemberRole,
+} from '@/api/groups';
 import { Button } from '@/components/Button';
+import { Field } from '@/components/Field';
+import { InviteCodeCard } from '@/components/InviteCodeCard';
+import { MemberRow } from '@/components/MemberRow';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { useSession } from '@/store/session';
-import { spacing } from '@/theme';
+import { MIN_TOUCH_TARGET, spacing } from '@/theme';
+import type { GroupDetail, MemberSummary } from '@/types/api';
 
 /**
- * Réglages — version minimale. L'étape 5.7 y ajoutera la liste des membres,
- * leurs rôles et le renommage du groupe.
+ * Réglages du groupe (§5).
  *
- * Déconnexion et sortie de groupe sont là dès maintenant : l'app n'offrait ni
- * l'une ni l'autre, et sans la seconde personne ne pouvait quitter un groupe
- * autrement qu'en se faisant retirer par un admin.
+ * L'ordre suit la maquette : le code d'invitation en haut, traité comme un
+ * objet typographique ; les membres ; les actions sensibles regroupées en bas.
+ *
+ * Le compte et la déconnexion s'y ajoutent : la maquette leur réservait un
+ * onglet « Profil » que la barre à quatre onglets retenue n'a pas.
  */
 export default function Settings() {
   const member = useSession((s) => s.member);
   const group = useGroup();
+  const members = useMembers();
   const signOut = useSignOut();
+  const isAdmin = member?.role === 'admin';
 
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
         <Text variant="title">Paramètres</Text>
+        <Text variant="monoLabel" color="inkSoft" numberOfLines={1}>
+          {group.data?.name ?? ' '}
+        </Text>
       </View>
 
-      <View style={styles.body}>
-        <Row label="Compte" value={member?.name ?? '—'} hint={member?.email} />
-        <Row
-          label="Groupe"
-          value={group.data?.name ?? '—'}
-          hint={
-            group.data &&
-            `Code d'invitation ${group.data.inviteCode} · ${group.data.memberCount} membre${group.data.memberCount > 1 ? 's' : ''}`
-          }
-        />
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {group.data && (
+          <InviteCodeCard
+            code={group.data.inviteCode}
+            groupName={group.data.name}
+          />
+        )}
 
-      <View style={styles.footer}>
-        <LeaveGroup />
-        <Button
-          label="Se déconnecter"
-          variant="secondary"
-          onPress={() => void signOut()}
+        <Members
+          members={members.data ?? []}
+          selfId={member?.id}
+          canManage={isAdmin}
+          loading={members.isPending}
         />
-      </View>
+
+        {isAdmin && group.data && <DeleteGroup group={group.data} />}
+
+        <View style={styles.footer}>
+          <LeaveGroup />
+
+          <View style={styles.account}>
+            <Text variant="monoLabel" color="inkSoft">
+              Compte
+            </Text>
+            <Text variant="bodyStrong">{member?.name ?? '—'}</Text>
+            <Text variant="mono" color="inkSoft">
+              {member?.email ?? ''}
+            </Text>
+          </View>
+
+          <Button
+            label="Se déconnecter"
+            variant="secondary"
+            onPress={() => void signOut()}
+          />
+        </View>
+      </ScrollView>
     </Screen>
+  );
+}
+
+function Members({
+  members,
+  selfId,
+  canManage,
+  loading,
+}: Readonly<{
+  members: MemberSummary[];
+  selfId?: string;
+  canManage: boolean;
+  loading: boolean;
+}>) {
+  const [managing, setManaging] = useState(false);
+  const setRole = useSetMemberRole();
+  const remove = useRemoveMember();
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHead}>
+        <Text variant="monoLabel" color="inkSoft">
+          Membres{' '}
+          {loading ? '' : `[${String(members.length).padStart(2, '0')}]`}
+        </Text>
+        {canManage && members.length > 1 && (
+          <Button
+            label={managing ? 'Terminer' : 'Gérer'}
+            variant="secondary"
+            onPress={() => setManaging((on) => !on)}
+            style={styles.manage}
+          />
+        )}
+      </View>
+
+      {members.map((entry) => (
+        <MemberRow
+          key={entry.id}
+          member={entry}
+          isSelf={entry.id === selfId}
+          managing={managing}
+          onToggleRole={() =>
+            setRole.mutate({
+              memberId: entry.id,
+              role: entry.role === 'admin' ? 'member' : 'admin',
+            })
+          }
+          onRemove={() => remove.mutate(entry.id)}
+        />
+      ))}
+
+      {(setRole.isError || remove.isError) && (
+        <Text variant="caption" color="rustClay">
+          {(setRole.error ?? remove.error)?.message}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Suppression du groupe. Le §5 demande de **retaper le nom** : c'est
+ * irréversible pour tout le monde, pas seulement pour celui qui appuie.
+ */
+function DeleteGroup({ group }: Readonly<{ group: GroupDetail }>) {
+  const [arming, setArming] = useState(false);
+  const [typed, setTyped] = useState('');
+  const remove = useDeleteGroup();
+
+  const matches =
+    typed.trim().toLowerCase() === group.name.trim().toLowerCase();
+
+  if (!arming) {
+    return (
+      <Button
+        label="Supprimer le groupe"
+        variant="secondary"
+        onPress={() => setArming(true)}
+        style={styles.section}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.section}>
+      <Text variant="caption" color="inkSoft">
+        L&apos;étagère et les {group.memberCount} membres partent avec. Retape{' '}
+        <Text variant="bodyStrong">{group.name}</Text> pour confirmer.
+      </Text>
+
+      <Field
+        label="Nom du groupe"
+        value={typed}
+        onChangeText={setTyped}
+        placeholder={group.name}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+
+      {remove.isError && (
+        <Text variant="caption" color="rustClay">
+          {remove.error.message}
+        </Text>
+      )}
+
+      <View style={styles.actions}>
+        <Button
+          label="Annuler"
+          variant="secondary"
+          onPress={() => {
+            setArming(false);
+            setTyped('');
+          }}
+          style={styles.action}
+        />
+        <Button
+          label="Supprimer"
+          variant="danger"
+          disabled={!matches}
+          loading={remove.isPending}
+          onPress={() => remove.mutate()}
+          style={styles.action}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -55,8 +217,7 @@ export default function Settings() {
  * Quitter le groupe, en deux temps.
  *
  * Le backend retient le dernier admin qui laisserait du monde derrière lui ; on
- * affiche son message tel quel plutôt que d'en réécrire un approximatif. La
- * promotion d'un autre membre, qui débloque ce cas, arrive avec l'étape 5.7.
+ * affiche son message tel quel plutôt que d'en réécrire un approximatif.
  */
 function LeaveGroup() {
   const [confirming, setConfirming] = useState(false);
@@ -104,31 +265,19 @@ function LeaveGroup() {
   );
 }
 
-function Row({
-  label,
-  value,
-  hint,
-}: Readonly<{ label: string; value: string; hint?: string | false }>) {
-  return (
-    <View style={styles.row}>
-      <Text variant="monoLabel" color="inkSoft">
-        {label}
-      </Text>
-      <Text variant="bodyStrong">{value}</Text>
-      {hint ? (
-        <Text variant="mono" color="inkSoft">
-          {hint}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.sm },
-  body: { flex: 1, paddingTop: spacing.lg, gap: spacing.lg },
-  row: { gap: 2 },
-  footer: { gap: spacing.xs },
+  header: { paddingTop: spacing.sm, gap: 2 },
+  content: { paddingVertical: spacing.md, gap: spacing.lg },
+  section: { gap: spacing.sm },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: MIN_TOUCH_TARGET,
+  },
+  manage: { paddingHorizontal: spacing.sm },
+  footer: { gap: spacing.sm, paddingTop: spacing.md },
+  account: { gap: 2 },
   confirm: { gap: spacing.xs },
   actions: { flexDirection: 'row', gap: spacing.xs },
   action: { flex: 1 },
