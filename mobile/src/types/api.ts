@@ -39,6 +39,13 @@ export interface MemberSummary {
   createdAt: string;
 }
 
+export interface LastAction {
+  actionType: ActionType;
+  at: string;
+  /** `null` quand le compte de l'auteur a été supprimé. */
+  memberName: string | null;
+}
+
 export interface Item {
   id: string;
   name: string;
@@ -53,6 +60,8 @@ export interface Item {
   groupId: string;
   createdAt: string;
   updatedAt: string;
+  /** `null` tant que personne n'a rien pris ni racheté. */
+  lastAction: LastAction | null;
 }
 
 export interface HistoryEntry {

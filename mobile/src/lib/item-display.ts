@@ -2,7 +2,7 @@ import { formatDistanceToNowStrict, format, isAfter, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Palette } from '@/theme';
 import { RELATIVE_DATE_MAX_DAYS } from '@/theme';
-import type { Item, ItemStatus } from '@/types/api';
+import type { Item, ItemStatus, LastAction } from '@/types/api';
 import { isCritical } from './stock';
 
 /**
@@ -45,4 +45,14 @@ export function relativeDate(iso: string): string {
   }
 
   return format(date, 'd MMM', { locale: fr });
+}
+
+/**
+ * « Sam · il y a 2 jours ». Quand l'auteur a supprimé son compte, l'action
+ * reste au tableau mais devient anonyme — l'événement a bien eu lieu.
+ */
+export function lastActionLabel(action: LastAction): string {
+  const who = action.memberName ?? "Quelqu'un";
+
+  return `${who} · ${relativeDate(action.at)}`;
 }

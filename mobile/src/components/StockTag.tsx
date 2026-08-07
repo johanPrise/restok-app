@@ -1,14 +1,12 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { fillPercent, fillRatio } from '@/lib/stock';
-import { relativeDate, statusBadge, statusColor } from '@/lib/item-display';
+import { lastActionLabel, statusBadge, statusColor } from '@/lib/item-display';
 import { border, gauge, radius, spacing, useTheme } from '@/theme';
 import type { Item } from '@/types/api';
 import { Text } from './Text';
 
 interface StockTagProps {
   item: Item;
-  /** Dernière action : « Sam · il y a 2 jours ». Absent tant qu'il n'y en a pas. */
-  lastActionBy?: string;
   onPress?: () => void;
 }
 
@@ -23,11 +21,7 @@ interface StockTagProps {
  * - un item en stock bas porte un **liseré** de sa couleur de statut sur le
  *   bord gauche, visible sans lire.
  */
-export function StockTag({
-  item,
-  lastActionBy,
-  onPress,
-}: Readonly<StockTagProps>) {
+export function StockTag({ item, onPress }: Readonly<StockTagProps>) {
   const { colors } = useTheme();
 
   const accent = colors[statusColor(item.status)];
@@ -73,9 +67,9 @@ export function StockTag({
         )}
       </View>
 
-      {lastActionBy !== undefined && (
+      {item.lastAction !== null && (
         <Text variant="body" color="inkSoft" style={styles.meta}>
-          {lastActionBy} · {relativeDate(item.updatedAt)}
+          {lastActionLabel(item.lastAction)}
         </Text>
       )}
 
