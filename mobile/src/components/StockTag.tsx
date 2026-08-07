@@ -1,13 +1,30 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, PressableProps, StyleSheet, View } from 'react-native';
+import Animated, {
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { fillPercent, fillRatio } from '@/lib/stock';
 import { lastActionLabel, statusBadge, statusColor } from '@/lib/item-display';
-import { border, gauge, radius, spacing, useTheme } from '@/theme';
+import { border, gauge, motion, radius, spacing, useTheme } from '@/theme';
 import type { Item } from '@/types/api';
 import { Text } from './Text';
 
-interface StockTagProps {
+interface StockTagProps extends Pick<
+  PressableProps,
+  'accessibilityActions' | 'onAccessibilityAction' | 'accessibilityHint'
+> {
   item: Item;
   onPress?: () => void;
+  /**
+   * Remplissage piloté de l'extérieur — la jauge suit le doigt pendant un
+   * geste. Sans lui le tag anime son propre niveau sur les données.
+   */
+  level?: SharedValue<number>;
 }
 
 /**
@@ -21,7 +38,12 @@ interface StockTagProps {
  * - un item en stock bas porte un **liseré** de sa couleur de statut sur le
  *   bord gauche, visible sans lire.
  */
-export function StockTag({ item, onPress }: Readonly<StockTagProps>) {
+export function StockTag({
+  item,
+  onPress,
+  level,
+  ...accessibility
+}: Readonly<StockTagProps>) {
   const { colors } = useTheme();
 
   const accent = colors[statusColor(item.status)];
@@ -29,11 +51,35 @@ export function StockTag({ item, onPress }: Readonly<StockTagProps>) {
   const ratio = fillRatio(item);
   const isEmpty = ratio === 0;
 
+  const own = useSharedValue(ratio);
+  const shown = level ?? own;
+
+  useEffect(() => {
+    own.value = withTiming(ratio, { duration: motion.standard });
+  }, [own, ratio]);
+
+  const fillStyle = useAnimatedStyle(
+    () => ({ width: `${shown.value * 100}%` }),
+    [shown],
+  );
+
+  // Le chiffre suit la jauge, sinon un « 33 % » figé contredit une barre qui
+  // se vide. On ne repasse en JS qu'au changement d'entier, pas à chaque frame.
+  const [percent, setPercent] = useState(() => fillPercent(item));
+  useAnimatedReaction(
+    () => Math.round(shown.value * 100),
+    (next, previous) => {
+      if (next !== previous) scheduleOnRN(setPercent, next);
+    },
+    [shown],
+  );
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${item.name}${badge ? `, ${badge}` : ''}`}
       onPress={onPress}
+      {...accessibility}
       style={[
         styles.card,
         {
@@ -82,14 +128,11 @@ export function StockTag({ item, onPress }: Readonly<StockTagProps>) {
           // Les chiffres restent alignés d'une ligne à l'autre.
           allowFontScaling={false}
         >
-          {fillPercent(item)}%
+          {percent}%
         </Text>
         <View style={[styles.track, { backgroundColor: colors.thread }]}>
-          <View
-            style={[
-              styles.fill,
-              { backgroundColor: accent, width: `${ratio * 100}%` },
-            ]}
+          <Animated.View
+            style={[styles.fill, { backgroundColor: accent }, fillStyle]}
           />
         </View>
       </View>

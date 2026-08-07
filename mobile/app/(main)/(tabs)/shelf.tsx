@@ -12,7 +12,7 @@ import { useItems } from '@/api/items';
 import { FAB_SIZE } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
-import { StockTag } from '@/components/StockTag';
+import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
@@ -107,7 +107,7 @@ export default function Shelf() {
             />
             {!collapsed[section.key] &&
               section.items.map((item) => (
-                <StockTag
+                <SwipeableStockTag
                   key={item.id}
                   item={item}
                   onPress={() => router.push(`/items/${item.id}`)}

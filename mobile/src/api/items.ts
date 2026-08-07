@@ -38,18 +38,34 @@ function useInvalidateItem() {
   };
 }
 
-export function useTakeItem() {
+/**
+ * Le rafraîchissement peut attendre : l'animation de décrochage (§4) dure
+ * 550ms, alors que le refetch répond en quelques dizaines de millisecondes.
+ * Sans ce délai, la liste se réorganise et emporte le tag avant que la
+ * séquence ait commencé — le seul moment orchestré de l'app ne se verrait
+ * jamais.
+ */
+function useSettleItem() {
   const invalidate = useInvalidateItem();
 
+  return (itemId: string, delayMs?: number) => {
+    if (!delayMs) return invalidate(itemId);
+    setTimeout(() => invalidate(itemId), delayMs);
+  };
+}
+
+export function useTakeItem() {
+  const settle = useSettleItem();
+
   return useMutation({
-    mutationFn: (itemId: string) =>
+    mutationFn: ({ itemId }: { itemId: string; settleDelayMs?: number }) =>
       authedRequest<Item>(`/items/${itemId}/take`, { method: 'POST' }),
-    onSuccess: (item) => invalidate(item.id),
+    onSuccess: (item, { settleDelayMs }) => settle(item.id, settleDelayMs),
   });
 }
 
 export function useRestockItem() {
-  const invalidate = useInvalidateItem();
+  const settle = useSettleItem();
 
   return useMutation({
     // `quantity` est obligatoire côté backend pour un item suivi en quantité,
@@ -59,7 +75,7 @@ export function useRestockItem() {
         method: 'POST',
         body: quantity === undefined ? {} : { quantity },
       }),
-    onSuccess: (item) => invalidate(item.id),
+    onSuccess: (item) => settle(item.id),
   });
 }
 
