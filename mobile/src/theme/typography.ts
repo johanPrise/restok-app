@@ -13,6 +13,8 @@ export const fontFamily = {
   displayBold: 'Archivo_700Bold',
   /** Quantités, dates, codes d'invitation, historique. */
   mono: 'IBMPlexMono_500Medium',
+  /** Libellés d'onglets — la maquette y passe le Bold, pas le Medium. */
+  monoBold: 'IBMPlexMono_700Bold',
 } as const;
 
 /** Échelle 32 / 24 / 18 / 16 / 13. */
@@ -22,6 +24,12 @@ export const fontSize = {
   subtitle: 18,
   body: 16,
   caption: 13,
+  /**
+   * Hors échelle du §2, et volontairement : à 13px les quatre libellés
+   * d'onglets ne tiennent plus côte à côte sur 390px. La maquette descend à 11,
+   * ce format ne sert nulle part ailleurs.
+   */
+  tabLabel: 11,
 } as const;
 
 const DISPLAY_LINE_HEIGHT = 1.1;
@@ -82,6 +90,16 @@ export const textStyles = {
     fontFamily: fontFamily.mono,
     fontSize: fontSize.caption,
     lineHeight: fontSize.caption * BODY_LINE_HEIGHT,
+  },
+  /**
+   * Libellé d'onglet. Contrairement à `monoLabel`, il garde sa casse : la
+   * maquette écrit « Inventaire », pas « INVENTAIRE ».
+   */
+  tabLabel: {
+    fontFamily: fontFamily.monoBold,
+    fontSize: fontSize.tabLabel,
+    lineHeight: 12,
+    letterSpacing: fontSize.tabLabel * 0.05,
   },
   /** En-têtes de section et libellés techniques : mono capitales. */
   monoLabel: {

@@ -24,6 +24,12 @@ export interface Palette {
   sage: string;
   /** Bordures et séparateurs — le « fil » du tag. */
   thread: string;
+  /**
+   * Ce qui se pose *sur* `pantryTeal` — onglet actif, icône du FAB. La maquette
+   * n'y met pas du blanc mais un vert d'eau très clair, qui adoucit le contraste
+   * sans le perdre. `paperRaised` (utilisé par Button) y serait plus dur.
+   */
+  onPantryTeal: string;
 
   /**
    * Traitement des grandes cartes de choix (onboarding), relevé sur les
@@ -49,6 +55,7 @@ export const lightPalette: Palette = {
   rustClay: '#C4502C',
   sage: '#7FA687',
   thread: '#D8DED9',
+  onPantryTeal: '#A9E9D8',
   choiceSurface: '#D8DED9',
   choiceBorder: '#095347',
   choiceFold: '#BCC3BC',
@@ -67,6 +74,10 @@ export const darkPalette: Palette = {
   // doit se détacher de `paperRaised` sans le concurrencer.
   pantryTealDeep: '#357366',
   thread: '#2E3A33',
+  // Le vert d'eau du mode clair ne tient pas ici : `pantryTeal` s'éclaircit en
+  // sombre, et clair-sur-clair tombe à 2.4:1. On inverse donc le sens du
+  // contraste — encre sombre sur la pastille — pour repasser au-dessus de 4.5:1.
+  onPantryTeal: '#0F1613',
   mustard: '#E3B54A',
   rustClay: '#D96A45',
   sage: '#93BA9B',

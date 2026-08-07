@@ -1,6 +1,9 @@
 import { Archivo_700Bold } from '@expo-google-fonts/archivo';
 import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo-black';
-import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
+import {
+  IBMPlexMono_500Medium,
+  IBMPlexMono_700Bold,
+} from '@expo-google-fonts/ibm-plex-mono';
 import {
   WorkSans_400Regular,
   WorkSans_600SemiBold,
@@ -16,4 +19,5 @@ export const appFonts = {
   WorkSans_400Regular,
   WorkSans_600SemiBold,
   IBMPlexMono_500Medium,
+  IBMPlexMono_700Bold,
 };

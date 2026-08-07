@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
+import { FAB_SIZE } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StockTag } from '@/components/StockTag';
@@ -46,7 +47,8 @@ export default function Shelf() {
     setCollapsed((state) => ({ ...state, [key]: !state[key] }));
 
   return (
-    <Screen>
+    // Pas d'`edges` en bas : la barre d'onglets absorbe déjà l'encoche.
+    <Screen edges={['top']}>
       <View style={styles.header}>
         <Text variant="title" numberOfLines={1}>
           {group.data?.name ?? ' '}
@@ -152,7 +154,13 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     fontSize: fontSize.body,
   },
-  list: { paddingVertical: spacing.md, gap: spacing.md },
+  list: {
+    paddingTop: spacing.md,
+    // Le FAB flotte au-dessus de la liste : sans cette réserve, il masque le
+    // dernier tag une fois le défilement en bout de course.
+    paddingBottom: spacing.md * 2 + FAB_SIZE,
+    gap: spacing.md,
+  },
   section: { gap: spacing.xs },
   empty: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },
   emptyTitle: { textAlign: 'center' },
