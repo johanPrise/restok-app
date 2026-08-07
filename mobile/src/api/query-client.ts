@@ -7,7 +7,14 @@ export const queryKeys = {
   group: ['group'] as const,
   members: ['members'] as const,
   items: ['items'] as const,
-  itemHistory: (itemId: string) => ['items', itemId, 'history'] as const,
+  /**
+   * Racine distincte de `items`, et non `['items', id, 'history']` :
+   * l'invalidation de TanStack Query se fait par préfixe, donc la moindre
+   * action sur un item rafraîchissait l'historique de **tous** les items déjà
+   * consultés — et, après une suppression, allait chercher celui d'un item qui
+   * n'existe plus (404).
+   */
+  itemHistory: (itemId: string) => ['item-history', itemId] as const,
 };
 
 export function createQueryClient(): QueryClient {

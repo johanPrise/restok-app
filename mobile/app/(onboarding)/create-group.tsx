@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useCreateGroup } from '@/api/groups';
 import { BackLink } from '@/components/BackLink';
+import { useGoBack } from '@/lib/useGoBack';
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
@@ -19,6 +20,7 @@ const TYPES: { value: GroupType; label: string }[] = [
 
 export default function CreateGroup() {
   const router = useRouter();
+  const goBack = useGoBack('/choose');
   const { colors } = useTheme();
   const [name, setName] = useState('');
   const [type, setType] = useState<GroupType>('roommates');
@@ -28,7 +30,7 @@ export default function CreateGroup() {
 
   return (
     <FormScreen>
-      <BackLink onPress={() => router.back()} />
+      <BackLink onPress={goBack} />
 
       <TagCard>
         <Text variant="tagName">Créer un groupe</Text>

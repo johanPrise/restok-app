@@ -9,10 +9,12 @@ import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
+import { useGoBack } from '@/lib/useGoBack';
 import { border, spacing, useTheme } from '@/theme';
 
 export default function Join() {
   const router = useRouter();
+  const goBack = useGoBack('/choose');
   const { colors } = useTheme();
   const [code, setCode] = useState('');
   const join = useJoinGroup();
@@ -29,7 +31,7 @@ export default function Join() {
 
   return (
     <FormScreen>
-      <BackLink onPress={() => router.back()} />
+      <BackLink onPress={goBack} />
 
       <TagCard>
         <Text variant="tagName">Rejoindre un groupe</Text>

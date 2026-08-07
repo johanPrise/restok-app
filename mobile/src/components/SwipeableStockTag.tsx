@@ -14,15 +14,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { useRestockItem, useTakeItem } from '@/api/items';
 import { fillRatio } from '@/lib/stock';
-import {
-  canSwipe,
-  emptiesOnTake,
-  outcomeRatio,
-  restockQuantity,
-  type SwipeAction,
-} from '@/lib/tag-swipe';
+import { emptiesOnTake, outcomeRatio, type SwipeAction } from '@/lib/tag-swipe';
+import { useItemActions } from '@/lib/useItemActions';
 import { motion, swipe, unhook } from '@/theme';
 import type { Item } from '@/types/api';
 import { StockTag } from './StockTag';
@@ -30,6 +24,12 @@ import { StockTag } from './StockTag';
 interface SwipeableStockTagProps {
   item: Item;
   onPress?: () => void;
+  /**
+   * Le décrochage raconte le départ du tag vers « À racheter ». Sur l'écran de
+   * détail il n'a nulle part où aller : le laisser jouer ferait disparaître le
+   * seul élément de la page.
+   */
+  unhookOnEmpty?: boolean;
 }
 
 const SNAP_BACK = { damping: 18, stiffness: 220 };
@@ -55,15 +55,14 @@ const UNHOOK_LIFT = { damping: 9, stiffness: 200 };
 export function SwipeableStockTag({
   item,
   onPress,
+  unhookOnEmpty = true,
 }: Readonly<SwipeableStockTagProps>) {
   const reduced = useReducedMotion();
-  const take = useTakeItem();
-  const restock = useRestockItem();
+  const actions = useItemActions(item);
 
   const base = fillRatio(item);
   const takeRatio = outcomeRatio(item, 'take');
-  const takeable = canSwipe(item, 'take');
-  const busy = take.isPending || restock.isPending;
+  const takeable = actions.canTake;
 
   const level = useSharedValue(base);
   const translateX = useSharedValue(0);
@@ -116,24 +115,18 @@ export function SwipeableStockTag({
     if (action === 'restock') {
       translateX.value = withSpring(0, SNAP_BACK);
       level.value = withTiming(1, { duration: motion.standard });
-      restock.mutate(
-        { itemId: item.id, quantity: restockQuantity(item) },
-        { onError: reset },
-      );
+      actions.restock({ onError: reset });
       return;
     }
 
-    const unhooking = emptiesOnTake(item);
+    const unhooking = unhookOnEmpty && emptiesOnTake(item);
     if (unhooking) playUnhook();
     else translateX.value = withSpring(0, SNAP_BACK);
 
-    take.mutate(
-      {
-        itemId: item.id,
-        settleDelayMs: unhooking && !reduced ? unhook.total : undefined,
-      },
-      { onError: reset },
-    );
+    actions.take({
+      onError: reset,
+      settleDelayMs: unhooking && !reduced ? unhook.total : undefined,
+    });
   };
 
   /**
@@ -153,7 +146,7 @@ export function SwipeableStockTag({
   };
 
   const pan = Gesture.Pan()
-    .enabled(!busy)
+    .enabled(!actions.busy)
     // Le défilement vertical de l'étagère garde la priorité : sans ces seuils,
     // un doigt qui descend emporterait le tag avec lui.
     .activeOffsetX([-16, 16])

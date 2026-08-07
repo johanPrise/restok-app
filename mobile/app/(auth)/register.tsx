@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRegister } from '@/api/auth';
 import { BackLink } from '@/components/BackLink';
+import { useGoBack } from '@/lib/useGoBack';
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
@@ -17,6 +18,7 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export default function Register() {
   const router = useRouter();
+  const goBack = useGoBack('/login');
   const { colors } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -40,7 +42,7 @@ export default function Register() {
 
   return (
     <FormScreen>
-      <BackLink onPress={() => router.back()} />
+      <BackLink onPress={goBack} />
 
       <TagCard>
         <Text variant="tagName">Créer un compte</Text>
