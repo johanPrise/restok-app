@@ -9,7 +9,14 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { motion, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
+import {
+  border,
+  motion,
+  MIN_TOUCH_TARGET,
+  radius,
+  spacing,
+  useTheme,
+} from '@/theme';
 import { Text } from './Text';
 
 interface TabBarButtonProps extends TabTriggerSlotProps {
@@ -165,8 +172,8 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     paddingHorizontal: 6,
     paddingVertical: spacing.xs / 2,
-    borderRadius: radius.tag + 4,
-    borderWidth: 1,
+    borderRadius: radius.chromeItem,
+    borderWidth: border.rim,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,

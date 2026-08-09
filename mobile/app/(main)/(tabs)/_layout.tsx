@@ -13,7 +13,7 @@ import {
 } from '@/components/icons';
 import { useTabBarSpace } from '@/lib/useTabBarSpace';
 import { useSession } from '@/store/session';
-import { spacing, tabBar, useTheme } from '@/theme';
+import { border, chrome, spacing, tabBar, useTheme } from '@/theme';
 
 /**
  * Barre du bas à quatre onglets, en verre dépoli.
@@ -115,17 +115,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 6,
     borderRadius: tabBar.radius,
-    borderWidth: 1,
-    // La profondeur vient d'ici et non d'un aplat : le verre doit sembler
-    // décollé du fond.
-    //
-    // Material range les composants de navigation au niveau 3 de son échelle
-    // d'élévation, soit 4dp d'ombre. On était à 10 : la barre pesait plus lourd
-    // qu'une feuille modale, ce qui n'est pas son rang.
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: border.rim,
+    // Chrome flottante : elle a droit à l'ombre là où le contenu ne l'a pas.
+    // La règle et son pourquoi sont dans `theme/layout`.
+    ...chrome,
   },
 });

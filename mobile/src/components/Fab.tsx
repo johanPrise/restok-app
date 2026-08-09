@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet } from 'react-native';
-import { radius, useTheme } from '@/theme';
+import { chrome, radius, useTheme } from '@/theme';
 import { PlusIcon } from './icons';
 
 interface FabProps {
@@ -9,9 +9,15 @@ interface FabProps {
 }
 
 /**
- * Bouton flottant d'ajout. Carré à coins arrondis comme les tags, et sans
- * ombre portée : le §3 fait venir la profondeur du fil et des aplats, jamais
- * d'une élévation.
+ * Bouton flottant d'ajout.
+ *
+ * Il flotte sur la même couche que la barre d'onglets, au-dessus de l'étagère,
+ * et reçoit donc la même **profondeur** : une ombre discrète. Il était resté
+ * plat au nom du §3, ce qui le collait au fond pendant que la barre lévitait
+ * juste à côté. Voir la règle des deux couches dans `theme/layout`.
+ *
+ * Ses coins, eux, restent à 12 comme le veut la maquette : la règle des deux
+ * couches parle de profondeur, pas de rayon.
  */
 export function Fab({ onPress, accessibilityLabel }: Readonly<FabProps>) {
   const { colors } = useTheme();
@@ -42,5 +48,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.tag,
     alignItems: 'center',
     justifyContent: 'center',
+    ...chrome,
   },
 });
