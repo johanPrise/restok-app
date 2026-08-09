@@ -49,9 +49,16 @@ export function GlassSurface({
     <BlurView
       intensity={intensity}
       tint={isDark ? 'dark' : 'light'}
-      // Sans `experimentalBlurMethod`, Android ne floute rien et se contente
-      // de la teinte.
-      experimentalBlurMethod="dimezisBlurView"
+      // Pas d'`experimentalBlurMethod` sur Android.
+      //
+      // Contrairement à iOS, où le flou est une primitive du système, Android
+      // n'en a pas : la méthode « dimezisBlurView » capture la **vue racine** de
+      // l'écran, la floute et la repeint. expo-blur remonte la hiérarchie pour
+      // trouver cette racine et rabat sur celle de l'app s'il n'en trouve pas —
+      // et toute l'app se retrouve alors repeinte sous un voile gris.
+      //
+      // On préfère donc une teinte franche sans flou sur Android. La barre reste
+      // translucide, le contenu se devine dessous, et rien ne déborde.
       style={[style, styles.clip]}
     >
       <View
