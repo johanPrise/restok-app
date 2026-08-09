@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/store/session';
-import type { AuthResponse } from '@/types/api';
+import type { AuthResponse, MemberSummary } from '@/types/api';
+import { authedRequest } from './authed';
 import { apiRequest } from './client';
+import { queryKeys } from './query-client';
 
 interface RegisterInput {
   name: string;
@@ -35,6 +37,35 @@ export function useLogin() {
     mutationFn: (input: LoginInput) =>
       apiRequest<AuthResponse>('/auth/login', { method: 'POST', body: input }),
     onSuccess: ({ accessToken, member }) => signIn(accessToken, member),
+  });
+}
+
+/**
+ * Son propre nom et son email.
+ *
+ * La session locale doit suivre : elle sert de cache d'identité faute
+ * d'endpoint « qui suis-je », et l'écran des réglages lit son nom depuis là.
+ */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (changes: { name?: string; email?: string }) =>
+      authedRequest<MemberSummary>('/members/me', {
+        method: 'PATCH',
+        body: changes,
+      }),
+    onSuccess: (updated) => {
+      const { member, setMember } = useSession.getState();
+      if (member) {
+        void setMember({
+          ...member,
+          name: updated.name,
+          email: updated.email,
+        });
+      }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.members });
+    },
   });
 }
 

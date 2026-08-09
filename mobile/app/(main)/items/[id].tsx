@@ -134,8 +134,10 @@ function ItemActionsPanel({
     return (
       <View style={styles.panel}>
         <View style={styles.actions}>
+          {/* « J'en ai pris » serait un mensonge ici : en suivi de présence,
+              une prise signale la rupture, pas une unité de moins. */}
           <Button
-            label="J'en ai pris"
+            label="J'ai pris le dernier"
             onPress={() => actions.take()}
             disabled={!actions.canTake}
             loading={actions.busy}

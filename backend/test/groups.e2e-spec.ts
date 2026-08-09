@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { auth, createGroupWith, signUp, TestMember } from './utils/api';
 import { createE2EApp, E2EContext } from './utils/e2e-app';
 
@@ -205,6 +206,87 @@ describe('Groups & members (e2e)', () => {
       await createGroupWith(app, alice, [bob]);
 
       await auth(app, alice).delete('/members/pas-un-uuid').expect(400);
+    });
+  });
+
+  describe('PATCH /members/me — son propre profil', () => {
+    it('change son nom', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      const res = await auth(app, bob)
+        .patch('/members/me')
+        .send({ name: 'Bobby' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ id: bob.id, name: 'Bobby' });
+    });
+
+    it("marche sans groupe, juste après l'inscription", async () => {
+      // C'est là qu'on corrige une faute de frappe dans son email.
+      const res = await auth(app, alice)
+        .patch('/members/me')
+        .send({ email: 'alice.corrigee@test.dev' })
+        .expect(200);
+
+      expect(res.body.email).toBe('alice.corrigee@test.dev');
+    });
+
+    it('permet de se reconnecter avec le nouvel email', async () => {
+      await auth(app, alice)
+        .patch('/members/me')
+        .send({ email: 'nouvelle@test.dev' })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: 'nouvelle@test.dev', password: 'motdepasse123' })
+        .expect(200);
+    });
+
+    it('refuse un email déjà pris', async () => {
+      await auth(app, alice)
+        .patch('/members/me')
+        .send({ email: bob.email })
+        .expect(409);
+    });
+
+    it('normalise la casse', async () => {
+      const res = await auth(app, alice)
+        .patch('/members/me')
+        .send({ email: '  Majuscules@Test.DEV ' })
+        .expect(200);
+
+      expect(res.body.email).toBe('majuscules@test.dev');
+    });
+
+    it.each([
+      ['email invalide', { email: 'pas-un-email' }],
+      ['nom trop court', { name: 'x' }],
+    ])('rejette un %s', async (_label, body) => {
+      await auth(app, alice).patch('/members/me').send(body).expect(400);
+    });
+
+    it("n'expose ni mot de passe ni push token", async () => {
+      const res = await auth(app, alice)
+        .patch('/members/me')
+        .send({ name: 'Alicia' })
+        .expect(200);
+
+      expect(res.body).not.toHaveProperty('password');
+      expect(res.body).not.toHaveProperty('pushToken');
+    });
+
+    it.each([
+      ['rôle', { name: 'Bobby', role: 'admin' }],
+      ['groupe', { name: 'Bobby', groupId: null }],
+      ['mot de passe', { password: 'nouveau123' }],
+    ])('refuse une tentative de changer son %s', async (_label, body) => {
+      // `forbidNonWhitelisted` rejette au lieu d'ignorer : une tentative
+      // d'élévation de privilège échoue bruyamment plutôt qu'en silence.
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob).patch('/members/me').send(body).expect(400);
+      await auth(app, bob).post('/items').send({ name: 'Pirate' }).expect(403);
     });
   });
 

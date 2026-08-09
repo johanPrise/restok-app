@@ -265,6 +265,17 @@ export function SwipeableStockTag({
     opacity: pending.value === 0 ? 0 : 1,
   }));
 
+  /**
+   * En suivi de présence, une prise signale la rupture et non une unité de
+   * moins : le libellé doit le dire, sinon un tap vide un item qu'on a
+   * seulement entamé.
+   */
+  const counts = item.trackingType === 'quantity';
+  const takeLabel = counts ? "J'en ai pris un" : "J'ai pris le dernier";
+  const takeHint = counts
+    ? 'Balaye vers la droite pour une prise, vers la gauche pour un rachat. Plus la course est longue, plus la quantité est grande.'
+    : "Balaye vers la droite quand il n'y en a plus, vers la gauche après un rachat.";
+
   // L'action d'accessibilité double le geste : un cran, donc un paquet.
   const restockUnits = Math.min(
     defaultRestockUnits(item),
@@ -299,9 +310,9 @@ export function SwipeableStockTag({
             item={item}
             onPress={handlePress}
             level={level}
-            accessibilityHint="Balaye vers la droite pour signaler une prise, vers la gauche pour un rachat. Plus la course est longue, plus la quantité est grande."
+            accessibilityHint={takeHint}
             accessibilityActions={[
-              ...(takeable ? [{ name: 'take', label: "J'en ai pris un" }] : []),
+              ...(takeable ? [{ name: 'take', label: takeLabel }] : []),
               {
                 name: 'restock',
                 label: `J'en ai racheté ${restockUnits}`,

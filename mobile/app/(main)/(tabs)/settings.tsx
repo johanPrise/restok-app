@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSignOut } from '@/api/auth';
@@ -33,6 +34,7 @@ export default function Settings() {
   const group = useGroup();
   const members = useMembers();
   const signOut = useSignOut();
+  const router = useRouter();
   const isAdmin = member?.role === 'admin';
 
   return (
@@ -77,6 +79,11 @@ export default function Settings() {
             </Text>
           </View>
 
+          <Button
+            label="Modifier mon compte"
+            variant="secondary"
+            onPress={() => router.push('/account')}
+          />
           <Button
             label="Se déconnecter"
             variant="secondary"

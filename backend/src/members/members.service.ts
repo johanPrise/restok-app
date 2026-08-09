@@ -139,6 +139,47 @@ export class MembersService {
     };
   }
 
+  /**
+   * Son propre profil — nom et email.
+   *
+   * Ne demande **aucun groupe** : on doit pouvoir corriger une faute de frappe
+   * dans son email juste après l'inscription, avant même d'avoir rejoint qui
+   * que ce soit.
+   */
+  async updateProfile(
+    memberId: string,
+    changes: { name?: string; email?: string },
+  ): Promise<MemberSummary> {
+    const member = await this.memberRepo.findOne({ where: { id: memberId } });
+    if (!member) {
+      throw new NotFoundException('Membre introuvable');
+    }
+
+    if (changes.email && changes.email !== member.email) {
+      // L'email identifie le compte à la connexion : deux personnes ne peuvent
+      // pas le partager. La contrainte d'unicité existe en base, mais lever un
+      // 409 lisible vaut mieux que de laisser remonter une erreur Postgres.
+      const taken = await this.memberRepo.findOne({
+        where: { email: changes.email },
+      });
+      if (taken) {
+        throw new ConflictException('Un compte existe déjà avec cet email');
+      }
+      member.email = changes.email;
+    }
+
+    if (changes.name !== undefined) member.name = changes.name;
+    await this.memberRepo.save(member);
+
+    return {
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      createdAt: member.createdAt,
+    };
+  }
+
   async updatePushToken(memberId: string, pushToken: string): Promise<void> {
     const result = await this.memberRepo.update(memberId, { pushToken });
     if (result.affected === 0) {
