@@ -74,7 +74,15 @@ export function TabBarButton({
   // La couleur du glyphe ne peut pas être animée — il est dessiné en SVG et
   // reçoit une chaîne. Elle bascule donc d'un coup, sous le fondu de la
   // pastille, ce qui ne se voit pas.
-  const tint = isFocused ? 'onPantryTeal' : 'inkSoft';
+  //
+  // `ink` et non `inkSoft` pour l'onglet au repos : sur du verre, le contraste
+  // dépend de ce qui défile derrière. Mesuré, `inkSoft` tombe à 3.08 en clair et
+  // 2.27 en sombre dès qu'un nom d'item passe sous la barre — sous le seuil AA
+  // de 4.5. `ink` tient 8.49 et 5.65 dans le même pire cas.
+  //
+  // La hiérarchie ne se perd pas : c'est la pastille remplie qui dit l'état
+  // actif, pas la force du texte. Material fonctionne pareil.
+  const tint = isFocused ? 'onPantryTeal' : 'ink';
 
   const glowStyle = useAnimatedStyle(() => ({ opacity: lit.value }));
 
