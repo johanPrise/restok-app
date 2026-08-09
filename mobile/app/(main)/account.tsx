@@ -29,13 +29,17 @@ export default function Account() {
 
   const [name, setName] = useState(member?.name ?? '');
   const [email, setEmail] = useState(member?.email ?? '');
+  const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const trimmedName = name.trim();
   const trimmedEmail = email.trim().toLowerCase();
 
-  const errors = validate(trimmedName, trimmedEmail);
+  // L'email est l'identifiant de connexion : le changer demande de confirmer
+  // son mot de passe. Le nom, lui, ne donne accès à rien.
+  const emailChanged = trimmedEmail !== member?.email;
+  const errors = validate(trimmedName, trimmedEmail, emailChanged, password);
   const shown = submitted ? errors : {};
 
   const changed =
@@ -44,16 +48,23 @@ export default function Account() {
   const submit = () => {
     setSubmitted(true);
     setSaved(false);
-    if (errors.name || errors.email) return;
+    if (errors.name || errors.email || errors.password) return;
 
     // On n'envoie que ce qui bouge : changer d'email est le seul geste qui
     // touche à l'identifiant de connexion, autant ne pas le faire pour rien.
     update.mutate(
       {
         ...(trimmedName === member?.name ? {} : { name: trimmedName }),
-        ...(trimmedEmail === member?.email ? {} : { email: trimmedEmail }),
+        ...(emailChanged
+          ? { email: trimmedEmail, currentPassword: password }
+          : {}),
       },
-      { onSuccess: () => setSaved(true) },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setPassword('');
+        },
+      },
     );
   };
 
@@ -96,9 +107,23 @@ export default function Account() {
           keyboardType="email-address"
           inputMode="email"
         />
+        {/* N'apparaît qu'au moment où il sert : changer son seul nom ne
+            demande rien. */}
+        {emailChanged && (
+          <Field
+            label="Ton mot de passe"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Pour confirmer le changement d'email"
+            error={shown.password}
+            secureTextEntry
+            autoComplete="current-password"
+          />
+        )}
+
         <Text variant="caption" color="inkSoft">
           Ton nom s&apos;affiche sous chaque prise et chaque rachat. Ton email
-          sert à te connecter.
+          sert à te connecter — le changer demande ton mot de passe.
         </Text>
       </View>
 
@@ -128,10 +153,16 @@ export default function Account() {
 interface Errors {
   name?: string;
   email?: string;
+  password?: string;
 }
 
 /** Reprend les contraintes du DTO ; le serveur reste seul juge. */
-function validate(name: string, email: string): Errors {
+function validate(
+  name: string,
+  email: string,
+  emailChanged: boolean,
+  password: string,
+): Errors {
   const errors: Errors = {};
 
   if (name.length < MIN_NAME_LENGTH) errors.name = 'Au moins deux caractères.';
@@ -140,6 +171,9 @@ function validate(name: string, email: string): Errors {
   }
 
   if (!email.includes('@')) errors.email = 'Adresse email invalide.';
+  if (emailChanged && password.length === 0) {
+    errors.password = 'Confirme ton mot de passe.';
+  }
 
   return errors;
 }

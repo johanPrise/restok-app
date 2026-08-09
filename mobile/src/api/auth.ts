@@ -50,7 +50,11 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (changes: { name?: string; email?: string }) =>
+    mutationFn: (changes: {
+      name?: string;
+      email?: string;
+      currentPassword?: string;
+    }) =>
       authedRequest<MemberSummary>('/members/me', {
         method: 'PATCH',
         body: changes,

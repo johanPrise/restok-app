@@ -221,11 +221,23 @@ describe('Groups & members (e2e)', () => {
       expect(res.body).toMatchObject({ id: bob.id, name: 'Bobby' });
     });
 
+    it('ne demande aucun mot de passe pour le seul nom', async () => {
+      // Le nom ne donne accès à rien : le protéger n'ajouterait que de la
+      // friction.
+      await auth(app, alice)
+        .patch('/members/me')
+        .send({ name: 'Alicia' })
+        .expect(200);
+    });
+
     it("marche sans groupe, juste après l'inscription", async () => {
       // C'est là qu'on corrige une faute de frappe dans son email.
       const res = await auth(app, alice)
         .patch('/members/me')
-        .send({ email: 'alice.corrigee@test.dev' })
+        .send({
+          email: 'alice.corrigee@test.dev',
+          currentPassword: 'motdepasse123',
+        })
         .expect(200);
 
       expect(res.body.email).toBe('alice.corrigee@test.dev');
@@ -234,7 +246,7 @@ describe('Groups & members (e2e)', () => {
     it('permet de se reconnecter avec le nouvel email', async () => {
       await auth(app, alice)
         .patch('/members/me')
-        .send({ email: 'nouvelle@test.dev' })
+        .send({ email: 'nouvelle@test.dev', currentPassword: 'motdepasse123' })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -246,17 +258,63 @@ describe('Groups & members (e2e)', () => {
     it('refuse un email déjà pris', async () => {
       await auth(app, alice)
         .patch('/members/me')
-        .send({ email: bob.email })
+        .send({ email: bob.email, currentPassword: 'motdepasse123' })
         .expect(409);
     });
 
     it('normalise la casse', async () => {
       const res = await auth(app, alice)
         .patch('/members/me')
-        .send({ email: '  Majuscules@Test.DEV ' })
+        .send({
+          email: '  Majuscules@Test.DEV ',
+          currentPassword: 'motdepasse123',
+        })
         .expect(200);
 
       expect(res.body.email).toBe('majuscules@test.dev');
+    });
+
+    describe("le mot de passe garde l'identifiant de connexion", () => {
+      it("refuse un changement d'email sans mot de passe", async () => {
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ email: 'pirate@test.dev' })
+          .expect(400);
+
+        // L'email n'a pas bougé : l'ancien fonctionne toujours.
+        await request(app.getHttpServer())
+          .post('/auth/login')
+          .send({ email: alice.email, password: 'motdepasse123' })
+          .expect(200);
+      });
+
+      it('refuse un mot de passe faux', async () => {
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ email: 'pirate@test.dev', currentPassword: 'pas-le-bon' })
+          .expect(400);
+      });
+
+      it('ne déconnecte pas sur un mot de passe faux', async () => {
+        // Un 401 ici terminerait la session côté client, alors que le token est
+        // parfaitement valide : c'est le corps qui est en cause, pas lui.
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ email: 'pirate@test.dev', currentPassword: 'pas-le-bon' })
+          .expect(400);
+
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ name: 'Toujours connectée' })
+          .expect(200);
+      });
+
+      it('ne le demande pas quand l’email ne change pas', async () => {
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ name: 'Alicia', email: alice.email })
+          .expect(200);
+      });
     });
 
     it.each([
@@ -280,6 +338,7 @@ describe('Groups & members (e2e)', () => {
       ['rôle', { name: 'Bobby', role: 'admin' }],
       ['groupe', { name: 'Bobby', groupId: null }],
       ['mot de passe', { password: 'nouveau123' }],
+      ['identifiant', { id: 'autre' }],
     ])('refuse une tentative de changer son %s', async (_label, body) => {
       // `forbidNonWhitelisted` rejette au lieu d'ignorer : une tentative
       // d'élévation de privilège échoue bruyamment plutôt qu'en silence.

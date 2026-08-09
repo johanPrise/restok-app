@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Member, MemberRole } from './entities/member.entity';
 
@@ -148,14 +149,27 @@ export class MembersService {
    */
   async updateProfile(
     memberId: string,
-    changes: { name?: string; email?: string },
+    changes: { name?: string; email?: string; currentPassword?: string },
   ): Promise<MemberSummary> {
-    const member = await this.memberRepo.findOne({ where: { id: memberId } });
+    // `password` est `select: false` sur l'entité — il faut le demander.
+    const member = await this.memberRepo.findOne({
+      where: { id: memberId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password: true,
+        role: true,
+        createdAt: true,
+      },
+    });
     if (!member) {
       throw new NotFoundException('Membre introuvable');
     }
 
     if (changes.email && changes.email !== member.email) {
+      await this.assertPassword(member, changes.currentPassword);
+
       // L'email identifie le compte à la connexion : deux personnes ne peuvent
       // pas le partager. La contrainte d'unicité existe en base, mais lever un
       // 409 lisible vaut mieux que de laisser remonter une erreur Postgres.
@@ -178,6 +192,30 @@ export class MembersService {
       role: member.role,
       createdAt: member.createdAt,
     };
+  }
+
+  /**
+   * Vérifie le mot de passe courant avant un changement d'email.
+   *
+   * Un **400** et non un 401 : le client termine la session sur tout 401, parce
+   * qu'un token refusé ne vaut plus rien. Répondre 401 à un mot de passe mal
+   * tapé déconnecterait donc quelqu'un dont la session est parfaitement valide.
+   * Ce n'est pas le token qui est en cause ici, c'est le corps de la requête.
+   */
+  private async assertPassword(
+    member: Member,
+    candidate: string | undefined,
+  ): Promise<void> {
+    if (!candidate) {
+      throw new BadRequestException(
+        'Confirme ton mot de passe pour changer ton email',
+      );
+    }
+
+    const matches = await bcrypt.compare(candidate, member.password);
+    if (!matches) {
+      throw new BadRequestException('Mot de passe incorrect');
+    }
   }
 
   async updatePushToken(memberId: string, pushToken: string): Promise<void> {
