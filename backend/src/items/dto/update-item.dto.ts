@@ -44,4 +44,10 @@ export class UpdateItemDto {
   @IsInt()
   @Min(2)
   packSize?: number;
+
+  /** Ce qui est écrit sur l'étiquette : « 1,5 L », « 500 g ». Descriptif seul. */
+  @IsOptional()
+  @IsString()
+  @Length(1, 20)
+  format?: string;
 }

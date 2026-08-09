@@ -61,6 +61,8 @@ export interface Item {
   unit: string | null;
   /** Unités par paquet, quand l'item s'achète par lot. `null` sinon. */
   packSize: number | null;
+  /** Ce qui est écrit sur l'étiquette : « 1,5 L », « 500 g ». Descriptif seul. */
+  format: string | null;
   groupId: string;
   createdAt: string;
   updatedAt: string;
@@ -86,6 +88,7 @@ export interface CreateItemInput {
   targetQuantity?: number;
   unit?: string;
   packSize?: number;
+  format?: string;
 }
 
 export interface UpdateItemInput {
@@ -96,4 +99,5 @@ export interface UpdateItemInput {
   targetQuantity?: number;
   unit?: string;
   packSize?: number;
+  format?: string;
 }

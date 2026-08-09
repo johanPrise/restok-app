@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useDeleteItem, useItemHistory, useItems } from '@/api/items';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ProductFormat } from '@/components/ProductFormat';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { ReceiptHistory } from '@/components/ReceiptHistory';
 import { Screen } from '@/components/Screen';
@@ -131,21 +132,24 @@ function ItemActionsPanel({
 
   if (!counts) {
     return (
-      <View style={styles.actions}>
-        <Button
-          label="J'en ai pris"
-          onPress={() => actions.take()}
-          disabled={!actions.canTake}
-          loading={actions.busy}
-          style={styles.action}
-        />
-        <Button
-          label="J'ai racheté"
-          variant="secondary"
-          onPress={() => actions.restock()}
-          loading={actions.busy}
-          style={styles.action}
-        />
+      <View style={styles.panel}>
+        <View style={styles.actions}>
+          <Button
+            label="J'en ai pris"
+            onPress={() => actions.take()}
+            disabled={!actions.canTake}
+            loading={actions.busy}
+            style={styles.action}
+          />
+          <Button
+            label="J'ai racheté"
+            variant="secondary"
+            onPress={() => actions.restock()}
+            loading={actions.busy}
+            style={styles.action}
+          />
+        </View>
+        <ProductFormat item={item} />
       </View>
     );
   }
@@ -187,6 +191,10 @@ function ItemActionsPanel({
           style={styles.action}
         />
       </View>
+
+      {/* L'étiquette se donne ici, au retour des courses : c'est le seul
+          moment où on a le produit en main. */}
+      <ProductFormat item={item} />
 
       {/* Un compteur de lots est ambigu tant qu'on ne dit pas ce qu'il y a
           dedans. */}

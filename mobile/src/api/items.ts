@@ -113,6 +113,25 @@ export function useUpdateItem() {
   });
 }
 
+/**
+ * Le format se corrige sans être admin, par une route à part : c'est ce qui est
+ * écrit sur l'étiquette, pas un réglage. Celui qui rentre du magasin l'a sous
+ * les yeux — le faire passer par un admin, c'est garantir qu'il ne le dira pas.
+ */
+export function useSetItemFormat() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ itemId, format }: { itemId: string; format: string }) =>
+      authedRequest<Item>(`/items/${itemId}/format`, {
+        method: 'PATCH',
+        body: { format },
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.items }),
+  });
+}
+
 export function useDeleteItem() {
   const queryClient = useQueryClient();
 

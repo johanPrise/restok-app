@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { fillPercent, fillRatio } from '@/lib/stock';
-import { lastActionLabel, statusBadge, statusColor } from '@/lib/item-display';
+import { statusBadge, statusColor, tagMeta } from '@/lib/item-display';
 import { border, gauge, motion, radius, spacing, useTheme } from '@/theme';
 import type { Item } from '@/types/api';
 import { Text } from './Text';
@@ -48,6 +48,7 @@ export function StockTag({
 
   const accent = colors[statusColor(item.status)];
   const badge = statusBadge(item);
+  const meta = tagMeta(item);
   const ratio = fillRatio(item);
   const isEmpty = ratio === 0;
 
@@ -113,9 +114,14 @@ export function StockTag({
         )}
       </View>
 
-      {item.lastAction !== null && (
-        <Text variant="body" color="inkSoft" style={styles.meta}>
-          {lastActionLabel(item.lastAction)}
+      {meta !== null && (
+        <Text
+          variant="body"
+          color="inkSoft"
+          style={styles.meta}
+          numberOfLines={1}
+        >
+          {meta}
         </Text>
       )}
 

@@ -93,6 +93,18 @@ export class Item {
   @Column({ name: 'pack_size', type: 'int', nullable: true })
   packSize: number | null;
 
+  /**
+   * Ce qui est écrit sur l'étiquette : « 1,5 L », « 500 g », « ×6 ».
+   *
+   * Purement descriptif — **jamais** utilisé dans un calcul. En colocation,
+   * personne ne sait combien de millilitres de liquide vaisselle part sur une
+   * assiette ; en revanche le format du contenant est connu, parce qu'il est
+   * imprimé dessus. Il ne sert donc pas à décompter, mais à ce que le prochain
+   * qui fait les courses rapporte le bon produit.
+   */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  format: string | null;
+
   @Column({ name: 'group_id', type: 'uuid' })
   groupId: string;
 

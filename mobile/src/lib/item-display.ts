@@ -56,3 +56,19 @@ export function lastActionLabel(action: LastAction): string {
 
   return `${who} · ${relativeDate(action.at)}`;
 }
+
+/**
+ * La ligne sous le nom du tag : le format du produit, puis qui a agi et quand.
+ *
+ * Les deux partagent la même place plutôt que d'ajouter une ligne. Le format
+ * vient en premier parce qu'il sert à celui qui part faire les courses — il
+ * décrit quoi acheter, là où la dernière action décrit ce qui s'est passé.
+ */
+export function tagMeta(item: Item): string | null {
+  const parts = [
+    item.format,
+    item.lastAction ? lastActionLabel(item.lastAction) : null,
+  ].filter((part): part is string => Boolean(part));
+
+  return parts.length > 0 ? parts.join(' · ') : null;
+}

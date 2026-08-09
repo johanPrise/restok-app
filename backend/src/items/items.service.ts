@@ -85,6 +85,7 @@ export class ItemsService {
         // aussi en suivi binaire, où ils ne s'affichent simplement nulle part.
         unit: dto.unit ?? null,
         packSize: dto.packSize ?? null,
+        format: dto.format ?? null,
         groupId,
         status:
           quantity === null
@@ -111,6 +112,7 @@ export class ItemsService {
     // item en rouleaux reste vrai même quand on cesse de les compter.
     if (dto.unit !== undefined) item.unit = dto.unit;
     if (dto.packSize !== undefined) item.packSize = dto.packSize;
+    if (dto.format !== undefined) item.format = dto.format;
 
     const trackingType = dto.trackingType ?? item.trackingType;
 
@@ -133,6 +135,28 @@ export class ItemsService {
     }
 
     item.trackingType = trackingType;
+    return this.itemRepo.save(item);
+  }
+
+  /**
+   * Le format se corrige **sans être admin**, contrairement au reste de la
+   * configuration d'un item.
+   *
+   * C'est une observation, pas un réglage : celui qui rentre du magasin lit
+   * l'étiquette et sait ce qu'il a pris. Lui demander de passer par un admin,
+   * c'est garantir que l'information ne sera jamais donnée.
+   */
+  async setFormat(
+    itemId: string,
+    groupId: string,
+    format: string | undefined,
+  ): Promise<Item> {
+    const item = await this.findOneInGroup(itemId, groupId);
+    const trimmed = format?.trim();
+
+    // Une chaîne vide efface : se tromper ne doit pas être définitif.
+    item.format = trimmed ? trimmed : null;
+
     return this.itemRepo.save(item);
   }
 

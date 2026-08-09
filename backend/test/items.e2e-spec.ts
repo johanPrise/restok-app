@@ -238,6 +238,81 @@ describe('Items (e2e)', () => {
     });
   });
 
+  describe("PATCH /items/:id/format — l'étiquette du produit", () => {
+    it('laisse un simple membre le préciser au retour des courses', async () => {
+      // C'est une observation, pas un réglage : celui qui lit l'étiquette doit
+      // pouvoir la reporter, sinon l'information ne sera jamais donnée.
+      const item = await createItem({ name: 'Eau' });
+
+      const res = await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '1,5 L' })
+        .expect(200);
+
+      expect(res.body.format).toBe('1,5 L');
+    });
+
+    it('reste refusé à un membre sur le reste de la configuration', async () => {
+      const item = await createItem({ name: 'Eau' });
+
+      await auth(app, bob)
+        .patch(`/items/${item.id}`)
+        .send({ lowThreshold: 5 })
+        .expect(403);
+    });
+
+    it('efface le format avec une chaîne vide', async () => {
+      const item = await createItem({ name: 'Eau', format: '1,5 L' });
+
+      const res = await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '  ' })
+        .expect(200);
+
+      expect(res.body.format).toBeNull();
+    });
+
+    it('rejette un format trop long', async () => {
+      const item = await createItem({ name: 'Eau' });
+
+      await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: 'x'.repeat(21) })
+        .expect(400);
+    });
+
+    it("traite un item d'un autre groupe comme introuvable", async () => {
+      const item = await createItem({ name: 'Eau' });
+      const carol = await signUp(app, 'Carol');
+      await createGroupWith(app, carol);
+
+      await auth(app, carol)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '1,5 L' })
+        .expect(404);
+    });
+
+    it('ne touche à rien d’autre', async () => {
+      const item = await createItem({
+        name: 'Eau',
+        trackingType: 'quantity',
+        quantity: 6,
+        lowThreshold: 2,
+      });
+
+      const res = await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '1,5 L' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({
+        quantity: 6,
+        lowThreshold: 2,
+        status: 'available',
+      });
+    });
+  });
+
   describe('quantités précisées', () => {
     it("prend le nombre d'unités demandé", async () => {
       const item = await createItem({
