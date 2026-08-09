@@ -6,6 +6,8 @@ import { ActionHistory, ActionType } from './entities/action-history.entity';
 export interface ActionHistoryEntry {
   id: string;
   actionType: ActionType;
+  /** Unités déplacées. `null` en suivi binaire, qui ne compte rien. */
+  quantity: number | null;
   createdAt: Date;
   member: { id: string; name: string } | null;
 }
@@ -40,13 +42,14 @@ export class ActionHistoryService {
     itemId: string,
     memberId: string,
     actionType: ActionType,
+    quantity: number | null = null,
     manager?: EntityManager,
   ): Promise<void> {
     const repo = manager
       ? manager.getRepository(ActionHistory)
       : this.historyRepo;
 
-    await repo.save(repo.create({ itemId, memberId, actionType }));
+    await repo.save(repo.create({ itemId, memberId, actionType, quantity }));
   }
 
   /**
@@ -97,6 +100,7 @@ export class ActionHistoryService {
     return entries.map((entry) => ({
       id: entry.id,
       actionType: entry.actionType,
+      quantity: entry.quantity,
       createdAt: entry.createdAt,
       // Un membre soft-deleted ne remonte plus : l'action reste, l'auteur
       // devient anonyme plutôt que de faire disparaître la ligne.

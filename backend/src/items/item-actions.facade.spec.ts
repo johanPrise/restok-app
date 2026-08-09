@@ -133,6 +133,8 @@ describe('ItemActionsFacade', () => {
         'item-1',
         'member-1',
         ActionType.TAKEN,
+        // Suivi binaire : rien à compter.
+        null,
         expect.anything(),
       );
     });
@@ -242,6 +244,54 @@ describe('ItemActionsFacade', () => {
         quantity: 12,
         status: ItemStatus.AVAILABLE,
       });
+    });
+
+    it('prend plusieurs unités d’un coup', async () => {
+      itemRepo.findOne.mockResolvedValue(quantityItem({ quantity: 10 }));
+
+      const item = await facade.take('item-1', 'group-1', 'member-1', 3);
+
+      expect(item).toMatchObject({
+        quantity: 7,
+        status: ItemStatus.AVAILABLE,
+      });
+    });
+
+    it('ajoute au stock existant au rachat', async () => {
+      itemRepo.findOne.mockResolvedValue(quantityItem({ quantity: 2 }));
+
+      const item = await facade.restock('item-1', 'group-1', 'member-1', 6);
+
+      expect(item).toMatchObject({ quantity: 8 });
+    });
+
+    it("consigne dans l'historique ce qui a réellement bougé", async () => {
+      // Prendre cinq unités quand il en reste deux n'en consomme que deux.
+      itemRepo.findOne.mockResolvedValue(quantityItem({ quantity: 2 }));
+
+      await facade.take('item-1', 'group-1', 'member-1', 5);
+
+      expect(historyService.record).toHaveBeenCalledWith(
+        'item-1',
+        'member-1',
+        ActionType.TAKEN,
+        2,
+        expect.anything(),
+      );
+    });
+
+    it('consigne la quantité rachetée', async () => {
+      itemRepo.findOne.mockResolvedValue(quantityItem({ quantity: 2 }));
+
+      await facade.restock('item-1', 'group-1', 'member-1', 6);
+
+      expect(historyService.record).toHaveBeenCalledWith(
+        'item-1',
+        'member-1',
+        ActionType.RESTOCKED,
+        6,
+        expect.anything(),
+      );
     });
   });
 

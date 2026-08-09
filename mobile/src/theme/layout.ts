@@ -62,8 +62,35 @@ export const unhook = {
   lift: -32,
 } as const;
 
-/** Course du geste avant validation, et course maximale du tag sous le doigt. */
+/**
+ * Géométrie du balayage.
+ *
+ * Le geste ne dit pas seulement *quoi*, il dit *combien* : passé le seuil de
+ * validation, chaque `unitStep` supplémentaire ajoute une unité. Un item suivi
+ * en binaire s'arrête à une, mais garde une course confortable — `minTravel` —
+ * pour que le geste ait le même poids partout.
+ */
 export const swipe = {
-  threshold: 96,
-  maxTravel: 140,
+  threshold: 72,
+  unitStep: 36,
+  minTravel: 120,
 } as const;
+
+/** Course maximale du tag sous le doigt, pour un nombre d'unités donné. */
+export function swipeTravel(maxUnits: number): number {
+  return Math.max(
+    swipe.minTravel,
+    swipe.threshold + (maxUnits - 1) * swipe.unitStep,
+  );
+}
+
+/** Unités exprimées par une course. Zéro en deçà du seuil : le geste est annulé. */
+export function swipeUnits(distance: number, maxUnits: number): number {
+  'worklet';
+  const travelled = Math.abs(distance);
+  if (travelled < swipe.threshold) return 0;
+
+  const extra = Math.floor((travelled - swipe.threshold) / swipe.unitStep);
+
+  return Math.min(1 + extra, maxUnits);
+}

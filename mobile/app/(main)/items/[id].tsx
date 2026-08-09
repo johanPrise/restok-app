@@ -4,13 +4,15 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useDeleteItem, useItemHistory, useItems } from '@/api/items';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { QuantityStepper } from '@/components/QuantityStepper';
 import { ReceiptHistory } from '@/components/ReceiptHistory';
 import { Screen } from '@/components/Screen';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useGoBack } from '@/lib/useGoBack';
-import { useItemActions } from '@/lib/useItemActions';
+import { defaultRestockUnits } from '@/lib/tag-swipe';
+import { useItemActions, type ItemActions } from '@/lib/useItemActions';
 import { useSession } from '@/store/session';
 import { spacing } from '@/theme';
 import type { Item } from '@/types/api';
@@ -65,22 +67,7 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
           aucune section où partir. */}
       <SwipeableStockTag item={item} unhookOnEmpty={false} />
 
-      <View style={styles.actions}>
-        <Button
-          label="J'en ai pris"
-          onPress={() => actions.take()}
-          disabled={!actions.canTake}
-          loading={actions.busy}
-          style={styles.action}
-        />
-        <Button
-          label="J'ai racheté"
-          variant="secondary"
-          onPress={() => actions.restock()}
-          loading={actions.busy}
-          style={styles.action}
-        />
-      </View>
+      <ItemActionsPanel item={item} actions={actions} />
 
       {actions.failed && (
         <Text variant="caption" color="rustClay">
@@ -100,6 +87,104 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
 
       {isAdmin && <DeleteItem itemId={item.id} onDeleted={goBack} />}
     </ScrollView>
+  );
+}
+
+/**
+ * Le balayage plafonne à quelques unités, parce qu'au-delà le geste devient
+ * pénible. Cet écran est justement le chemin précis : il ne reprend pas cette
+ * limite, seulement une borne raisonnable contre la faute de frappe.
+ */
+const MAX_RESTOCK_UNITS = 99;
+
+/**
+ * Les deux actions, avec leur quantité.
+ *
+ * C'est ici que se dit le combien exact — le balayage exprime des unités par
+ * crans, ce qui va vite mais plafonne. En suivi binaire il n'y a rien à
+ * compter : les boutons restent seuls.
+ *
+ * Les valeurs de départ ne sont pas neutres : une prise vaut une unité, un
+ * rachat propose de quoi refaire le plein. C'est ce qu'on fait le plus souvent.
+ */
+function ItemActionsPanel({
+  item,
+  actions,
+}: Readonly<{ item: Item; actions: ItemActions }>) {
+  const counts = item.trackingType === 'quantity';
+  const [taking, setTaking] = useState(1);
+  /**
+   * Tant que personne n'y touche, le rachat suit le stock : après une prise,
+   * « refaire le plein » ne veut plus dire la même chose. Une valeur figée au
+   * montage proposait de racheter ce qui manquait *avant* l'action.
+   */
+  const [chosen, setChosen] = useState<number | null>(null);
+  const buying = chosen ?? defaultRestockUnits(item);
+
+  if (!counts) {
+    return (
+      <View style={styles.actions}>
+        <Button
+          label="J'en ai pris"
+          onPress={() => actions.take()}
+          disabled={!actions.canTake}
+          loading={actions.busy}
+          style={styles.action}
+        />
+        <Button
+          label="J'ai racheté"
+          variant="secondary"
+          onPress={() => actions.restock()}
+          loading={actions.busy}
+          style={styles.action}
+        />
+      </View>
+    );
+  }
+
+  const stock = item.quantity ?? 0;
+
+  return (
+    <View style={styles.panel}>
+      <View style={styles.actions}>
+        <QuantityStepper
+          label="Unités prises"
+          value={Math.min(taking, Math.max(stock, 1))}
+          onChange={setTaking}
+          max={Math.max(stock, 1)}
+        />
+        <Button
+          label="J'en ai pris"
+          onPress={() => actions.take({ units: Math.min(taking, stock) })}
+          disabled={!actions.canTake}
+          loading={actions.busy}
+          style={styles.action}
+        />
+      </View>
+
+      <View style={styles.actions}>
+        <QuantityStepper
+          label="Unités rachetées"
+          value={buying}
+          onChange={setChosen}
+          max={MAX_RESTOCK_UNITS}
+        />
+        <Button
+          label="J'ai racheté"
+          variant="secondary"
+          onPress={() => actions.restock({ units: buying })}
+          loading={actions.busy}
+          style={styles.action}
+        />
+      </View>
+
+      <Text variant="caption" color="inkSoft">
+        {stock} en stock
+        {item.targetQuantity
+          ? ` · ${item.targetQuantity} quand c'est plein`
+          : ''}
+      </Text>
+    </View>
   );
 }
 
@@ -154,7 +239,8 @@ function DeleteItem({
 const styles = StyleSheet.create({
   content: { paddingBottom: spacing.xl, gap: spacing.md },
   missing: { flex: 1, justifyContent: 'center' },
-  actions: { flexDirection: 'row', gap: spacing.xs },
+  panel: { gap: spacing.sm },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   action: { flex: 1 },
   section: { marginTop: spacing.sm, gap: spacing.xs },
   danger: { marginTop: spacing.lg, gap: spacing.xs },

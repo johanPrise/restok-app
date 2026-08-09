@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/types/jwt-payload.type';
 import { CreateItemDto } from './dto/create-item.dto';
 import { RestockItemDto } from './dto/restock-item.dto';
+import { TakeItemDto } from './dto/take-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemActionsFacade } from './item-actions.facade';
 import { ItemsService } from './items.service';
@@ -67,9 +68,10 @@ export class ItemsController {
   @HttpCode(HttpStatus.OK)
   take(
     @Param('id', ParseUUIDPipe) itemId: string,
+    @Body() dto: TakeItemDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.itemActions.take(itemId, user.groupId!, user.id);
+    return this.itemActions.take(itemId, user.groupId!, user.id, dto.quantity);
   }
 
   @Post(':id/restock')

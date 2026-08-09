@@ -57,6 +57,11 @@ export function ReceiptHistory({
             <Text variant="mono" style={styles.who} numberOfLines={1}>
               {(entry.member?.name ?? "Quelqu'un").toUpperCase()}
             </Text>
+            {/* Vide en suivi binaire : la colonne reste, pour que les lignes
+                s'alignent comme sur un vrai relevé. */}
+            <Text variant="mono" style={styles.count}>
+              {entry.quantity === null ? '' : `×${entry.quantity}`}
+            </Text>
             <Text variant="mono" color="inkSoft" style={styles.action}>
               {actionLabel(entry.actionType)}
             </Text>
@@ -93,13 +98,15 @@ function actionLabel(action: ActionType): string {
   return action === 'taken' ? 'pris' : 'racheté';
 }
 
-const DATE_WIDTH = 68;
-const ACTION_WIDTH = 64;
+const DATE_WIDTH = 62;
+const COUNT_WIDTH = 34;
+const ACTION_WIDTH = 62;
 
 const styles = StyleSheet.create({
   receipt: { gap: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   date: { width: DATE_WIDTH },
   who: { flex: 1 },
+  count: { width: COUNT_WIDTH, textAlign: 'right' },
   action: { width: ACTION_WIDTH, textAlign: 'right' },
 });

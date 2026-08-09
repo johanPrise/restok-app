@@ -8,6 +8,8 @@ import {
 } from './tracking-strategy.interface';
 
 const DEFAULT_LOW_THRESHOLD = 1;
+/** Une prise sans précision reste une unité — le geste rapide de l'étagère. */
+const DEFAULT_MOVE = 1;
 
 /**
  * Le statut se déduit toujours de la quantité, y compris après un rachat.
@@ -29,15 +31,39 @@ export function statusForQuantity(
     : ItemStatus.AVAILABLE;
 }
 
-/** Compteur numérique avec seuil bas configurable. */
+/**
+ * Compteur numérique avec seuil bas configurable.
+ *
+ * Les deux actions expriment un **mouvement**, pas un stock final : on prend
+ * trois unités, on en rachète six. C'est ce que les gens savent dire en
+ * sortant du placard ou du magasin — leur demander le total après coup, c'est
+ * leur demander de faire l'addition à la place de l'app.
+ */
 @Injectable()
 export class QuantityTrackingStrategy implements TrackingStrategy {
   computeNext(item: Item, action: TrackingAction): TrackingResult {
-    const quantity =
-      action.type === ActionType.RESTOCKED
-        ? (action.quantity ?? item.quantity ?? 0)
-        : Math.max((item.quantity ?? 0) - 1, 0);
+    const stock = item.quantity ?? 0;
+    const asked = action.quantity ?? DEFAULT_MOVE;
 
-    return { status: statusForQuantity(quantity, item.lowThreshold), quantity };
+    if (action.type === ActionType.RESTOCKED) {
+      const quantity = stock + asked;
+
+      return {
+        status: statusForQuantity(quantity, item.lowThreshold),
+        quantity,
+        moved: asked,
+      };
+    }
+
+    // On ne consomme jamais plus que ce qu'il y a : demander trois unités
+    // quand il en reste deux vide l'item et enregistre deux.
+    const moved = Math.min(asked, stock);
+    const quantity = stock - moved;
+
+    return {
+      status: statusForQuantity(quantity, item.lowThreshold),
+      quantity,
+      moved,
+    };
   }
 }

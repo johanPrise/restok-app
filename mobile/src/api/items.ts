@@ -54,12 +54,26 @@ function useSettleItem() {
   };
 }
 
+/**
+ * Les deux actions transportent un **mouvement** : combien d'unités on prend,
+ * combien on rapporte. Jamais un stock final — c'est au backend de faire
+ * l'addition, pas à l'utilisateur.
+ */
+interface MoveInput {
+  itemId: string;
+  quantity?: number;
+  settleDelayMs?: number;
+}
+
 export function useTakeItem() {
   const settle = useSettleItem();
 
   return useMutation({
-    mutationFn: ({ itemId }: { itemId: string; settleDelayMs?: number }) =>
-      authedRequest<Item>(`/items/${itemId}/take`, { method: 'POST' }),
+    mutationFn: ({ itemId, quantity }: MoveInput) =>
+      authedRequest<Item>(`/items/${itemId}/take`, {
+        method: 'POST',
+        body: quantity === undefined ? {} : { quantity },
+      }),
     onSuccess: (item, { settleDelayMs }) => settle(item.id, settleDelayMs),
   });
 }
@@ -68,14 +82,13 @@ export function useRestockItem() {
   const settle = useSettleItem();
 
   return useMutation({
-    // `quantity` est obligatoire côté backend pour un item suivi en quantité,
-    // ignoré en mode binaire.
-    mutationFn: ({ itemId, quantity }: { itemId: string; quantity?: number }) =>
+    // Obligatoire pour un item suivi en quantité, ignoré en mode binaire.
+    mutationFn: ({ itemId, quantity }: MoveInput) =>
       authedRequest<Item>(`/items/${itemId}/restock`, {
         method: 'POST',
         body: quantity === undefined ? {} : { quantity },
       }),
-    onSuccess: (item) => settle(item.id),
+    onSuccess: (item, { settleDelayMs }) => settle(item.id, settleDelayMs),
   });
 }
 

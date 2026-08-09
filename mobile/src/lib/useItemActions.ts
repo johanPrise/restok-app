@@ -1,8 +1,10 @@
 import { useRestockItem, useTakeItem } from '@/api/items';
 import type { Item } from '@/types/api';
-import { canSwipe, restockQuantity } from './tag-swipe';
+import { canSwipe, movement } from './tag-swipe';
 
 interface RunOptions {
+  /** Nombre d'unités. Une seule par défaut. */
+  units?: number;
   onError?: () => void;
   /** Retarde le rafraîchissement de la liste, le temps d'une animation. */
   settleDelayMs?: number;
@@ -24,7 +26,7 @@ export interface ItemActions {
  * Le §4 exige que rien ne soit atteignable **que** par un geste : le tag et
  * l'écran de détail déclenchent donc exactement le même code, plutôt que deux
  * copies qui finiraient par diverger sur les règles délicates — l'interdit sur
- * un item vide, et la quantité à poser au rachat.
+ * un item vide, et la traduction des unités en quantité envoyée.
  */
 export function useItemActions(item: Item): ItemActions {
   const take = useTakeItem();
@@ -38,15 +40,18 @@ export function useItemActions(item: Item): ItemActions {
     // `mutate` efface l'erreur de sa propre mutation, pas celle de l'autre :
     // sans ce `reset`, un rachat réussi s'affichait sous le message d'échec
     // d'une prise précédente.
-    take: ({ onError, settleDelayMs } = {}) => {
+    take: ({ units = 1, onError, settleDelayMs } = {}) => {
       restock.reset();
-      take.mutate({ itemId: item.id, settleDelayMs }, { onError });
+      take.mutate(
+        { itemId: item.id, quantity: movement(item, units), settleDelayMs },
+        { onError },
+      );
     },
 
-    restock: ({ onError } = {}) => {
+    restock: ({ units = 1, onError, settleDelayMs } = {}) => {
       take.reset();
       restock.mutate(
-        { itemId: item.id, quantity: restockQuantity(item) },
+        { itemId: item.id, quantity: movement(item, units), settleDelayMs },
         { onError },
       );
     },

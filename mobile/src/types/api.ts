@@ -67,6 +67,8 @@ export interface Item {
 export interface HistoryEntry {
   id: string;
   actionType: ActionType;
+  /** Unités déplacées. `null` en suivi binaire, qui ne compte rien. */
+  quantity: number | null;
   createdAt: string;
   /** `null` quand le compte de l'auteur a été supprimé. */
   member: { id: string; name: string } | null;
