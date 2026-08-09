@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useTabBarSpace } from '@/lib/useTabBarSpace';
 import { spacing } from '@/theme';
 import { Screen } from './Screen';
 import { Text } from './Text';
@@ -18,9 +19,11 @@ interface ComingSoonProps {
  * qui absorbe déjà l'encoche.
  */
 export function ComingSoon({ title, description }: Readonly<ComingSoonProps>) {
+  const tabBarSpace = useTabBarSpace();
+
   return (
     <Screen edges={['top']}>
-      <View style={styles.body}>
+      <View style={[styles.body, { paddingBottom: tabBarSpace }]}>
         <Text variant="monoLabel" color="inkSoft">
           Bientôt
         </Text>

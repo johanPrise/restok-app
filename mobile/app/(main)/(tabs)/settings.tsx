@@ -16,6 +16,7 @@ import { InviteCodeCard } from '@/components/InviteCodeCard';
 import { MemberRow } from '@/components/MemberRow';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
+import { useTabBarSpace } from '@/lib/useTabBarSpace';
 import { useSession } from '@/store/session';
 import { MIN_TOUCH_TARGET, spacing } from '@/theme';
 import type { GroupDetail, MemberSummary } from '@/types/api';
@@ -35,6 +36,7 @@ export default function Settings() {
   const members = useMembers();
   const signOut = useSignOut();
   const router = useRouter();
+  const tabBarSpace = useTabBarSpace();
   const isAdmin = member?.role === 'admin';
 
   return (
@@ -47,7 +49,7 @@ export default function Settings() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarSpace }]}
         showsVerticalScrollIndicator={false}
       >
         {group.data && (
@@ -274,7 +276,7 @@ function LeaveGroup() {
 
 const styles = StyleSheet.create({
   header: { paddingTop: spacing.sm, gap: 2 },
-  content: { paddingVertical: spacing.md, gap: spacing.lg },
+  content: { paddingTop: spacing.md, gap: spacing.lg },
   section: { gap: spacing.sm },
   sectionHead: {
     flexDirection: 'row',

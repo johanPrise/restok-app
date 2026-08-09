@@ -32,6 +32,20 @@ export const gauge = {
 /** Cible tactile minimale (§8). */
 export const MIN_TOUCH_TARGET = 44;
 
+/**
+ * La barre d'onglets flotte **au-dessus** du contenu plutôt que de le pousser :
+ * c'est ce qui donne au verre dépoli quelque chose à flouter. En contrepartie,
+ * chaque écran d'onglet doit réserver la place qu'elle occupe, sinon son
+ * dernier élément finit caché dessous.
+ */
+export const tabBar = {
+  height: MIN_TOUCH_TARGET + spacing.xs * 2,
+  /** Entre la barre et le bord de l'écran, et entre la barre et le contenu. */
+  gap: spacing.xs,
+  radius: 24,
+  inset: spacing.sm,
+} as const;
+
 /** §7 : les timestamps passent en date absolue au-delà d'une semaine. */
 export const RELATIVE_DATE_MAX_DAYS = 7;
 

@@ -18,6 +18,7 @@ import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
+import { useTabBarSpace } from '@/lib/useTabBarSpace';
 import { useSession } from '@/store/session';
 import {
   border,
@@ -35,6 +36,7 @@ export default function Shelf() {
   const group = useGroup();
   const items = useItems();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
+  const tabBarSpace = useTabBarSpace();
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -83,7 +85,12 @@ export default function Shelf() {
       />
 
       <ScrollView
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          // La barre flotte au-dessus du contenu et le FAB au-dessus d'elle :
+          // sans cette réserve, le dernier tag reste caché sous les deux.
+          { paddingBottom: tabBarSpace + FAB_SIZE + spacing.md },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -174,13 +181,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     fontSize: fontSize.body,
   },
-  list: {
-    paddingTop: spacing.md,
-    // Le FAB flotte au-dessus de la liste : sans cette réserve, il masque le
-    // dernier tag une fois le défilement en bout de course.
-    paddingBottom: spacing.md * 2 + FAB_SIZE,
-    gap: spacing.md,
-  },
+  list: { paddingTop: spacing.md, gap: spacing.md },
   section: { gap: spacing.xs },
   empty: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },
   emptyTitle: { textAlign: 'center' },
