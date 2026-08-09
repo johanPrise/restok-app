@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { motion, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
@@ -28,6 +29,10 @@ interface TabBarButtonProps extends TabTriggerSlotProps {
  *
  * Les marges de la pastille s'appliquent dans les deux états : sinon la barre
  * se réorganiserait à chaque changement d'onglet.
+ *
+ * Un appui l'enfonce légèrement. Sans ce retour, toucher un onglet ne produisait
+ * rien tant que l'écran n'avait pas basculé — et sur un rendu lent, on doute
+ * d'avoir touché.
  */
 export function TabBarButton({
   icon: Icon,
@@ -63,7 +68,7 @@ export function TabBarButton({
     borderColor: interpolateColor(lit.value, [0, 1], [dim, bright]),
     // Le halo n'a de sens qu'allumé : à zéro il ne coûte rien.
     shadowOpacity: lit.value * 0.55,
-    elevation: lit.value * 8,
+    elevation: lit.value * 4,
   }));
 
   // La couleur du glyphe ne peut pas être animée — il est dessiné en SVG et
@@ -72,6 +77,16 @@ export function TabBarButton({
   const tint = isFocused ? 'onPantryTeal' : 'inkSoft';
 
   const glowStyle = useAnimatedStyle(() => ({ opacity: lit.value }));
+
+  // Retour d'appui immédiat, sur le thread d'animation : il ne dépend donc pas
+  // du temps que met l'écran à basculer.
+  const press = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: press.value }],
+  }));
+  const squeeze = (to: number) => {
+    press.value = reduced ? 1 : withSpring(to, PRESS_SPRING);
+  };
 
   return (
     <Pressable
@@ -84,10 +99,17 @@ export function TabBarButton({
       // quel onglet il se trouvait. La forme ARIA est comprise des deux côtés.
       role="tab"
       aria-selected={isFocused}
+      onPressIn={() => squeeze(0.92)}
+      onPressOut={() => squeeze(1)}
       style={styles.trigger}
     >
       <Animated.View
-        style={[styles.pill, { shadowColor: colors.pantryTeal }, pillStyle]}
+        style={[
+          styles.pill,
+          { shadowColor: colors.pantryTeal },
+          pillStyle,
+          pressStyle,
+        ]}
       >
         {/* Le trait de lumière en haut de la pastille : c'est lui qui donne
             l'impression que l'onglet est éclairé et non simplement coloré. */}
@@ -114,6 +136,9 @@ export function TabBarButton({
     </Pressable>
   );
 }
+
+/** Court et peu amorti : l'enfoncement doit se sentir, pas se regarder. */
+const PRESS_SPRING = { damping: 15, stiffness: 400 };
 
 const styles = StyleSheet.create({
   // `flex: 1` plutôt que les largeurs du Figma : quatre cibles tactiles égales,
