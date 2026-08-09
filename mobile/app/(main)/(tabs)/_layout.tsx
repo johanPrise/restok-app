@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     height: tabBar.height,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: 6,
     borderRadius: tabBar.radius,
     borderWidth: 1,
     // La profondeur vient d'ici et non d'un aplat : le verre doit sembler

@@ -99,7 +99,15 @@ export function TabBarButton({
           ]}
         />
         <Icon color={colors[tint]} />
-        <Text variant="tabLabel" color={tint} numberOfLines={1}>
+        <Text
+          variant="tabLabel"
+          color={tint}
+          numberOfLines={1}
+          // La barre est une chrome de hauteur fixe : au-delà de ce facteur,
+          // « Inventaire » se fait tronquer. On plafonne plutôt que de laisser
+          // un réglage d'accessibilité casser la mise en page.
+          maxFontSizeMultiplier={1.1}
+        >
           {label}
         </Text>
       </Animated.View>
@@ -113,9 +121,15 @@ const styles = StyleSheet.create({
   trigger: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pill: {
     minHeight: MIN_TOUCH_TARGET,
-    width: '100%',
-    // 6 et non 16 comme le Figma : la pastille y est dessinée à sa largeur
-    // naturelle, alors qu'ici elle doit tenir dans un quart de la barre.
+    // Elle épouse son contenu au lieu de remplir la cellule. En `width: '100%'`
+    // les quatre pastilles partageaient leurs bords — zéro pixel entre elles,
+    // mesuré — et la barre se lisait comme un bloc compact. Material fait le
+    // même choix : son indicateur actif entoure son contenu, pas la cellule.
+    //
+    // Bornée à sa cellule : sur un très petit écran, « Paramètres » déborderait
+    // sinon sur la pastille voisine. Un libellé tronqué reste moins mauvais que
+    // deux pastilles qui se chevauchent.
+    maxWidth: '100%',
     paddingHorizontal: 6,
     paddingVertical: spacing.xs / 2,
     borderRadius: radius.tag + 4,

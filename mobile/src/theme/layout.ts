@@ -43,7 +43,7 @@ export const tabBar = {
   /** Entre la barre et le bord de l'écran, et entre la barre et le contenu. */
   gap: spacing.xs,
   radius: 24,
-  inset: spacing.sm,
+  inset: spacing.xs,
 } as const;
 
 /** §7 : les timestamps passent en date absolue au-delà d'une semaine. */

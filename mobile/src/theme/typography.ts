@@ -99,7 +99,9 @@ export const textStyles = {
     fontFamily: fontFamily.monoBold,
     fontSize: fontSize.tabLabel,
     lineHeight: 12,
-    letterSpacing: fontSize.tabLabel * 0.05,
+    // 0.02 et non 0.05 comme ailleurs : en mono, l'interlettrage coûte trois
+    // pixels sur « Inventaire », et c'est cette place qui sépare les pastilles.
+    letterSpacing: fontSize.tabLabel * 0.02,
   },
   /** En-têtes de section et libellés techniques : mono capitales. */
   monoLabel: {
