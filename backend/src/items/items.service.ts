@@ -81,6 +81,10 @@ export class ItemsService {
         // ce que j'ai en créant l'item ».
         targetQuantity:
           quantity === null ? null : (dto.targetQuantity ?? quantity),
+        // `unit` et `packSize` décrivent l'item, pas son stock : ils valent
+        // aussi en suivi binaire, où ils ne s'affichent simplement nulle part.
+        unit: dto.unit ?? null,
+        packSize: dto.packSize ?? null,
         groupId,
         status:
           quantity === null
@@ -103,6 +107,10 @@ export class ItemsService {
 
     if (dto.name !== undefined) item.name = dto.name;
     if (dto.lowThreshold !== undefined) item.lowThreshold = dto.lowThreshold;
+    // Survivent au changement de mode, contrairement à `quantity` : décrire un
+    // item en rouleaux reste vrai même quand on cesse de les compter.
+    if (dto.unit !== undefined) item.unit = dto.unit;
+    if (dto.packSize !== undefined) item.packSize = dto.packSize;
 
     const trackingType = dto.trackingType ?? item.trackingType;
 

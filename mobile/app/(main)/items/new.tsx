@@ -37,10 +37,20 @@ export default function NewItem() {
   const [quantity, setQuantity] = useState('');
   const [threshold, setThreshold] = useState('');
   const [target, setTarget] = useState('');
+  const [unit, setUnit] = useState('');
+  const [pack, setPack] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const counting = mode === 'quantity';
-  const errors = validate({ name, counting, quantity, threshold, target });
+  const errors = validate({
+    name,
+    counting,
+    quantity,
+    threshold,
+    target,
+    unit,
+    pack,
+  });
   const shown = submitted ? errors : {};
 
   const submit = () => {
@@ -48,6 +58,10 @@ export default function NewItem() {
     if (Object.keys(errors).length > 0) return;
 
     const input: CreateItemInput = { name: name.trim(), trackingType: mode };
+    // Descriptifs : ils valent aussi en suivi binaire, où ils ne s'affichent
+    // simplement nulle part.
+    if (unit.trim()) input.unit = unit.trim();
+    if (pack.trim()) input.packSize = Number(pack);
     if (counting) {
       input.quantity = Number(quantity);
       // Laissés vides, le backend applique ses propres défauts : seuil à 1, et
@@ -133,6 +147,24 @@ export default function NewItem() {
               keyboardType="number-pad"
               inputMode="numeric"
             />
+            <Field
+              label="Une unité s'appelle"
+              value={unit}
+              onChangeText={setUnit}
+              placeholder="rouleau, bidon, dosette…"
+              error={shown.unit}
+              autoCapitalize="none"
+              maxLength={20}
+            />
+            <Field
+              label="Par paquet de"
+              value={pack}
+              onChangeText={setPack}
+              placeholder="laisse vide si ça s'achète à l'unité"
+              error={shown.pack}
+              keyboardType="number-pad"
+              inputMode="numeric"
+            />
           </>
         )}
       </View>
@@ -154,7 +186,7 @@ export default function NewItem() {
 }
 
 type Errors = Partial<
-  Record<'name' | 'quantity' | 'threshold' | 'target', string>
+  Record<'name' | 'quantity' | 'threshold' | 'target' | 'unit' | 'pack', string>
 >;
 
 /**
@@ -167,12 +199,16 @@ function validate({
   quantity,
   threshold,
   target,
+  unit,
+  pack,
 }: {
   name: string;
   counting: boolean;
   quantity: string;
   threshold: string;
   target: string;
+  unit: string;
+  pack: string;
 }): Errors {
   const errors: Errors = {};
   const trimmed = name.trim();
@@ -190,6 +226,13 @@ function validate({
   }
   if (target.trim() && !isWhole(target, 1)) {
     errors.target = 'Un nombre entier, au moins 1.';
+  }
+  if (unit.trim().length > 20) {
+    errors.unit = 'Vingt caractères au maximum.';
+  }
+  // Un « paquet de 1 » n'en est pas un : autant le laisser vide.
+  if (pack.trim() && !isWhole(pack, 2)) {
+    errors.pack = 'Un nombre entier, au moins 2.';
   }
 
   return errors;

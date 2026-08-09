@@ -11,7 +11,13 @@ import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useGoBack } from '@/lib/useGoBack';
-import { defaultRestockUnits } from '@/lib/tag-swipe';
+import {
+  defaultRestockPacks,
+  hasPacks,
+  packSummary,
+  unitsInPacks,
+  withUnit,
+} from '@/lib/units';
 import { useItemActions, type ItemActions } from '@/lib/useItemActions';
 import { useSession } from '@/store/session';
 import { spacing } from '@/theme';
@@ -119,7 +125,9 @@ function ItemActionsPanel({
    * montage proposait de racheter ce qui manquait *avant* l'action.
    */
   const [chosen, setChosen] = useState<number | null>(null);
-  const buying = chosen ?? defaultRestockUnits(item);
+  // Compté en paquets quand l'item s'achète par lot — c'est l'unité dans
+  // laquelle on revient du magasin. Converti juste avant l'appel.
+  const buyingPacks = chosen ?? defaultRestockPacks(item);
 
   if (!counts) {
     return (
@@ -164,22 +172,32 @@ function ItemActionsPanel({
 
       <View style={styles.actions}>
         <QuantityStepper
-          label="Unités rachetées"
-          value={buying}
+          label={hasPacks(item) ? 'Paquets rachetés' : 'Unités rachetées'}
+          value={buyingPacks}
           onChange={setChosen}
           max={MAX_RESTOCK_UNITS}
         />
         <Button
           label="J'ai racheté"
           variant="secondary"
-          onPress={() => actions.restock({ units: buying })}
+          onPress={() =>
+            actions.restock({ units: unitsInPacks(item, buyingPacks) })
+          }
           loading={actions.busy}
           style={styles.action}
         />
       </View>
 
+      {/* Un compteur de lots est ambigu tant qu'on ne dit pas ce qu'il y a
+          dedans. */}
+      {packSummary(item, buyingPacks) !== null && (
+        <Text variant="caption" color="pantryTeal">
+          {packSummary(item, buyingPacks)}
+        </Text>
+      )}
+
       <Text variant="caption" color="inkSoft">
-        {stock} en stock
+        {withUnit(item, stock)} en stock
         {item.targetQuantity
           ? ` · ${item.targetQuantity} quand c'est plein`
           : ''}

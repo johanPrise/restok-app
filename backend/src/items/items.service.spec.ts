@@ -127,6 +127,49 @@ describe('ItemsService', () => {
       });
     });
 
+    describe('unité et conditionnement', () => {
+      it("retient le nom de l'unité et la taille du paquet", async () => {
+        const item = await service.create(
+          {
+            name: 'Papier toilette',
+            trackingType: TrackingType.QUANTITY,
+            quantity: 12,
+            unit: 'rouleau',
+            packSize: 6,
+          },
+          'group-1',
+        );
+
+        expect(item).toMatchObject({ unit: 'rouleau', packSize: 6 });
+      });
+
+      it('les laisse nuls quand rien n’est précisé', async () => {
+        const item = await service.create({ name: 'Ampoules' }, 'group-1');
+
+        expect(item).toMatchObject({ unit: null, packSize: null });
+      });
+
+      it('les conserve au retour en suivi binaire', async () => {
+        // Contrairement à la quantité : décrire un item en rouleaux reste vrai
+        // même quand on cesse de les compter.
+        itemRepo.findOne.mockResolvedValue(
+          buildItem({
+            trackingType: TrackingType.QUANTITY,
+            quantity: 12,
+            unit: 'rouleau',
+            packSize: 6,
+          }),
+        );
+
+        const item = await service.update('item-1', 'group-1', {
+          trackingType: TrackingType.THRESHOLD,
+        });
+
+        expect(item).toMatchObject({ unit: 'rouleau', packSize: 6 });
+        expect(item.quantity).toBeNull();
+      });
+    });
+
     it('crée un item vide directement en to_restock', async () => {
       // out_of_stock n'est jamais un état de repos : un item créé à zéro doit
       // atterrir au même endroit qu'un item vidé par une prise.

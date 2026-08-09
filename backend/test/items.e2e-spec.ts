@@ -180,6 +180,64 @@ describe('Items (e2e)', () => {
     });
   });
 
+  describe('unité et conditionnement', () => {
+    it("porte le nom de l'unité et la taille du paquet", async () => {
+      const item = await createItem({
+        name: 'Papier toilette',
+        trackingType: 'quantity',
+        quantity: 12,
+        unit: 'rouleau',
+        packSize: 6,
+      });
+
+      expect(item).toMatchObject({ unit: 'rouleau', packSize: 6 });
+    });
+
+    it('reste en unités de base côté domaine', async () => {
+      // Le conditionnement n'entre pas dans le compte : deux paquets de six,
+      // c'est douze unités envoyées par l'interface.
+      const item = await createItem({
+        name: 'Papier toilette',
+        trackingType: 'quantity',
+        quantity: 0,
+        unit: 'rouleau',
+        packSize: 6,
+      });
+
+      const res = await auth(app, bob)
+        .post(`/items/${item.id}/restock`)
+        .send({ quantity: 12 })
+        .expect(200);
+
+      expect(res.body.quantity).toBe(12);
+    });
+
+    it('rejette un paquet de moins de deux', async () => {
+      await auth(app, alice)
+        .post('/items')
+        .send({ name: 'Papier toilette', packSize: 1 })
+        .expect(400);
+    });
+
+    it('rejette une unité trop longue', async () => {
+      await auth(app, alice)
+        .post('/items')
+        .send({ name: 'Papier toilette', unit: 'x'.repeat(21) })
+        .expect(400);
+    });
+
+    it('se modifie après coup', async () => {
+      const item = await createItem({ name: 'Papier toilette' });
+
+      const res = await auth(app, alice)
+        .patch(`/items/${item.id}`)
+        .send({ unit: 'rouleau', packSize: 6 })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ unit: 'rouleau', packSize: 6 });
+    });
+  });
+
   describe('quantités précisées', () => {
     it("prend le nombre d'unités demandé", async () => {
       const item = await createItem({

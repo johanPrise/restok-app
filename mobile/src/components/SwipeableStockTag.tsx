@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -23,6 +23,7 @@ import {
   ratioAfter,
   type SwipeAction,
 } from '@/lib/tag-swipe';
+import { unitsInPacks } from '@/lib/units';
 import { useItemActions } from '@/lib/useItemActions';
 import {
   motion,
@@ -79,6 +80,40 @@ export function SwipeableStockTag({
   const takeable = actions.canTake;
   const takeMax = maxUnits(item, 'take');
   const restockMax = maxUnits(item, 'restock');
+
+  /**
+   * Tout ce dont le geste a besoin, en tableaux de nombres bruts.
+   *
+   * Un worklet tourne sur le thread d'animation et ne peut pas appeler une
+   * fonction JS ordinaire : le faire marche sur le web, où tout partage le même
+   * thread, et lève en natif. On calcule donc les paliers **avant**, et le
+   * geste ne fait plus qu'indexer.
+   *
+   * Un cran de rachat vaut un paquet quand l'item s'achète par lot — c'est
+   * l'unité dans laquelle on revient du magasin.
+   */
+  const { takeRatios, restockRatios, restockUnitsByNotch } = useMemo(() => {
+    const notch = (count: number) => count + 1;
+
+    return {
+      takeRatios: Array.from({ length: notch(takeMax) }, (_, units) =>
+        units === 0 ? base : ratioAfter(item, 'take', units),
+      ),
+      restockRatios: Array.from({ length: notch(restockMax) }, (_, packs) =>
+        packs === 0
+          ? base
+          : ratioAfter(item, 'restock', unitsInPacks(item, packs)),
+      ),
+      restockUnitsByNotch: Array.from(
+        { length: notch(restockMax) },
+        (_, packs) => unitsInPacks(item, packs),
+      ),
+    };
+  }, [base, item, restockMax, takeMax]);
+
+  // Mêmes raisons : les bornes de course sont des nombres, pas des appels.
+  const maxRight = takeable ? swipeTravel(takeMax) : 0;
+  const maxLeft = -swipeTravel(restockMax);
 
   const level = useSharedValue(base);
   const translateX = useSharedValue(0);
@@ -191,26 +226,24 @@ export function SwipeableStockTag({
       scheduleOnRN(setSwiping, true);
     })
     .onUpdate((event) => {
-      const dx = clamp(
-        event.translationX,
-        -swipeTravel(restockMax),
-        takeable ? swipeTravel(takeMax) : 0,
-      );
+      const dx = clamp(event.translationX, maxLeft, maxRight);
       translateX.value = dx;
 
-      const action = dx > 0 ? 'take' : 'restock';
-      const count = swipeUnits(dx, dx > 0 ? takeMax : restockMax);
-      pending.value = dx > 0 ? count : -count;
+      const taking = dx > 0;
+      const notches = swipeUnits(dx, taking ? takeMax : restockMax);
+      const count = taking ? notches : restockUnitsByNotch[notches];
 
-      // À zéro unité le geste est annulé : la jauge revient à son niveau réel.
-      level.value = count === 0 ? base : ratioAfter(item, action, count);
+      pending.value = taking ? count : -count;
+      level.value = taking ? takeRatios[notches] : restockRatios[notches];
     })
     .onEnd(() => {
       const dx = translateX.value;
-      const count = swipeUnits(dx, dx > 0 ? takeMax : restockMax);
+      const taking = dx > 0;
+      const notches = swipeUnits(dx, taking ? takeMax : restockMax);
+      const count = taking ? notches : restockUnitsByNotch[notches];
 
       if (count > 0) {
-        scheduleOnRN(commit, dx > 0 ? 'take' : 'restock', count);
+        scheduleOnRN(commit, taking ? 'take' : 'restock', count);
         return;
       }
 
@@ -232,8 +265,11 @@ export function SwipeableStockTag({
     opacity: pending.value === 0 ? 0 : 1,
   }));
 
-  // L'action d'accessibilité double le geste : elle en reprend le plafond.
-  const restockUnits = Math.min(defaultRestockUnits(item), restockMax);
+  // L'action d'accessibilité double le geste : un cran, donc un paquet.
+  const restockUnits = Math.min(
+    defaultRestockUnits(item),
+    restockUnitsByNotch[restockMax],
+  );
 
   return (
     <GestureDetector gesture={pan}>

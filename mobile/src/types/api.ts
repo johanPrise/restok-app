@@ -57,6 +57,10 @@ export interface Item {
   lowThreshold: number | null;
   /** Le « plein » : dénominateur de la jauge, pas un seuil d'alerte. */
   targetQuantity: number | null;
+  /** Comment s'appelle une unité — « rouleau », « bidon ». Étiquette d'affichage. */
+  unit: string | null;
+  /** Unités par paquet, quand l'item s'achète par lot. `null` sinon. */
+  packSize: number | null;
   groupId: string;
   createdAt: string;
   updatedAt: string;
@@ -80,6 +84,8 @@ export interface CreateItemInput {
   quantity?: number;
   lowThreshold?: number;
   targetQuantity?: number;
+  unit?: string;
+  packSize?: number;
 }
 
 export interface UpdateItemInput {
@@ -88,4 +94,6 @@ export interface UpdateItemInput {
   quantity?: number;
   lowThreshold?: number;
   targetQuantity?: number;
+  unit?: string;
+  packSize?: number;
 }
