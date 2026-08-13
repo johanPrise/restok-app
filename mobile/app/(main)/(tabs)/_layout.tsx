@@ -3,7 +3,6 @@ import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fab } from '@/components/Fab';
-import { GlassSurface } from '@/components/GlassSurface';
 import { TabBarButton } from '@/components/TabBarButton';
 import {
   BasketIcon,
@@ -11,17 +10,19 @@ import {
   SettingsIcon,
   ShelfIcon,
 } from '@/components/icons';
-import { useTabBarSpace } from '@/lib/useTabBarSpace';
 import { useSession } from '@/store/session';
-import { border, chrome, spacing, tabBar, useTheme } from '@/theme';
+import { border, spacing, tabBar, useTheme } from '@/theme';
 
 /**
- * Barre du bas à quatre onglets, en verre dépoli.
+ * Barre du bas à quatre onglets, d'après le Figma exporté du produit : ancrée
+ * dans le flux normal, pas en survol — un aplat `paperRaised`, un fil `thread`
+ * en haut, aucun rayon, aucune ombre. L'onglet actif ne se distingue que par
+ * la couleur de son icône et de son libellé, rien d'autre : pas de pastille,
+ * pas de fond, pas de halo.
  *
- * Elle **flotte au-dessus** du contenu au lieu de le pousser : un verre posé
- * sur un aplat uniforme ne montre rien, il lui faut quelque chose à flouter.
- * En contrepartie chaque écran d'onglet réserve sa hauteur — voir
- * `useTabBarSpace`.
+ * N'étant pas en survol, elle n'occupe pas la couche « chrome flottante » —
+ * voir l'extension du §3 dans `theme/layout` — donc aucun écran n'a besoin de
+ * lui réserver de place : `TabSlot` s'arrête naturellement au-dessus d'elle.
  *
  * On passe par les `Tabs` sans habillage d'`expo-router/ui` plutôt que par le
  * navigateur classique : la barre est trop dessinée pour les options du
@@ -29,21 +30,16 @@ import { border, chrome, spacing, tabBar, useTheme } from '@/theme';
  *
  * `<TabList>` doit rester un enfant direct de `<Tabs>` — c'est en le parcourant
  * qu'expo-router découvre les routes. Avec `asChild`, le parseur sait descendre
- * dans l'enfant unique, ce qui permet de lui donner la surface de verre.
+ * dans l'enfant unique, ce qui permet de lui donner la surface pleine.
  */
 export default function TabsLayout() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
-  const space = useTabBarSpace();
   // Le backend refuse la création d'item à un simple membre (403) : lui
   // proposer le bouton serait promettre une action qui échouera.
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
-
-  // Un liseré clair en haut du verre : c'est lui qui donne l'arête, l'illusion
-  // d'une plaque posée plutôt que d'un rectangle peint.
-  const rim = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.75)';
 
   return (
     <Tabs style={[styles.root, { backgroundColor: colors.paper }]}>
@@ -55,10 +51,10 @@ export default function TabsLayout() {
         <TabSlot style={styles.slot} />
 
         {pathname === '/shelf' && isAdmin && (
-          <View
-            style={[styles.fabSlot, { bottom: space + spacing.xs }]}
-            pointerEvents="box-none"
-          >
+          // La barre ne flotte plus au-dessus du contenu, mais le FAB, lui,
+          // continue de le faire : `bottom` reste un simple espacement fixe,
+          // plus besoin de calculer la hauteur d'une barre qui n'est plus là.
+          <View style={styles.fabSlot} pointerEvents="box-none">
             <Fab
               accessibilityLabel="Ajouter un item"
               onPress={() => router.push('/items/new')}
@@ -71,13 +67,16 @@ export default function TabsLayout() {
         {/* `style` doit être un objet **plat** : `asChild` passe par un Slot qui
             fusionne les styles à l'étalement, et un tableau y devient un objet
             à clés numériques que react-native-web ne sait pas appliquer. */}
-        <GlassSurface
-          intensity={48}
+        <View
           style={StyleSheet.flatten([
             styles.bar,
             {
-              borderColor: rim,
-              bottom: Math.max(insets.bottom, tabBar.gap),
+              backgroundColor: colors.paperRaised,
+              borderTopColor: colors.thread,
+              // La zone de gestes / l'encoche du bas fait partie de la barre,
+              // pas du contenu au-dessus — elle n'a donc pas à être réservée
+              // ailleurs.
+              paddingBottom: insets.bottom,
             },
           ])}
         >
@@ -93,7 +92,7 @@ export default function TabsLayout() {
           <TabTrigger name="settings" href="/settings" asChild>
             <TabBarButton icon={SettingsIcon} label="Paramètres" />
           </TabTrigger>
-        </GlassSurface>
+        </View>
       </TabList>
     </Tabs>
   );
@@ -105,19 +104,12 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   body: { flex: 1 },
   slot: { flexGrow: 1, flexShrink: 1, flexBasis: 0 },
-  fabSlot: { position: 'absolute', right: spacing.lg },
+  fabSlot: { position: 'absolute', right: spacing.lg, bottom: spacing.lg },
   bar: {
-    position: 'absolute',
-    left: tabBar.inset,
-    right: tabBar.inset,
-    height: tabBar.height,
     flexDirection: 'row',
     alignItems: 'center',
+    height: tabBar.height,
     paddingHorizontal: 6,
-    borderRadius: tabBar.radius,
-    borderWidth: border.rim,
-    // Chrome flottante : elle a droit à l'ombre là où le contenu ne l'a pas.
-    // La règle et son pourquoi sont dans `theme/layout`.
-    ...chrome,
+    borderTopWidth: border.hairline,
   },
 });

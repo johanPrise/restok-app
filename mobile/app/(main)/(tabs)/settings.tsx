@@ -16,7 +16,6 @@ import { InviteCodeCard } from '@/components/InviteCodeCard';
 import { MemberRow } from '@/components/MemberRow';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
-import { useTabBarSpace } from '@/lib/useTabBarSpace';
 import { useSession } from '@/store/session';
 import { MIN_TOUCH_TARGET, spacing } from '@/theme';
 import type { GroupDetail, MemberSummary } from '@/types/api';
@@ -36,7 +35,6 @@ export default function Settings() {
   const members = useMembers();
   const signOut = useSignOut();
   const router = useRouter();
-  const tabBarSpace = useTabBarSpace();
   const isAdmin = member?.role === 'admin';
 
   return (
@@ -49,7 +47,12 @@ export default function Settings() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: tabBarSpace }]}
+        contentContainerStyle={[
+          styles.content,
+          // La barre d'onglets est ancrée, pas en survol : `TabSlot` s'arrête
+          // déjà au-dessus d'elle, il reste juste un peu d'air en bas de liste.
+          { paddingBottom: spacing.lg },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {group.data && (

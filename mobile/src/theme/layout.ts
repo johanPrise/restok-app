@@ -24,7 +24,7 @@ export const radius = {
 export const border = {
   /** Le « fil » du tag. La profondeur vient de là, pas d'une ombre portée. */
   hairline: 1,
-  /** L'arête d'une surface de verre — un liseré clair, pas un trait d'encre. */
+  /** L'arête de la chrome flottante — un liseré `thread`, pas un trait d'encre. */
   rim: 1,
   /** Liseré latéral d'un item en stock bas. */
   statusAccent: 3,
@@ -45,17 +45,17 @@ export const MIN_TOUCH_TARGET = 44;
  * `paperRaised` et d'un fil de 1px. Cette règle parle du **contenu** — les tags
  * sont des étiquettes posées sur une étagère, et une étiquette ne lévite pas.
  *
- * La chrome flottante n'est pas du contenu. La barre d'onglets et le FAB ne
- * sont posés sur rien : ils passent **au-dessus** de l'étagère, et le contenu
- * défile dessous. Leur donner le même traitement plat qu'un tag les collerait au
- * fond et effacerait la couche qu'ils occupent.
+ * Le FAB, lui, ne repose sur rien : il passe **au-dessus** de l'étagère, et le
+ * contenu défile dessous. Lui donner le même traitement plat qu'un tag le
+ * collerait au fond et effacerait la couche qu'il occupe.
  *
- * D'où deux traitements, et un seul par couche :
- * - **contenu** — fil `thread` de 1px, aplats, aucune ombre ;
- * - **chrome flottante** — verre, arête claire, ombre discrète.
+ * La barre d'onglets n'est **pas** dans ce cas — le Figma la montre ancrée
+ * dans le flux, pas en survol : elle suit donc le traitement du contenu (fil
+ * `thread`, aplat, aucune ombre), pas celui-ci. `chrome` ne reste donc utile
+ * qu'au FAB, seul élément qui flotte réellement.
  *
  * L'ombre reste au niveau 3 de l'échelle Material, celui des composants de
- * navigation. Au-delà, la chrome pèserait plus qu'une feuille modale.
+ * navigation. Au-delà, il pèserait plus qu'une feuille modale.
  */
 export const chrome = {
   shadowColor: '#000',
@@ -66,17 +66,12 @@ export const chrome = {
 } as const;
 
 /**
- * La barre d'onglets flotte **au-dessus** du contenu plutôt que de le pousser :
- * c'est ce qui donne au verre dépoli quelque chose à flouter. En contrepartie,
- * chaque écran d'onglet doit réserver la place qu'elle occupe, sinon son
- * dernier élément finit caché dessous.
+ * La barre d'onglets, d'après le Figma : ancrée en bas dans le flux normal
+ * (pas de `position: absolute`, pas de rayon, pas d'ombre), un simple fil en
+ * haut. Elle ne flotte pas — donc rien à réserver dans les écrans en dessous.
  */
 export const tabBar = {
-  height: MIN_TOUCH_TARGET + spacing.xs * 2,
-  /** Entre la barre et le bord de l'écran, et entre la barre et le contenu. */
-  gap: spacing.xs,
-  radius: radius.chrome,
-  inset: spacing.xs,
+  height: 80,
 } as const;
 
 /** §7 : les timestamps passent en date absolue au-delà d'une semaine. */

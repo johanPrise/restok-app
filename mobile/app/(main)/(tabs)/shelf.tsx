@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -7,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { ApiError } from '@/api/client';
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
 import { Button } from '@/components/Button';
@@ -18,7 +20,6 @@ import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
-import { useTabBarSpace } from '@/lib/useTabBarSpace';
 import { useSession } from '@/store/session';
 import {
   border,
@@ -36,7 +37,6 @@ export default function Shelf() {
   const group = useGroup();
   const items = useItems();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
-  const tabBarSpace = useTabBarSpace();
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -49,12 +49,20 @@ export default function Shelf() {
     (item) => item.status === 'to_restock' || item.status === 'out_of_stock',
   ).length;
 
+  const headerSummary = items.isError
+    ? 'Connexion au serveur impossible'
+    : summary(toRestock, items.data?.length ?? 0);
+  const headerSummaryColor =
+    items.isError || toRestock > 0 ? 'rustClay' : 'inkSoft';
+
   const toggle = (key: string) =>
     setCollapsed((state) => ({ ...state, [key]: !state[key] }));
 
   return (
     // Pas d'`edges` en bas : la barre d'onglets absorbe déjà l'encoche.
     <Screen edges={['top']}>
+      {/* Un en-tête, pas une ligne de titre : le nom du groupe est ce que le
+          groupe partage, il mérite le milieu de l'écran plutôt qu'un coin. */}
       <View style={styles.header}>
         <EditableGroupName
           name={group.data?.name ?? ' '}
@@ -62,9 +70,10 @@ export default function Shelf() {
         />
         <Text
           variant="monoLabel"
-          color={toRestock > 0 ? 'rustClay' : 'inkSoft'}
+          color={headerSummaryColor}
+          style={styles.headerSummary}
         >
-          {summary(toRestock, items.data?.length ?? 0)}
+          {headerSummary}
         </Text>
       </View>
 
@@ -87,9 +96,10 @@ export default function Shelf() {
       <ScrollView
         contentContainerStyle={[
           styles.list,
-          // La barre flotte au-dessus du contenu et le FAB au-dessus d'elle :
-          // sans cette réserve, le dernier tag reste caché sous les deux.
-          { paddingBottom: tabBarSpace + FAB_SIZE + spacing.md },
+          // La barre d'onglets est ancrée, pas en survol — `TabSlot` s'arrête
+          // déjà au-dessus d'elle. Seul le FAB flotte encore sur cette liste :
+          // sans cette réserve, le dernier tag resterait caché dessous.
+          { paddingBottom: FAB_SIZE + spacing.md },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -104,7 +114,18 @@ export default function Shelf() {
         {items.isPending &&
           Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
 
-        {!items.isPending && sections.length === 0 && (
+        {/* Un stock vide et un serveur injoignable produisaient le même écran :
+            `items.data ?? []` avale l'échec réseau, et « Étagère vide » se
+            montrait alors qu'en fait rien n'avait pu être chargé. Le premier
+            n'a rien à corriger ; le second demande de relancer le backend. */}
+        {items.isError && (
+          <ErrorState
+            message={networkErrorMessage(items.error)}
+            onRetry={() => void items.refetch()}
+          />
+        )}
+
+        {!items.isPending && !items.isError && sections.length === 0 && (
           <EmptyState
             searching={query.trim().length > 0}
             onAdd={isAdmin ? () => router.push('/items/new') : undefined}
@@ -143,12 +164,51 @@ function summary(toRestock: number, total: number): string {
   return `${toRestock} item${toRestock > 1 ? 's' : ''} à racheter`;
 }
 
+/**
+ * `ApiError` porte un message du backend, lisible tel quel. Toute autre
+ * erreur — `TypeError: Network request failed`, `Failed to fetch` — vient de
+ * `fetch` lui-même, jamais du serveur : le dire clairement plutôt que
+ * d'afficher le jargon réseau brut.
+ */
+function networkErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+
+  return "Le serveur ne répond pas. Vérifie qu'il est bien démarré.";
+}
+
+function ErrorState({
+  message,
+  onRetry,
+}: Readonly<{ message: string; onRetry: () => void }>) {
+  return (
+    <View style={styles.empty}>
+      <Text variant="tagName" color="rustClay" style={styles.emptyTitle}>
+        Connexion impossible
+      </Text>
+      <Text variant="body" color="inkSoft" style={styles.emptyBody}>
+        {message}
+      </Text>
+      <Button label="Réessayer" onPress={onRetry} style={styles.emptyAdd} />
+    </View>
+  );
+}
+
 function EmptyState({
   searching,
   onAdd,
 }: Readonly<{ searching: boolean; onAdd?: () => void }>) {
   return (
     <View style={styles.empty}>
+      {/* Seule l'étagère vraiment vide montre l'étagère vide : une recherche
+          sans résultat n'a rien à voir avec l'état du stock. */}
+      {!searching && (
+        <Image
+          source={require('../../../assets/illustrations/etagere_2.png')}
+          style={styles.emptyIllustration}
+          contentFit="contain"
+          accessibilityLabel="Une étagère de rangement vide, sans aucun item"
+        />
+      )}
       <Text variant="tagName" color="inkSoft" style={styles.emptyTitle}>
         {searching ? 'Aucun résultat' : 'Étagère vide'}
       </Text>
@@ -171,7 +231,8 @@ function EmptyState({
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.sm, gap: 2 },
+  header: { alignItems: 'center', paddingTop: spacing.sm, gap: 2 },
+  headerSummary: { textAlign: 'center' },
   search: {
     minHeight: MIN_TOUCH_TARGET,
     marginTop: spacing.md,
@@ -184,6 +245,15 @@ const styles = StyleSheet.create({
   list: { paddingTop: spacing.md, gap: spacing.md },
   section: { gap: spacing.xs },
   empty: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },
+  // En proportion de l'écran plutôt qu'une taille fixe : à 160 elle se
+  // perdait dans l'espace vide. Plafonnée pour ne pas déborder sur un iPad.
+  // Ratio de l'image source (342×326), quasi carrée.
+  emptyIllustration: {
+    width: '72%',
+    maxWidth: 280,
+    aspectRatio: 342 / 326,
+    marginBottom: spacing.sm,
+  },
   emptyTitle: { textAlign: 'center' },
   emptyBody: { textAlign: 'center' },
   emptyAdd: { marginTop: spacing.sm, alignSelf: 'stretch' },

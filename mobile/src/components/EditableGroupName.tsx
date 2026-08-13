@@ -37,7 +37,7 @@ export function EditableGroupName({
 
   if (draft === null) {
     return (
-      <View>
+      <View style={styles.wrap}>
         <Pressable
           accessibilityRole={editable ? 'button' : 'header'}
           accessibilityLabel={
@@ -46,13 +46,13 @@ export function EditableGroupName({
           disabled={!editable}
           onPress={() => setDraft(name)}
         >
-          <Text variant="title" numberOfLines={1}>
+          <Text variant="title" numberOfLines={1} style={styles.text}>
             {name}
           </Text>
         </Pressable>
 
         {rename.isError && (
-          <Text variant="caption" color="rustClay">
+          <Text variant="caption" color="rustClay" style={styles.text}>
             {rename.error.message}
           </Text>
         )}
@@ -70,6 +70,7 @@ export function EditableGroupName({
       selectTextOnFocus
       maxLength={MAX_LENGTH}
       returnKeyType="done"
+      textAlign="center"
       accessibilityLabel="Nom du groupe"
       style={[
         styles.input,
@@ -81,6 +82,9 @@ export function EditableGroupName({
 }
 
 const styles = StyleSheet.create({
+  // En tête d'écran, pas rangé dans un coin : c'est ce que le groupe partage.
+  wrap: { alignItems: 'center' },
+  text: { textAlign: 'center' },
   input: {
     // Le champ garde exactement la place du titre : la page ne saute pas quand
     // on passe de l'un à l'autre.
@@ -89,5 +93,6 @@ const styles = StyleSheet.create({
     marginHorizontal: -spacing.xs,
     borderWidth: border.hairline,
     borderRadius: radius.button,
+    textAlign: 'center',
   },
 });
