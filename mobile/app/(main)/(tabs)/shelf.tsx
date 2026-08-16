@@ -11,6 +11,7 @@ import {
 import { ApiError } from '@/api/client';
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
+import { useShoppingList } from '@/api/shopping';
 import { Button } from '@/components/Button';
 import { EditableGroupName } from '@/components/EditableGroupName';
 import { FAB_SIZE } from '@/components/Fab';
@@ -20,6 +21,7 @@ import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
+import { itemsOnList } from '@/lib/shopping-list';
 import { useSession } from '@/store/session';
 import {
   border,
@@ -36,9 +38,17 @@ export default function Shelf() {
   const { colors } = useTheme();
   const group = useGroup();
   const items = useItems();
+  const shopping = useShoppingList();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  // Croisé ici plutôt que renvoyé par `GET /items` : les deux listes sont déjà
+  // en cache, et l'étagère reste ignorante des courses côté serveur.
+  const onList = useMemo(
+    () => itemsOnList(shopping.data ?? []),
+    [shopping.data],
+  );
 
   const sections = useMemo(
     () => groupByUrgency(searchItems(items.data ?? [], query)),
@@ -146,6 +156,7 @@ export default function Shelf() {
                 <SwipeableStockTag
                   key={item.id}
                   item={item}
+                  onList={onList.has(item.id)}
                   onPress={() => router.push(`/items/${item.id}`)}
                 />
               ))}

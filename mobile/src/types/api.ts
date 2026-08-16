@@ -70,6 +70,36 @@ export interface Item {
   lastAction: LastAction | null;
 }
 
+/**
+ * Une ligne de la liste de courses.
+ *
+ * Deux natures dans un même type : une ligne **liée** prolonge un item de
+ * l'étagère (`itemId` non nul, et elle en tient son nom), une ligne **libre**
+ * porte du texte que le groupe ne suit pas — du pain, du fromage.
+ */
+export interface ShoppingLine {
+  id: string;
+  /** `null` sur une ligne libre. */
+  itemId: string | null;
+  /** Calculé côté serveur : le nom de l'item, ou le texte libre. */
+  name: string;
+  /** Toujours en **unités de base**, jamais en paquets. */
+  quantity: number | null;
+  checked: boolean;
+  /** Le nom de qui a coché, `null` tant que personne ne l'a fait. */
+  checkedBy: string | null;
+  checkedAt: string | null;
+  /** Recopiés de l'item : au rayon, c'est ce qui dit quoi prendre. */
+  unit: string | null;
+  packSize: number | null;
+  format: string | null;
+}
+
+/** Une ligne porte soit un item, soit un texte libre — jamais les deux. */
+export type AddShoppingLineInput =
+  | { itemId: string; quantity?: number }
+  | { label: string; quantity?: number };
+
 export interface HistoryEntry {
   id: string;
   actionType: ActionType;

@@ -1,6 +1,18 @@
 import type { Item } from '@/types/api';
 
 /**
+ * Ce qu'il faut savoir d'un produit pour parler de son conditionnement.
+ *
+ * Un `Item` le satisfait, une ligne de courses aussi — elle recopie ces deux
+ * champs. Les fonctions ci-dessous n'ont jamais eu besoin de plus, et exiger un
+ * `Item` entier obligerait la liste de courses à en fabriquer un faux.
+ */
+export interface Packaging {
+  unit: string | null;
+  packSize: number | null;
+}
+
+/**
  * Traduction entre ce que l'utilisateur dit et ce que le domaine compte.
  *
  * Le backend ne connaît **que** des unités de base : douze rouleaux, jamais
@@ -10,12 +22,12 @@ import type { Item } from '@/types/api';
  */
 
 /** Vrai quand l'item s'achète par lot. */
-export function hasPacks(item: Item): boolean {
+export function hasPacks(item: Packaging): boolean {
   return (item.packSize ?? 0) > 1;
 }
 
 /** Unités contenues dans `packs` paquets — ce qui part vraiment à l'API. */
-export function unitsInPacks(item: Item, packs: number): number {
+export function unitsInPacks(item: Packaging, packs: number): number {
   return hasPacks(item) ? packs * (item.packSize ?? 1) : packs;
 }
 
@@ -23,7 +35,7 @@ export function unitsInPacks(item: Item, packs: number): number {
  * Accorde le nom de l'unité. Sans `unit`, on ne met rien plutôt qu'un mot
  * générique : « 12 » se lit mieux que « 12 unités ».
  */
-export function withUnit(item: Item, count: number): string {
+export function withUnit(item: Packaging, count: number): string {
   if (!item.unit) return String(count);
 
   return `${count} ${plural(item.unit, count)}`;
@@ -41,7 +53,7 @@ export function defaultRestockPacks(item: Item): number {
 }
 
 /** « 2 paquets · 12 rouleaux », pour lever l'ambiguïté d'un compteur de lots. */
-export function packSummary(item: Item, packs: number): string | null {
+export function packSummary(item: Packaging, packs: number): string | null {
   if (!hasPacks(item)) return null;
 
   const units = unitsInPacks(item, packs);

@@ -128,3 +128,15 @@ export function BellBadgeIcon({
     </Svg>
   );
 }
+
+/** Coche seule — la case cochée d'une ligne de courses. */
+export function CheckIcon({ color, size = 14 }: Readonly<IconProps>) {
+  return (
+    <Svg width={size} height={size * (10.4 / 14)} viewBox="0 0 14 10.4">
+      <Path
+        d="M5 10.4L0 5.4L1.4 4L5 7.6L12.6 0L14 1.4L5 10.4V10.4"
+        fill={color}
+      />
+    </Svg>
+  );
+}
