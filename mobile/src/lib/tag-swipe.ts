@@ -50,6 +50,12 @@ export function quantityAfter(
   action: SwipeAction,
   units: number,
 ): number {
+  // Le suivi binaire ne compte rien : une prise vide, un rachat remplit. On lit
+  // le mode plutôt que de le déduire d'une quantité nulle — les fonctions
+  // voisines font déjà ainsi, et s'appuyer sur cet invariant rendait le
+  // décrochage dépendant d'un `null` posé ailleurs.
+  if (!counts(item)) return action === 'take' ? 0 : 1;
+
   const stock = item.quantity ?? 0;
 
   return action === 'take' ? Math.max(stock - units, 0) : stock + units;
