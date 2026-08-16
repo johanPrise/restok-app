@@ -24,6 +24,8 @@ import { TrackingStrategyFactory } from './strategies/tracking-strategy.factory'
     ThresholdTrackingStrategy,
     QuantityTrackingStrategy,
   ],
-  exports: [ItemsService],
+  // `ItemActionsFacade` sort pour la liste de courses : clôturer, c'est un
+  // rachat en gros, qui doit passer par la même state machine que le geste.
+  exports: [ItemsService, ItemActionsFacade],
 })
 export class ItemsModule {}

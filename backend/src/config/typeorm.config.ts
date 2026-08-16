@@ -4,6 +4,7 @@ import { ActionHistory } from '../action-history/entities/action-history.entity'
 import { Group } from '../groups/entities/group.entity';
 import { Item } from '../items/entities/item.entity';
 import { Member } from '../members/entities/member.entity';
+import { ShoppingLine } from '../shopping/entities/shopping-line.entity';
 
 export function typeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
   const env = config.get<string>('NODE_ENV');
@@ -19,7 +20,7 @@ export function typeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
     database: config.get<string>('DB_NAME', 'restock'),
     // Liste explicite plutôt qu'autoLoadEntities : les entités doivent être
     // connues même avant que leur module respectif n'existe.
-    entities: [Group, Member, Item, ActionHistory],
+    entities: [Group, Member, Item, ActionHistory, ShoppingLine],
     // Itération rapide en dev. Les migrations prendront le relais avant le
     // déploiement — le SQL du §3 de la spec fait référence.
     synchronize: !isProduction,

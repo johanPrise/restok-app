@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionHistoryService } from '../action-history/action-history.service';
@@ -10,6 +11,7 @@ import type { LastAction } from '../action-history/action-history.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { Item, ItemStatus, TrackingType } from './entities/item.entity';
+import { ITEM_DELETED, ItemDeletedEvent } from './events/item-deleted.event';
 import { autoTransition } from './item-state-machine';
 import { statusForQuantity } from './strategies/quantity-tracking.strategy';
 
@@ -34,6 +36,7 @@ export class ItemsService {
     @InjectRepository(Item)
     private readonly itemRepo: Repository<Item>,
     private readonly actionHistoryService: ActionHistoryService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -163,6 +166,10 @@ export class ItemsService {
   async remove(itemId: string, groupId: string): Promise<void> {
     const item = await this.findOneInGroup(itemId, groupId);
     await this.itemRepo.softRemove(item);
+
+    // La suppression est douce : rien ne cascade. L'event laisse le reste de
+    // l'app faire le ménage sans que l'étagère ait à savoir qui l'écoute.
+    this.eventEmitter.emit(ITEM_DELETED, new ItemDeletedEvent(itemId, groupId));
   }
 
   /** Le filtre sur groupId isole les groupes : un item d'ailleurs est introuvable. */

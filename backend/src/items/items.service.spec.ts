@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { Repository } from 'typeorm';
@@ -44,6 +45,7 @@ describe('ItemsService', () => {
             findLastActionByItem: jest.fn().mockResolvedValue(new Map()),
           },
         },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 
