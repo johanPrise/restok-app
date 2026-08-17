@@ -5,6 +5,7 @@ import { Group } from '../groups/entities/group.entity';
 import { Item } from '../items/entities/item.entity';
 import { Member } from '../members/entities/member.entity';
 import { ShoppingLine } from '../shopping/entities/shopping-line.entity';
+import { MIGRATIONS_TABLE } from './migrations';
 
 export function typeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
   const env = config.get<string>('NODE_ENV');
@@ -21,9 +22,16 @@ export function typeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
     // Liste explicite plutôt qu'autoLoadEntities : les entités doivent être
     // connues même avant que leur module respectif n'existe.
     entities: [Group, Member, Item, ActionHistory, ShoppingLine],
-    // Itération rapide en dev. Les migrations prendront le relais avant le
-    // déploiement — le SQL du §3 de la spec fait référence.
+    // Itération rapide en dev et dans les tests, où la base est recréée sans
+    // cesse. En production, c'est aux migrations de fabriquer le schéma : sans
+    // elles, `synchronize: false` démarrait contre une base vide et n'y créait
+    // jamais rien.
     synchronize: !isProduction,
+    migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+    migrationsTableName: MIGRATIONS_TABLE,
+    // Appliquées au démarrage, et seulement en production : ailleurs
+    // `synchronize` a déjà posé le schéma, et les deux se marcheraient dessus.
+    migrationsRun: isProduction,
     // Le log SQL est précieux en dev, illisible dans la sortie des tests.
     logging: !isProduction && !isTest,
   };
