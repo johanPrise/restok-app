@@ -2,11 +2,15 @@ import type { Item, ShoppingLine } from '@/types/api';
 import {
   checkedCount,
   checkedSummary,
+  countable,
   initial,
   itemsOnList,
   lineQuantity,
   missingFromList,
+  packsOf,
   splitLines,
+  suggestedQuantity,
+  suggestItems,
 } from './shopping-list';
 
 const line = (overrides: Partial<ShoppingLine> = {}): ShoppingLine => ({
@@ -20,6 +24,7 @@ const line = (overrides: Partial<ShoppingLine> = {}): ShoppingLine => ({
   unit: null,
   packSize: null,
   format: null,
+  trackingType: null,
   ...overrides,
 });
 
@@ -191,5 +196,106 @@ describe('missingFromList', () => {
 
   it('laisse en paix ce qui ne manque pas', () => {
     expect(missingFromList([item({ status: 'available' })], [])).toEqual([]);
+  });
+});
+
+describe('suggestItems', () => {
+  it("propose l'item de l'étagère qui répond à ce qu'on tape", () => {
+    const found = suggestItems([item({ name: 'Café' })], [], 'caf');
+
+    expect(found.map((i) => i.name)).toEqual(['Café']);
+  });
+
+  it('ne propose rien tant que le champ est vide', () => {
+    expect(suggestItems([item()], [], '   ')).toEqual([]);
+  });
+
+  it('écarte ce qui est déjà sur la liste — l’API le refuserait', () => {
+    const cafe = item({ id: 'a', name: 'Café' });
+
+    expect(suggestItems([cafe], [line({ itemId: 'a' })], 'caf')).toEqual([]);
+  });
+
+  it('ignore la casse, et cherche au milieu du nom', () => {
+    const found = suggestItems(
+      [item({ name: 'Papier toilette' })],
+      [],
+      'TOILET',
+    );
+
+    expect(found).toHaveLength(1);
+  });
+
+  it('s’arrête à trois : au-delà on lit une liste', () => {
+    const items = Array.from({ length: 6 }, (_, index) =>
+      item({ id: `item-${index}`, name: `Café ${index}` }),
+    );
+
+    expect(suggestItems(items, [], 'café')).toHaveLength(3);
+  });
+});
+
+describe('suggestedQuantity', () => {
+  it('propose de quoi refaire le plein, arrondi au paquet', () => {
+    // Cible 12, il en reste 6, par lots de 6 : un paquet.
+    expect(
+      suggestedQuantity(item({ quantity: 6, targetQuantity: 12, packSize: 6 })),
+    ).toBe(6);
+  });
+
+  it('monte au lot supérieur plutôt que de rester court', () => {
+    expect(
+      suggestedQuantity(item({ quantity: 0, targetQuantity: 10, packSize: 6 })),
+    ).toBe(12);
+  });
+
+  it('ne compte rien en suivi binaire', () => {
+    expect(
+      suggestedQuantity(item({ trackingType: 'threshold' })),
+    ).toBeUndefined();
+  });
+
+  it('propose au moins un paquet même quand le plein est atteint', () => {
+    expect(
+      suggestedQuantity(
+        item({ quantity: 12, targetQuantity: 12, packSize: 6 }),
+      ),
+    ).toBe(6);
+  });
+});
+
+describe('countable', () => {
+  it('laisse compter un item suivi en quantité', () => {
+    expect(countable(line({ trackingType: 'quantity' }))).toBe(true);
+  });
+
+  it('refuse de compter un item suivi en présence', () => {
+    // Le rachat y ignore la quantité : proposer de la saisir promettrait un
+    // effet qui n'aura pas lieu.
+    expect(countable(line({ trackingType: 'threshold' }))).toBe(false);
+  });
+
+  it('laisse compter une ligne libre, qui n’a pas d’item pour l’interdire', () => {
+    expect(countable(line({ trackingType: null }))).toBe(true);
+  });
+});
+
+describe('packsOf', () => {
+  it('compte en paquets quand l’item s’achète par lot', () => {
+    expect(packsOf(line({ quantity: 12, packSize: 6 }))).toBe(2);
+  });
+
+  it('compte en unités sans conditionnement', () => {
+    expect(packsOf(line({ quantity: 3 }))).toBe(3);
+  });
+
+  it('démarre à un quand la ligne ne dit pas de quantité', () => {
+    // Zéro voudrait dire « ne pas acheter » — ce n'est pas ce qu'on demande
+    // en ouvrant le compteur.
+    expect(packsOf(line({ quantity: null }))).toBe(1);
+  });
+
+  it('arrondit au paquet supérieur un compte qui ne tombe pas juste', () => {
+    expect(packsOf(line({ quantity: 7, packSize: 6 }))).toBe(2);
   });
 });

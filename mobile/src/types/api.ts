@@ -93,12 +93,13 @@ export interface ShoppingLine {
   unit: string | null;
   packSize: number | null;
   format: string | null;
+  /** `null` sur une ligne libre. Dit si compter veut dire quelque chose. */
+  trackingType: TrackingType | null;
 }
 
 /** Une ligne porte soit un item, soit un texte libre — jamais les deux. */
 export type AddShoppingLineInput =
-  | { itemId: string; quantity?: number }
-  | { label: string; quantity?: number };
+  { itemId: string; quantity?: number } | { label: string; quantity?: number };
 
 export interface HistoryEntry {
   id: string;

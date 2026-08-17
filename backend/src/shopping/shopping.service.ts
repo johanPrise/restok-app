@@ -79,6 +79,15 @@ export interface ShoppingLineView {
   unit: string | null;
   packSize: number | null;
   format: string | null;
+  /**
+   * Le mode de suivi de l'item, `null` sur une ligne libre.
+   *
+   * L'interface en a besoin pour savoir si préciser une quantité veut dire
+   * quelque chose : sur un item suivi en présence, le rachat ignore la
+   * quantité, et proposer de la saisir serait promettre un effet qui n'aura
+   * pas lieu.
+   */
+  trackingType: TrackingType | null;
 }
 
 @Injectable()
@@ -296,6 +305,7 @@ export class ShoppingService {
       unit: line.item?.unit ?? null,
       packSize: line.item?.packSize ?? null,
       format: line.item?.format ?? null,
+      trackingType: line.item?.trackingType ?? null,
     };
   }
 }

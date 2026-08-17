@@ -8,7 +8,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ApiError } from '@/api/client';
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
 import { useShoppingList } from '@/api/shopping';
@@ -20,6 +19,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { apiErrorMessage } from '@/lib/api-error';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
 import { itemsOnList } from '@/lib/shopping-list';
 import { useSession } from '@/store/session';
@@ -130,7 +130,7 @@ export default function Shelf() {
             n'a rien à corriger ; le second demande de relancer le backend. */}
         {items.isError && (
           <ErrorState
-            message={networkErrorMessage(items.error)}
+            message={apiErrorMessage(items.error)}
             onRetry={() => void items.refetch()}
           />
         )}
@@ -173,18 +173,6 @@ function summary(toRestock: number, total: number): string {
   if (toRestock === 0) return 'Tout est en stock';
 
   return `${toRestock} item${toRestock > 1 ? 's' : ''} à racheter`;
-}
-
-/**
- * `ApiError` porte un message du backend, lisible tel quel. Toute autre
- * erreur — `TypeError: Network request failed`, `Failed to fetch` — vient de
- * `fetch` lui-même, jamais du serveur : le dire clairement plutôt que
- * d'afficher le jargon réseau brut.
- */
-function networkErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
-
-  return "Le serveur ne répond pas. Vérifie qu'il est bien démarré.";
 }
 
 function ErrorState({

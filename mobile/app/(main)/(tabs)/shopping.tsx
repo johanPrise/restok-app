@@ -1,19 +1,20 @@
 import { useMemo, useState } from 'react';
 import {
   Alert,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
-import { ApiError } from '@/api/client';
 import { useItems } from '@/api/items';
 import {
   useAddShoppingLine,
   useCompleteShopping,
   useRefillShopping,
   useRemoveShoppingLine,
+  useSetShoppingLineQuantity,
   useShoppingList,
   useToggleShoppingLine,
 } from '@/api/shopping';
@@ -24,13 +25,18 @@ import { ShoppingRow } from '@/components/ShoppingRow';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { BasketIcon } from '@/components/icons';
+import { apiErrorMessage, latestFailure } from '@/lib/api-error';
 import {
   checkedCount,
   checkedSummary,
   missingFromList,
   splitLines,
+  suggestedQuantity,
+  suggestItems,
 } from '@/lib/shopping-list';
-import type { ShoppingLine } from '@/types/api';
+import { withUnit } from '@/lib/units';
+import type { Item, ShoppingLine } from '@/types/api';
 import {
   border,
   fontFamily,
@@ -50,10 +56,14 @@ export default function Shopping() {
   const items = useItems();
   const [draft, setDraft] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // Une seule ligne en correction à la fois : deux compteurs ouverts, et on ne
+  // sait plus lequel on ajuste.
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const add = useAddShoppingLine();
   const toggle = useToggleShoppingLine();
   const remove = useRemoveShoppingLine();
+  const setQuantity = useSetShoppingLineQuantity();
   const refill = useRefillShopping();
   const complete = useCompleteShopping();
 
@@ -62,13 +72,43 @@ export default function Shopping() {
   const checked = checkedCount(lines);
   const missing = missingFromList(items.data ?? [], lines);
 
+  /**
+   * Un geste qui échoue doit le dire. Cocher est *optimiste* : la ligne se
+   * décoche toute seule au refus du serveur, et sans ce message on croirait à
+   * un bug de l'appli plutôt qu'à un appel refusé.
+   */
+  const failure = latestFailure([
+    add,
+    toggle,
+    remove,
+    setQuantity,
+    refill,
+    complete,
+  ]);
+
   const label = draft.trim();
   const canAdd = label.length >= MIN_LABEL;
+  const suggestions = suggestItems(items.data ?? [], lines, draft);
 
   const submit = () => {
     if (!canAdd) return;
     setDraft('');
     add.mutate({ label });
+  };
+
+  /**
+   * Rattacher plutôt que dupliquer : une ligne libre « Café » disparaîtrait à
+   * la validation sans rien remettre en stock.
+   */
+  const addFromShelf = (item: Item) => {
+    setDraft('');
+    add.mutate({ itemId: item.id, quantity: suggestedQuantity(item) });
+  };
+
+  const commitQuantity = (line: ShoppingLine, units: number) => {
+    setEditingId(null);
+    if (units !== line.quantity)
+      setQuantity.mutate({ id: line.id, quantity: units });
   };
 
   const confirmRemove = (line: ShoppingLine) =>
@@ -102,6 +142,10 @@ export default function Shopping() {
                 toggle.mutate({ id: line.id, checked: !line.checked })
               }
               onRemove={() => confirmRemove(line)}
+              editing={editingId === line.id}
+              onEdit={() => setEditingId(line.id)}
+              onCancelEdit={() => setEditingId(null)}
+              onQuantity={(units) => commitQuantity(line, units)}
             />
           ))}
       </View>
@@ -135,7 +179,7 @@ export default function Shopping() {
             chose : la première propose de la remplir, le second de réessayer. */}
         {shopping.isError && (
           <ErrorState
-            message={networkErrorMessage(shopping.error)}
+            message={apiErrorMessage(shopping.error)}
             onRetry={() => void shopping.refetch()}
           />
         )}
@@ -167,6 +211,25 @@ export default function Shopping() {
       {/* Les deux actions restent sous le pouce quelle que soit la longueur de
           la liste : au magasin, on ne fait pas défiler pour valider. */}
       <View style={[styles.footer, { borderTopColor: colors.thread }]}>
+        {failure !== null && (
+          <Text variant="caption" color="rustClay">
+            {failure}
+          </Text>
+        )}
+
+        {/* Au-dessus du champ, pas en dessous : le clavier occupe le bas. */}
+        {suggestions.length > 0 && (
+          <View style={styles.suggestions}>
+            {suggestions.map((item) => (
+              <Suggestion
+                key={item.id}
+                item={item}
+                onPress={() => addFromShelf(item)}
+              />
+            ))}
+          </View>
+        )}
+
         <View style={styles.addRow}>
           <TextInput
             value={draft}
@@ -205,6 +268,40 @@ export default function Shopping() {
   );
 }
 
+/**
+ * Un item de l'étagère proposé pendant la frappe. Il annonce ce qu'il ajoutera
+ * — sinon on ne saurait pas ce qui distingue ce choix du texte qu'on tape.
+ */
+function Suggestion({
+  item,
+  onPress,
+}: Readonly<{ item: Item; onPress: () => void }>) {
+  const { colors } = useTheme();
+  const units = suggestedQuantity(item);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Ajouter ${item.name} depuis l'étagère`}
+      onPress={onPress}
+      style={[
+        styles.suggestion,
+        { backgroundColor: colors.paperRaised, borderColor: colors.thread },
+      ]}
+    >
+      <BasketIcon color={colors.inkSoft} size={14} />
+      <Text variant="body" numberOfLines={1} style={styles.suggestionName}>
+        {item.name}
+      </Text>
+      {units !== undefined && (
+        <Text variant="mono" color="inkSoft">
+          {withUnit(item, units)}
+        </Text>
+      )}
+    </Pressable>
+  );
+}
+
 function EmptyState({
   missing,
   loading,
@@ -233,16 +330,6 @@ function EmptyState({
       )}
     </TagCard>
   );
-}
-
-/**
- * `ApiError` porte un message du backend, lisible tel quel. Toute autre erreur
- * vient de `fetch` lui-même, jamais du serveur.
- */
-function networkErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
-
-  return "Le serveur ne répond pas. Vérifie qu'il est bien démarré.";
 }
 
 function ErrorState({
@@ -277,6 +364,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  suggestions: { gap: spacing.xs },
+  suggestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minHeight: MIN_TOUCH_TARGET,
+    paddingHorizontal: spacing.sm,
+    borderWidth: border.hairline,
+    borderRadius: radius.button,
+  },
+  suggestionName: { flex: 1 },
   input: {
     flex: 1,
     minHeight: MIN_TOUCH_TARGET,

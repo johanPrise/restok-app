@@ -54,6 +54,7 @@ describe('Shopping (e2e)', () => {
         unit: 'rouleau',
         packSize: 6,
         format: '×6',
+        trackingType: 'quantity',
       });
     });
 
@@ -64,6 +65,9 @@ describe('Shopping (e2e)', () => {
         itemId: null,
         name: 'Pain',
         quantity: null,
+        // Une ligne libre ne suit rien : préciser une quantité y reste
+        // pourtant permis, c'est l'item qui déciderait du contraire.
+        trackingType: null,
       });
     });
 

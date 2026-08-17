@@ -1,5 +1,11 @@
 import type { Item, ShoppingLine } from '@/types/api';
-import { hasPacks, packSummary, withUnit } from './units';
+import {
+  defaultRestockPacks,
+  hasPacks,
+  packSummary,
+  unitsInPacks,
+  withUnit,
+} from './units';
 
 /**
  * Les deux sections de la maquette : ce qui vient de l'étagère, et ce qu'on a
@@ -54,6 +60,33 @@ export function lineQuantity(line: ShoppingLine): string | null {
 }
 
 /**
+ * Une quantité a-t-elle un sens sur cette ligne ?
+ *
+ * Sur un item suivi en présence, le rachat ignore la quantité : proposer de la
+ * saisir promettrait un effet qui n'aura pas lieu. Une ligne libre, elle, n'a
+ * pas d'item pour lui interdire quoi que ce soit — « deux paquets de chips »
+ * est une chose parfaitement dicible.
+ */
+export function countable(line: ShoppingLine): boolean {
+  return line.trackingType !== 'threshold';
+}
+
+/**
+ * Ce que le compteur affiche quand on corrige une ligne : des **paquets** si
+ * l'item s'achète par lot, des unités sinon. C'est l'unité dans laquelle on
+ * attrape les choses au rayon.
+ *
+ * Une ligne sans quantité démarre à un — il faut bien partir de quelque part,
+ * et zéro voudrait dire « ne pas acheter ».
+ */
+export function packsOf(line: ShoppingLine): number {
+  const quantity = line.quantity ?? 1;
+  if (!hasPacks(line)) return quantity;
+
+  return Math.max(Math.ceil(quantity / (line.packSize ?? 1)), 1);
+}
+
+/**
  * L'initiale de qui a coché, pour la pastille.
  *
  * Sur un nom vide — le serveur renvoie `null` quand le compte a disparu —
@@ -73,6 +106,52 @@ export function itemsOnList(lines: readonly ShoppingLine[]): Set<string> {
   return new Set(
     lines.map((line) => line.itemId).filter((id): id is string => id !== null),
   );
+}
+
+/** Ce qu'on propose au-dessus du champ d'ajout. Trois : au-delà, on lit une liste. */
+const MAX_SUGGESTIONS = 3;
+
+/**
+ * Les items de l'étagère qui répondent à ce qu'on est en train de taper.
+ *
+ * Sans ça, écrire « Café » crée une ligne libre homonyme : elle disparaîtra à
+ * la validation sans rien remettre en stock, et l'étagère restera à zéro. La
+ * suggestion est donc le seul moyen de rattacher ce qu'on tape à ce que le
+ * groupe suit vraiment.
+ *
+ * Ce qui est déjà sur la liste n'est pas proposé — l'API le refuserait (409),
+ * et proposer une action qui échoue est pire que ne rien proposer.
+ */
+export function suggestItems(
+  items: readonly Item[],
+  lines: readonly ShoppingLine[],
+  query: string,
+): Item[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+
+  const already = itemsOnList(lines);
+
+  return items
+    .filter(
+      (item) =>
+        !already.has(item.id) && item.name.toLowerCase().includes(needle),
+    )
+    .slice(0, MAX_SUGGESTIONS);
+}
+
+/**
+ * Combien d'unités proposer en mettant un item sur la liste : de quoi refaire
+ * le plein, arrondi au paquet. Même calcul que le serveur au versement — les
+ * deux chemins doivent proposer la même chose, sinon le pré-remplissage dépend
+ * de la porte par laquelle on est entré.
+ *
+ * `undefined` en suivi binaire : il n'y a rien à compter.
+ */
+export function suggestedQuantity(item: Item): number | undefined {
+  if (item.trackingType !== 'quantity') return undefined;
+
+  return unitsInPacks(item, defaultRestockPacks(item));
 }
 
 /**
