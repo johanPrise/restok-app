@@ -60,7 +60,7 @@ export default function Shelf() {
   ).length;
 
   const headerSummary = items.isError
-    ? 'Connexion au serveur impossible'
+    ? 'Étagère non chargée'
     : summary(toRestock, items.data?.length ?? 0);
   const headerSummaryColor =
     items.isError || toRestock > 0 ? 'rustClay' : 'inkSoft';
@@ -181,8 +181,10 @@ function ErrorState({
 }: Readonly<{ message: string; onRetry: () => void }>) {
   return (
     <View style={styles.empty}>
+      {/* Le titre nomme ce que la personne voit — une étagère vide d'un coup —
+          et non la panne technique qui l'a causée. */}
       <Text variant="tagName" color="rustClay" style={styles.emptyTitle}>
-        Connexion impossible
+        Étagère indisponible
       </Text>
       <Text variant="body" color="inkSoft" style={styles.emptyBody}>
         {message}

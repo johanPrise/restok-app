@@ -46,7 +46,14 @@ export function canTransition(from: ItemStatus, to: ItemStatus): boolean {
 
 export function assertTransition(from: ItemStatus, to: ItemStatus): void {
   if (!canTransition(from, to)) {
-    throw new ConflictException(`Transition interdite : ${from} → ${to}`);
+    // Le client affiche `message` tel quel : « Transition interdite :
+    // available → to_restock » n'apprend rien à qui range ses courses, et
+    // expose les noms de nos états. Le détail part dans `cause`, que les logs
+    // gardent et que la réponse HTTP n'emporte pas.
+    throw new ConflictException(
+      'Cet item a changé entre-temps. Rafraîchis pour voir où il en est.',
+      { cause: `Transition interdite : ${from} → ${to}` },
+    );
   }
 }
 

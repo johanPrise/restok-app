@@ -1,3 +1,4 @@
+import { useMutationState } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import {
   Alert,
@@ -9,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useItems } from '@/api/items';
+import { useIsOnline } from '@/api/network';
 import {
   useAddShoppingLine,
   useCompleteShopping,
@@ -27,6 +29,7 @@ import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { BasketIcon } from '@/components/icons';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
+import { completeBlockedReason, offlineNotice } from '@/lib/offline';
 import {
   checkedCount,
   checkedSummary,
@@ -54,6 +57,12 @@ export default function Shopping() {
   const { colors } = useTheme();
   const shopping = useShoppingList();
   const items = useItems();
+  const online = useIsOnline();
+  // Les gestes que la bibliothèque a mis en pause faute de réseau. Ils
+  // repartiront seuls — encore faut-il le dire.
+  const paused = useMutationState({
+    filters: { predicate: (mutation) => mutation.state.isPaused },
+  }).length;
   const [draft, setDraft] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   // Une seule ligne en correction à la fois : deux compteurs ouverts, et on ne
@@ -85,6 +94,9 @@ export default function Shopping() {
     refill,
     complete,
   ]);
+
+  const notice = offlineNotice(online, paused);
+  const blocked = completeBlockedReason(online);
 
   const label = draft.trim();
   const canAdd = label.length >= MIN_LABEL;
@@ -156,7 +168,7 @@ export default function Shopping() {
       <View style={styles.header}>
         <Text variant="display">Courses</Text>
         <Text variant="monoLabel" color="inkSoft">
-          {shopping.isError ? 'Liste indisponible' : checkedSummary(lines)}
+          {shopping.isError ? 'Liste non chargée' : checkedSummary(lines)}
         </Text>
       </View>
 
@@ -188,6 +200,7 @@ export default function Shopping() {
           <EmptyState
             missing={missing.length}
             loading={refill.isPending}
+            online={online}
             onRefill={() => refill.mutate()}
           />
         )}
@@ -200,6 +213,7 @@ export default function Shopping() {
             variant="secondary"
             label={`Récupérer ${missing.length} item${missing.length > 1 ? 's' : ''} à racheter`}
             loading={refill.isPending}
+            disabled={!online}
             onPress={() => refill.mutate()}
           />
         )}
@@ -211,7 +225,15 @@ export default function Shopping() {
       {/* Les deux actions restent sous le pouce quelle que soit la longueur de
           la liste : au magasin, on ne fait pas défiler pour valider. */}
       <View style={[styles.footer, { borderTopColor: colors.thread }]}>
-        {failure !== null && (
+        {/* Le hors-ligne passe avant l'erreur : un geste qui échoue parce que
+            le réseau est coupé n'a pas à se raconter deux fois. */}
+        {notice !== null && (
+          <Text variant="caption" color="mustard">
+            {notice}
+          </Text>
+        )}
+
+        {notice === null && failure !== null && (
           <Text variant="caption" color="rustClay">
             {failure}
           </Text>
@@ -257,9 +279,17 @@ export default function Shopping() {
           />
         </View>
 
+        {/* Répondre au « pourquoi est-il gris ? », et seulement quand la
+            question se pose — c'est-à-dire quand il y a de quoi valider. */}
+        {blocked !== null && checked > 0 && (
+          <Text variant="caption" color="inkSoft">
+            {blocked}
+          </Text>
+        )}
+
         <Button
           label="J’ai fait les courses"
-          disabled={checked === 0}
+          disabled={checked === 0 || blocked !== null}
           loading={complete.isPending}
           onPress={() => complete.mutate()}
         />
@@ -305,8 +335,14 @@ function Suggestion({
 function EmptyState({
   missing,
   loading,
+  online,
   onRefill,
-}: Readonly<{ missing: number; loading: boolean; onRefill: () => void }>) {
+}: Readonly<{
+  missing: number;
+  loading: boolean;
+  online: boolean;
+  onRefill: () => void;
+}>) {
   return (
     <TagCard style={styles.empty}>
       <Text variant="tagName" color="inkSoft" style={styles.centered}>
@@ -324,6 +360,9 @@ function EmptyState({
           variant="secondary"
           label="Récupérer ce qui est à racheter"
           loading={loading}
+          // Le versement se calcule côté serveur, sur l'état du stock à
+          // l'instant de l'appel : il n'y a rien à mettre en file.
+          disabled={!online}
           onPress={onRefill}
           style={styles.emptyAction}
         />
@@ -339,7 +378,7 @@ function ErrorState({
   return (
     <View style={styles.error}>
       <Text variant="tagName" color="rustClay" style={styles.centered}>
-        Connexion impossible
+        Liste indisponible
       </Text>
       <Text variant="body" color="inkSoft" style={styles.centered}>
         {message}

@@ -1,5 +1,6 @@
 import { useSession } from '@/store/session';
 import { ApiError, apiRequest, RequestOptions } from './client';
+import { purgePersistedCache } from './persist';
 import { queryClient } from './query-client';
 
 /**
@@ -36,6 +37,8 @@ async function reconcileSession(error: ApiError): Promise<void> {
     // prochain à se connecter voyait l'étagère du précédent le temps d'un
     // refetch — `staleTime` la tient trente secondes.
     queryClient.clear();
+    // Et sur disque, où elle survivrait maintenant au redémarrage.
+    purgePersistedCache();
     return;
   }
 
@@ -44,5 +47,6 @@ async function reconcileSession(error: ApiError): Promise<void> {
     // Idem pour un membre retiré de son groupe : les items, l'historique et la
     // liste des membres ne le regardent plus.
     queryClient.clear();
+    purgePersistedCache();
   }
 }

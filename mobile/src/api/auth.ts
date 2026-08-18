@@ -3,6 +3,7 @@ import { useSession } from '@/store/session';
 import type { AuthResponse, MemberSummary } from '@/types/api';
 import { authedRequest } from './authed';
 import { apiRequest } from './client';
+import { purgePersistedCache } from './persist';
 import { queryKeys } from './query-client';
 
 interface RegisterInput {
@@ -80,7 +81,9 @@ export function useSignOut() {
   return async () => {
     await signOut();
     // Sans ça, le prochain compte connecté verrait un instant l'étagère du
-    // précédent.
+    // précédent — et depuis que le cache va sur disque, il la reverrait même
+    // après un redémarrage.
     queryClient.clear();
+    purgePersistedCache();
   };
 }

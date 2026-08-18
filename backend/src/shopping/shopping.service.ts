@@ -125,8 +125,11 @@ export class ShoppingService {
     // Une ligne est soit le prolongement d'un item, soit du texte libre. Les
     // deux à la fois laisserait deux noms concurrents sur la même ligne.
     if (hasItem === hasLabel) {
+      // Ce cas ne vient jamais de l'app, qui n'offre pas de l'atteindre — mais
+      // le message part quand même à l'écran si elle change. On décrit donc ce
+      // qu'il faut faire, pas le contrat de la route.
       throw new BadRequestException(
-        'Une ligne porte soit un item de l’étagère, soit un texte libre',
+        'Choisis un item de l’étagère, ou écris ce que tu veux acheter.',
       );
     }
 

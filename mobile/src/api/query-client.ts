@@ -1,7 +1,17 @@
 import { QueryClient } from '@tanstack/react-query';
+import type { AddShoppingLineInput, ShoppingLine } from '@/types/api';
+import { authedRequest } from './authed';
 import { ApiError } from './client';
+import { mutationKeys } from './mutation-keys';
 
 const MAX_RETRIES = 2;
+
+/**
+ * Un jour. C'est `gcTime` qui décide de ce qui vaut la peine d'être écrit sur
+ * disque : une entrée ramassée en cinq minutes ne survivrait pas à la
+ * fermeture de l'app, et le cache persistant ne servirait à rien.
+ */
+const DISK_LIFETIME = 1000 * 60 * 60 * 24;
 
 export const queryKeys = {
   group: ['group'] as const,
@@ -29,10 +39,109 @@ function createQueryClient(): QueryClient {
           return failureCount < MAX_RETRIES;
         },
         staleTime: 30_000,
+        gcTime: DISK_LIFETIME,
       },
       mutations: { retry: false },
     },
   });
+}
+
+/**
+ * Les gestes rejouables déclarés hors de tout composant.
+ *
+ * Une mutation reprise après un redémarrage n'a plus de composant pour lui
+ * fournir sa fonction : elle ne retrouve que ce qui est enregistré ici. Les
+ * callbacks ferment sur le `queryClient` singleton plutôt que de compter sur un
+ * contexte de rendu, pour la même raison.
+ */
+interface ToggleInput {
+  id: string;
+  checked: boolean;
+}
+
+interface QuantityInput {
+  id: string;
+  quantity: number;
+}
+
+/** Ce que `onMutate` met de côté pour pouvoir revenir en arrière. */
+interface Rollback {
+  previous?: ShoppingLine[];
+}
+
+function registerResumableMutations(client: QueryClient): void {
+  client.setMutationDefaults<ShoppingLine, Error, AddShoppingLineInput>(
+    mutationKeys.addShoppingLine,
+    {
+      mutationFn: (input) =>
+        authedRequest<ShoppingLine>('/shopping', {
+          method: 'POST',
+          body: input,
+        }),
+      onSuccess: () => {
+        void client.invalidateQueries({ queryKey: queryKeys.shopping });
+      },
+    },
+  );
+
+  client.setMutationDefaults<ShoppingLine, Error, ToggleInput, Rollback>(
+    mutationKeys.toggleShoppingLine,
+    {
+      mutationFn: ({ id, checked }) =>
+        authedRequest<ShoppingLine>(`/shopping/${id}`, {
+          method: 'PATCH',
+          body: { checked },
+        }),
+      // Cocher est le geste du magasin, et le seul qui parte en rafale : il
+      // doit répondre au doigt, pas au réseau.
+      onMutate: async ({ id, checked }) => {
+        // Un refetch déjà en vol écraserait la bascule avec l'état d'avant.
+        await client.cancelQueries({ queryKey: queryKeys.shopping });
+        const previous = client.getQueryData<ShoppingLine[]>(
+          queryKeys.shopping,
+        );
+
+        client.setQueryData<ShoppingLine[]>(queryKeys.shopping, (lines) =>
+          lines?.map((line) => (line.id === id ? { ...line, checked } : line)),
+        );
+
+        return { previous };
+      },
+      onError: (_error, _input, context) => {
+        if (context?.previous) {
+          client.setQueryData(queryKeys.shopping, context.previous);
+        }
+      },
+      onSettled: () => {
+        void client.invalidateQueries({ queryKey: queryKeys.shopping });
+      },
+    },
+  );
+
+  client.setMutationDefaults<ShoppingLine, Error, QuantityInput>(
+    mutationKeys.setShoppingLineQuantity,
+    {
+      mutationFn: ({ id, quantity }) =>
+        authedRequest<ShoppingLine>(`/shopping/${id}`, {
+          method: 'PATCH',
+          body: { quantity },
+        }),
+      onSuccess: () => {
+        void client.invalidateQueries({ queryKey: queryKeys.shopping });
+      },
+    },
+  );
+
+  client.setMutationDefaults<void, Error, string>(
+    mutationKeys.removeShoppingLine,
+    {
+      mutationFn: (id) =>
+        authedRequest<void>(`/shopping/${id}`, { method: 'DELETE' }),
+      onSuccess: () => {
+        void client.invalidateQueries({ queryKey: queryKeys.shopping });
+      },
+    },
+  );
 }
 
 /**
@@ -44,3 +153,5 @@ function createQueryClient(): QueryClient {
  * précédent en mémoire, visible par le suivant le temps d'un refetch.
  */
 export const queryClient = createQueryClient();
+
+registerResumableMutations(queryClient);

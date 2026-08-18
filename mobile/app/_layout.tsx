@@ -1,4 +1,4 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { trackNetwork } from '@/api/network';
+import { persistOptions } from '@/api/persist';
 import { queryClient } from '@/api/query-client';
 import { useNotificationSync } from '@/lib/useNotificationSync';
 import { useSession } from '@/store/session';
@@ -15,6 +17,10 @@ import { appFonts } from '@/theme/fonts';
 // Le splash reste visible tant que les polices ne sont pas prêtes : sans ça
 // l'app affiche un premier rendu en police système, puis saute.
 void SplashScreen.preventAutoHideAsync();
+
+// Au chargement du module, pas dans un effet : une requête partie avant le
+// premier rendu doit déjà savoir s'il y a du réseau.
+trackNetwork();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(appFonts);
@@ -42,12 +48,24 @@ export default function RootLayout() {
     // `GestureHandlerRootView` doit envelopper toute l'app : sans lui, les
     // gestes des tags ne reçoivent jamais d'événement sur Android.
     <GestureHandlerRootView style={styles.root}>
-      <QueryClientProvider client={queryClient}>
+      {/* Le cache est restauré depuis le disque avant le premier rendu : au
+          fond d'un rayon, rouvrir l'app ne doit pas exiger du réseau pour
+          revoir sa liste. */}
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={persistOptions}
+        onSuccess={() => {
+          // Une fois la restauration faite : ce qui attendait hors-ligne
+          // repart. Sans cet appel, les gestes mis en pause avant la fermeture
+          // resteraient en pause pour toujours.
+          void queryClient.resumePausedMutations();
+        }}
+      >
         <SafeAreaProvider>
           <StatusBar style="auto" />
           <NavigationTree />
         </SafeAreaProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   );
 }

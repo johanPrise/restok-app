@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/store/session';
 import type { AddShoppingLineInput, ShoppingLine } from '@/types/api';
 import { authedRequest } from './authed';
+import { mutationKeys } from './mutation-keys';
 import { queryKeys } from './query-client';
 
 export function useShoppingList() {
@@ -14,94 +15,51 @@ export function useShoppingList() {
   });
 }
 
-function useInvalidateShopping() {
-  const queryClient = useQueryClient();
-
-  return () => queryClient.invalidateQueries({ queryKey: queryKeys.shopping });
-}
-
+/**
+ * Les quatre gestes de ligne ne portent qu'une clé : leur définition vit dans
+ * `query-client`, hors de tout composant, pour qu'une mutation mise en pause
+ * hors-ligne puisse repartir après un redémarrage — un composant démonté ne
+ * peut plus fournir sa fonction.
+ */
+// Les paramètres de type sont répétés ici : `useMutation` ne va pas les lire
+// dans les défauts, et sans eux les appelants passeraient n'importe quoi.
 export function useAddShoppingLine() {
-  const invalidate = useInvalidateShopping();
-
-  return useMutation({
-    mutationFn: (input: AddShoppingLineInput) =>
-      authedRequest<ShoppingLine>('/shopping', { method: 'POST', body: input }),
-    onSuccess: () => void invalidate(),
+  return useMutation<ShoppingLine, Error, AddShoppingLineInput>({
+    mutationKey: mutationKeys.addShoppingLine,
   });
 }
 
-/**
- * Cocher est le geste du magasin, et le seul qui parte en rafale : il doit
- * répondre au doigt, pas au réseau. La ligne bascule donc dans le cache
- * **avant** l'aller-retour, et revient en arrière si le serveur refuse.
- *
- * `cancelQueries` d'abord : un refetch déjà en vol écraserait la bascule avec
- * l'état d'avant en arrivant après elle.
- */
 export function useToggleShoppingLine() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, checked }: { id: string; checked: boolean }) =>
-      authedRequest<ShoppingLine>(`/shopping/${id}`, {
-        method: 'PATCH',
-        body: { checked },
-      }),
-    onMutate: async ({ id, checked }) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.shopping });
-      const previous = queryClient.getQueryData<ShoppingLine[]>(
-        queryKeys.shopping,
-      );
-
-      queryClient.setQueryData<ShoppingLine[]>(queryKeys.shopping, (lines) =>
-        lines?.map((line) => (line.id === id ? { ...line, checked } : line)),
-      );
-
-      return { previous };
-    },
-    onError: (_error, _input, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.shopping, context.previous);
-      }
-    },
-    // Dans les deux cas : c'est le serveur qui dit qui a coché et quand.
-    onSettled: () =>
-      void queryClient.invalidateQueries({ queryKey: queryKeys.shopping }),
+  return useMutation<ShoppingLine, Error, { id: string; checked: boolean }>({
+    mutationKey: mutationKeys.toggleShoppingLine,
   });
 }
 
 export function useSetShoppingLineQuantity() {
-  const invalidate = useInvalidateShopping();
-
-  return useMutation({
-    mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
-      authedRequest<ShoppingLine>(`/shopping/${id}`, {
-        method: 'PATCH',
-        body: { quantity },
-      }),
-    onSuccess: () => void invalidate(),
+  return useMutation<ShoppingLine, Error, { id: string; quantity: number }>({
+    mutationKey: mutationKeys.setShoppingLineQuantity,
   });
 }
 
 export function useRemoveShoppingLine() {
-  const invalidate = useInvalidateShopping();
-
-  return useMutation({
-    mutationFn: (id: string) =>
-      authedRequest<void>(`/shopping/${id}`, { method: 'DELETE' }),
-    onSuccess: () => void invalidate(),
+  return useMutation<void, Error, string>({
+    mutationKey: mutationKeys.removeShoppingLine,
   });
 }
 
 /**
- * Verse dans la liste ce que l'étagère réclame. Le serveur renvoie la liste
- * entière : on la pose telle quelle plutôt que de relancer une requête pour
- * lire ce qu'on vient de recevoir.
+ * Verse dans la liste ce que l'étagère réclame.
+ *
+ * Sans clé, donc jamais reprise après coup : elle calcule ce qui manque **au
+ * moment de l'appel**. Différée d'une heure, elle verserait un état qui n'est
+ * plus le bon. `networkMode: 'always'` pour qu'elle échoue franchement hors
+ * réseau au lieu d'attendre en silence.
  */
 export function useRefillShopping() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: () =>
       authedRequest<ShoppingLine[]>('/shopping/refill', { method: 'POST' }),
     onSuccess: (lines) => queryClient.setQueryData(queryKeys.shopping, lines),
@@ -109,18 +67,23 @@ export function useRefillShopping() {
 }
 
 /**
- * Les lignes cochées deviennent des rachats. L'étagère change donc aussi, et
- * c'est même tout l'intérêt : sans cette invalidation, on rentre du magasin et
- * le stock affiche encore la veille.
+ * Les lignes cochées deviennent des rachats.
+ *
+ * **Jamais** mise en file. C'est une incrémentation qui écrit dans le stock et
+ * dans le journal : rejouée après coup, elle double l'inventaire, et le journal
+ * jure que c'est vrai. L'écran la refuse hors-ligne, et l'absence de clé
+ * garantit qu'aucune reprise automatique ne la ressuscitera.
  */
 export function useCompleteShopping() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: () =>
       authedRequest<ShoppingLine[]>('/shopping/complete', { method: 'POST' }),
     onSuccess: (lines) => {
       queryClient.setQueryData(queryKeys.shopping, lines);
+      // L'étagère change aussi, et c'est tout l'intérêt.
       void queryClient.invalidateQueries({ queryKey: queryKeys.items });
     },
   });
