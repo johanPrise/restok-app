@@ -18,7 +18,12 @@ const UNAVAILABLE_REASONS = {
   'expo-go':
     "Expo Go ne reçoit pas les notifications — il faudra l'app compilée.",
   simulator: 'Un simulateur ne reçoit pas de notifications.',
-  'no-project-id': 'Configuration de projet incomplète.',
+  // Une app mal configurée à la compilation : la personne devant l'écran n'y
+  // peut rien, et « projectId » ne lui dirait rien. On dit ce qu'elle observe
+  // — ça ne marchera pas ici — et on ne l'envoie pas chercher un réglage qui
+  // n'existe pas de son côté.
+  'no-project-id':
+    'Les notifications ne sont pas disponibles dans cette version de l’app.',
 } as const;
 
 export default function NotificationsStep() {

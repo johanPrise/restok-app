@@ -69,9 +69,20 @@ describe('state machine des items', () => {
       expect(() => assertTransition(TO_RESTOCK, AVAILABLE)).not.toThrow();
     });
 
-    it('nomme les deux états dans le message', () => {
-      expect(() => assertTransition(TO_RESTOCK, OUT_OF_STOCK)).toThrow(
-        'to_restock → out_of_stock',
+    it('garde les deux états dans la cause, pas dans le message', () => {
+      // Le message part au client tel quel : il doit parler à quelqu'un qui
+      // range ses courses. Les noms d'états servent au diagnostic, et restent
+      // dans la cause, que la réponse HTTP n'emporte pas.
+      let thrown: unknown;
+      try {
+        assertTransition(TO_RESTOCK, OUT_OF_STOCK);
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect((thrown as Error).message).not.toMatch(/to_restock|out_of_stock/);
+      expect((thrown as Error).cause).toBe(
+        'Transition interdite : to_restock → out_of_stock',
       );
     });
   });
