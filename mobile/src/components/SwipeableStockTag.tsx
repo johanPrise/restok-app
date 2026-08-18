@@ -41,6 +41,8 @@ import { Text } from './Text';
 interface SwipeableStockTagProps {
   item: Item;
   onPress?: () => void;
+  /** Déjà sur la liste de courses — voir `StockTag`. */
+  onList?: boolean;
   /**
    * Le décrochage raconte le départ du tag vers « À racheter ». Sur l'écran de
    * détail il n'a nulle part où aller : le laisser jouer ferait disparaître le
@@ -70,6 +72,7 @@ const UNHOOK_LIFT = { damping: 9, stiffness: 200 };
 export function SwipeableStockTag({
   item,
   onPress,
+  onList = false,
   unhookOnEmpty = true,
 }: Readonly<SwipeableStockTagProps>) {
   const { colors } = useTheme();
@@ -309,6 +312,7 @@ export function SwipeableStockTag({
           <StockTag
             item={item}
             onPress={handlePress}
+            onList={onList}
             level={level}
             accessibilityHint={takeHint}
             accessibilityActions={[

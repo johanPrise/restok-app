@@ -8,9 +8,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ApiError } from '@/api/client';
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
+import { useShoppingList } from '@/api/shopping';
 import { Button } from '@/components/Button';
 import { EditableGroupName } from '@/components/EditableGroupName';
 import { FAB_SIZE } from '@/components/Fab';
@@ -19,7 +19,9 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { apiErrorMessage } from '@/lib/api-error';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
+import { itemsOnList } from '@/lib/shopping-list';
 import { useSession } from '@/store/session';
 import {
   border,
@@ -36,9 +38,17 @@ export default function Shelf() {
   const { colors } = useTheme();
   const group = useGroup();
   const items = useItems();
+  const shopping = useShoppingList();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  // Croisé ici plutôt que renvoyé par `GET /items` : les deux listes sont déjà
+  // en cache, et l'étagère reste ignorante des courses côté serveur.
+  const onList = useMemo(
+    () => itemsOnList(shopping.data ?? []),
+    [shopping.data],
+  );
 
   const sections = useMemo(
     () => groupByUrgency(searchItems(items.data ?? [], query)),
@@ -120,7 +130,7 @@ export default function Shelf() {
             n'a rien à corriger ; le second demande de relancer le backend. */}
         {items.isError && (
           <ErrorState
-            message={networkErrorMessage(items.error)}
+            message={apiErrorMessage(items.error)}
             onRetry={() => void items.refetch()}
           />
         )}
@@ -146,6 +156,7 @@ export default function Shelf() {
                 <SwipeableStockTag
                   key={item.id}
                   item={item}
+                  onList={onList.has(item.id)}
                   onPress={() => router.push(`/items/${item.id}`)}
                 />
               ))}
@@ -162,18 +173,6 @@ function summary(toRestock: number, total: number): string {
   if (toRestock === 0) return 'Tout est en stock';
 
   return `${toRestock} item${toRestock > 1 ? 's' : ''} à racheter`;
-}
-
-/**
- * `ApiError` porte un message du backend, lisible tel quel. Toute autre
- * erreur — `TypeError: Network request failed`, `Failed to fetch` — vient de
- * `fetch` lui-même, jamais du serveur : le dire clairement plutôt que
- * d'afficher le jargon réseau brut.
- */
-function networkErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
-
-  return "Le serveur ne répond pas. Vérifie qu'il est bien démarré.";
 }
 
 function ErrorState({

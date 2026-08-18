@@ -12,6 +12,7 @@ import { fillPercent, fillRatio } from '@/lib/stock';
 import { statusBadge, statusColor, tagMeta } from '@/lib/item-display';
 import { border, gauge, motion, radius, spacing, useTheme } from '@/theme';
 import type { Item } from '@/types/api';
+import { BasketIcon } from './icons';
 import { Text } from './Text';
 
 interface StockTagProps extends Pick<
@@ -20,6 +21,12 @@ interface StockTagProps extends Pick<
 > {
   item: Item;
   onPress?: () => void;
+  /**
+   * Déjà sur la liste de courses. Calculé côté client en croisant les deux
+   * listes déjà en cache : l'étagère n'a pas à savoir que les courses
+   * existent.
+   */
+  onList?: boolean;
   /**
    * Remplissage piloté de l'extérieur — la jauge suit le doigt pendant un
    * geste. Sans lui le tag anime son propre niveau sur les données.
@@ -41,6 +48,7 @@ interface StockTagProps extends Pick<
 export function StockTag({
   item,
   onPress,
+  onList = false,
   level,
   ...accessibility
 }: Readonly<StockTagProps>) {
@@ -78,7 +86,9 @@ export function StockTag({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${item.name}${badge ? `, ${badge}` : ''}`}
+      accessibilityLabel={`${item.name}${badge ? `, ${badge}` : ''}${
+        onList ? ', déjà sur la liste de courses' : ''
+      }`}
       onPress={onPress}
       {...accessibility}
       style={[
@@ -105,6 +115,10 @@ export function StockTag({
         <Text variant="tagName" style={styles.name} numberOfLines={2}>
           {item.name}
         </Text>
+        {/* Un panier discret plutôt qu'un second badge : le statut garde son
+            emplacement, et « déjà sur la liste » n'est pas un statut de stock —
+            il ne prend donc aucune couleur du §1. */}
+        {onList && <BasketIcon color={colors.inkSoft} size={14} />}
         {badge !== null && (
           <View style={[styles.badge, { backgroundColor: accent }]}>
             <Text variant="monoLabel" color="paperRaised">

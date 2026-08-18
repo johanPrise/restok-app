@@ -18,6 +18,11 @@ export const radius = {
   chrome: 24,
   /** Un élément **dans** la chrome — une pastille d'onglet. */
   chromeItem: 16,
+  /**
+   * La case à cocher des courses. Plus carrée que `button` : à 24px, le rayon
+   * des boutons la fait lire comme une pastille, et une pastille se coche mal.
+   */
+  checkbox: 4,
   full: 999,
 } as const;
 
