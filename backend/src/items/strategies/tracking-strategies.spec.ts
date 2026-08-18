@@ -68,12 +68,21 @@ describe('QuantityTrackingStrategy', () => {
   const strategy = new QuantityTrackingStrategy();
 
   describe('prise', () => {
-    it('décrémente de 1', () => {
+    it('retire une unité par défaut', () => {
       expect(
         strategy.computeNext(buildItem({ quantity: 5 }), {
           type: ActionType.TAKEN,
         }),
-      ).toEqual({ status: ItemStatus.AVAILABLE, quantity: 4 });
+      ).toEqual({ status: ItemStatus.AVAILABLE, quantity: 4, moved: 1 });
+    });
+
+    it('retire ce qu’on lui demande', () => {
+      expect(
+        strategy.computeNext(buildItem({ quantity: 10, lowThreshold: 2 }), {
+          type: ActionType.TAKEN,
+          quantity: 3,
+        }),
+      ).toEqual({ status: ItemStatus.AVAILABLE, quantity: 7, moved: 3 });
     });
 
     it('bascule en low au passage du seuil', () => {
@@ -81,7 +90,7 @@ describe('QuantityTrackingStrategy', () => {
         strategy.computeNext(buildItem({ quantity: 3, lowThreshold: 2 }), {
           type: ActionType.TAKEN,
         }),
-      ).toEqual({ status: ItemStatus.LOW, quantity: 2 });
+      ).toEqual({ status: ItemStatus.LOW, quantity: 2, moved: 1 });
     });
 
     it('bascule en rupture à zéro', () => {
@@ -89,7 +98,7 @@ describe('QuantityTrackingStrategy', () => {
         strategy.computeNext(buildItem({ quantity: 1 }), {
           type: ActionType.TAKEN,
         }),
-      ).toEqual({ status: ItemStatus.OUT_OF_STOCK, quantity: 0 });
+      ).toEqual({ status: ItemStatus.OUT_OF_STOCK, quantity: 0, moved: 1 });
     });
 
     it('ne descend jamais sous zéro', () => {
@@ -97,7 +106,18 @@ describe('QuantityTrackingStrategy', () => {
         strategy.computeNext(buildItem({ quantity: 0 }), {
           type: ActionType.TAKEN,
         }),
-      ).toEqual({ status: ItemStatus.OUT_OF_STOCK, quantity: 0 });
+      ).toEqual({ status: ItemStatus.OUT_OF_STOCK, quantity: 0, moved: 0 });
+    });
+
+    it('ne consomme que ce qui reste quand on en demande trop', () => {
+      // Prendre cinq unités quand il en reste deux vide l'item ; l'historique
+      // doit consigner deux, pas cinq.
+      expect(
+        strategy.computeNext(buildItem({ quantity: 2 }), {
+          type: ActionType.TAKEN,
+          quantity: 5,
+        }),
+      ).toEqual({ status: ItemStatus.OUT_OF_STOCK, quantity: 0, moved: 2 });
     });
 
     it('traite une quantité null comme zéro', () => {
@@ -110,13 +130,24 @@ describe('QuantityTrackingStrategy', () => {
   });
 
   describe('rachat', () => {
-    it('applique la quantité rachetée', () => {
+    it("ajoute au stock au lieu de l'écraser", () => {
+      // « J'ai racheté 6 rouleaux » : il en restait 2, il y en a 8. Demander le
+      // total, c'est faire l'addition à la place de l'utilisateur.
+      expect(
+        strategy.computeNext(buildItem({ quantity: 2, lowThreshold: 2 }), {
+          type: ActionType.RESTOCKED,
+          quantity: 6,
+        }),
+      ).toEqual({ status: ItemStatus.AVAILABLE, quantity: 8, moved: 6 });
+    });
+
+    it('repart de zéro sur un item épuisé', () => {
       expect(
         strategy.computeNext(buildItem({ quantity: 0, lowThreshold: 2 }), {
           type: ActionType.RESTOCKED,
           quantity: 12,
         }),
-      ).toEqual({ status: ItemStatus.AVAILABLE, quantity: 12 });
+      ).toEqual({ status: ItemStatus.AVAILABLE, quantity: 12, moved: 12 });
     });
 
     it('reste en low si le rachat ne dépasse pas le seuil', () => {
@@ -125,10 +156,10 @@ describe('QuantityTrackingStrategy', () => {
           type: ActionType.RESTOCKED,
           quantity: 3,
         }),
-      ).toEqual({ status: ItemStatus.LOW, quantity: 3 });
+      ).toEqual({ status: ItemStatus.LOW, quantity: 3, moved: 3 });
     });
 
-    it('ne déclare pas disponible un item racheté à zéro', () => {
+    it('ne déclare pas disponible un item racheté de rien', () => {
       // Le §4 renvoie `available` en dur au rachat, ce qui produisait un item
       // disponible avec une quantité nulle.
       expect(
@@ -136,7 +167,18 @@ describe('QuantityTrackingStrategy', () => {
           type: ActionType.RESTOCKED,
           quantity: 0,
         }),
-      ).toEqual({ status: ItemStatus.OUT_OF_STOCK, quantity: 0 });
+      ).toEqual({ status: ItemStatus.OUT_OF_STOCK, quantity: 0, moved: 0 });
+    });
+
+    it('peut dépasser la référence de la jauge', () => {
+      // Rien n'empêche d'avoir plus que « plein » — c'est l'affichage qui
+      // plafonne, pas le stock.
+      expect(
+        strategy.computeNext(
+          buildItem({ quantity: 10, targetQuantity: 12, lowThreshold: 2 }),
+          { type: ActionType.RESTOCKED, quantity: 6 },
+        ).quantity,
+      ).toBe(16);
     });
   });
 });

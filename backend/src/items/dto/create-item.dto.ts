@@ -33,4 +33,22 @@ export class CreateItemDto {
   @IsInt()
   @Min(1)
   targetQuantity?: number;
+
+  /** Nom d'une unité : « rouleau », « bidon ». Étiquette d'affichage. */
+  @IsOptional()
+  @IsString()
+  @Length(1, 20)
+  unit?: string;
+
+  /** Unités par paquet. Deux au minimum — un « paquet de 1 » n'en est pas un. */
+  @IsOptional()
+  @IsInt()
+  @Min(2)
+  packSize?: number;
+
+  /** Ce qui est écrit sur l'étiquette : « 1,5 L », « 500 g ». Descriptif seul. */
+  @IsOptional()
+  @IsString()
+  @Length(1, 20)
+  format?: string;
 }

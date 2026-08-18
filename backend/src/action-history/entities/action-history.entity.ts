@@ -52,6 +52,17 @@ export class ActionHistory {
   })
   actionType: ActionType;
 
+  /**
+   * Combien a bougé — unités prises, unités rachetées.
+   *
+   * `null` en suivi binaire, qui ne compte rien : « j'ai pris le dernier » n'a
+   * pas de quantité. Sans cette colonne, l'historique dit qui a agi mais jamais
+   * à quelle hauteur, et la rotation pondérée par le coût prévue en V3 n'aurait
+   * rien sur quoi s'appuyer.
+   */
+  @Column({ type: 'int', nullable: true })
+  quantity: number | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }

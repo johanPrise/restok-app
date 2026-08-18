@@ -39,12 +39,20 @@ export class ItemActionsFacade {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  take(itemId: string, groupId: string, memberId: string): Promise<Item> {
+  /** `quantity` : combien d'unités on prend. Une seule par défaut. */
+  take(
+    itemId: string,
+    groupId: string,
+    memberId: string,
+    quantity?: number,
+  ): Promise<Item> {
     return this.applyAction(itemId, groupId, memberId, {
       type: ActionType.TAKEN,
+      quantity,
     });
   }
 
+  /** `quantity` : combien d'unités on rapporte, pas le stock final. */
   restock(
     itemId: string,
     groupId: string,
@@ -77,7 +85,7 @@ export class ItemActionsFacade {
 
       this.assertActionApplicable(item, action);
 
-      const { status, quantity } = this.trackingStrategyFactory
+      const { status, quantity, moved } = this.trackingStrategyFactory
         .getStrategy(item.trackingType)
         .computeNext(item, action);
 
@@ -102,10 +110,14 @@ export class ItemActionsFacade {
       if (quantity !== undefined) item.quantity = quantity;
       await itemRepo.save(item);
 
+      // `moved` et non `action.quantity` : c'est ce qui a bougé pour de vrai,
+      // une fois borné par le stock. Rester à `null` en suivi binaire, qui ne
+      // compte rien.
       await this.actionHistoryService.record(
         itemId,
         memberId,
         action.type,
+        moved ?? null,
         manager,
       );
 

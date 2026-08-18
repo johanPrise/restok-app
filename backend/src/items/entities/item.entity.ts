@@ -72,6 +72,39 @@ export class Item {
   @Column({ name: 'target_quantity', type: 'int', nullable: true })
   targetQuantity: number | null;
 
+  /**
+   * Comment s'appelle une unité : « rouleau », « bidon », « dosette ».
+   *
+   * Une étiquette d'affichage, rien de plus — « 15 » ne dit pas 15 quoi. Elle
+   * décrit l'item, pas son stock : contrairement à `quantity`, elle survit à un
+   * changement de mode de suivi.
+   */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  unit: string | null;
+
+  /**
+   * Combien d'unités dans un paquet, quand l'item s'achète par lot.
+   *
+   * Le domaine ne compte **qu'en unités de base** : c'est l'interface qui
+   * traduit « 2 paquets » en douze rouleaux avant d'appeler l'API. Faire entrer
+   * le conditionnement dans la state machine, les seuils et l'historique
+   * coûterait bien plus que ce qu'il rapporte.
+   */
+  @Column({ name: 'pack_size', type: 'int', nullable: true })
+  packSize: number | null;
+
+  /**
+   * Ce qui est écrit sur l'étiquette : « 1,5 L », « 500 g », « ×6 ».
+   *
+   * Purement descriptif — **jamais** utilisé dans un calcul. En colocation,
+   * personne ne sait combien de millilitres de liquide vaisselle part sur une
+   * assiette ; en revanche le format du contenant est connu, parce qu'il est
+   * imprimé dessus. Il ne sert donc pas à décompter, mais à ce que le prochain
+   * qui fait les courses rapporte le bon produit.
+   */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  format: string | null;
+
   @Column({ name: 'group_id', type: 'uuid' })
   groupId: string;
 

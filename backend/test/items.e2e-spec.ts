@@ -180,6 +180,255 @@ describe('Items (e2e)', () => {
     });
   });
 
+  describe('unité et conditionnement', () => {
+    it("porte le nom de l'unité et la taille du paquet", async () => {
+      const item = await createItem({
+        name: 'Papier toilette',
+        trackingType: 'quantity',
+        quantity: 12,
+        unit: 'rouleau',
+        packSize: 6,
+      });
+
+      expect(item).toMatchObject({ unit: 'rouleau', packSize: 6 });
+    });
+
+    it('reste en unités de base côté domaine', async () => {
+      // Le conditionnement n'entre pas dans le compte : deux paquets de six,
+      // c'est douze unités envoyées par l'interface.
+      const item = await createItem({
+        name: 'Papier toilette',
+        trackingType: 'quantity',
+        quantity: 0,
+        unit: 'rouleau',
+        packSize: 6,
+      });
+
+      const res = await auth(app, bob)
+        .post(`/items/${item.id}/restock`)
+        .send({ quantity: 12 })
+        .expect(200);
+
+      expect(res.body.quantity).toBe(12);
+    });
+
+    it('rejette un paquet de moins de deux', async () => {
+      await auth(app, alice)
+        .post('/items')
+        .send({ name: 'Papier toilette', packSize: 1 })
+        .expect(400);
+    });
+
+    it('rejette une unité trop longue', async () => {
+      await auth(app, alice)
+        .post('/items')
+        .send({ name: 'Papier toilette', unit: 'x'.repeat(21) })
+        .expect(400);
+    });
+
+    it('se modifie après coup', async () => {
+      const item = await createItem({ name: 'Papier toilette' });
+
+      const res = await auth(app, alice)
+        .patch(`/items/${item.id}`)
+        .send({ unit: 'rouleau', packSize: 6 })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ unit: 'rouleau', packSize: 6 });
+    });
+  });
+
+  describe("PATCH /items/:id/format — l'étiquette du produit", () => {
+    it('laisse un simple membre le préciser au retour des courses', async () => {
+      // C'est une observation, pas un réglage : celui qui lit l'étiquette doit
+      // pouvoir la reporter, sinon l'information ne sera jamais donnée.
+      const item = await createItem({ name: 'Eau' });
+
+      const res = await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '1,5 L' })
+        .expect(200);
+
+      expect(res.body.format).toBe('1,5 L');
+    });
+
+    it('reste refusé à un membre sur le reste de la configuration', async () => {
+      const item = await createItem({ name: 'Eau' });
+
+      await auth(app, bob)
+        .patch(`/items/${item.id}`)
+        .send({ lowThreshold: 5 })
+        .expect(403);
+    });
+
+    it('efface le format avec une chaîne vide', async () => {
+      const item = await createItem({ name: 'Eau', format: '1,5 L' });
+
+      const res = await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '  ' })
+        .expect(200);
+
+      expect(res.body.format).toBeNull();
+    });
+
+    it('rejette un format trop long', async () => {
+      const item = await createItem({ name: 'Eau' });
+
+      await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: 'x'.repeat(21) })
+        .expect(400);
+    });
+
+    it("traite un item d'un autre groupe comme introuvable", async () => {
+      const item = await createItem({ name: 'Eau' });
+      const carol = await signUp(app, 'Carol');
+      await createGroupWith(app, carol);
+
+      await auth(app, carol)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '1,5 L' })
+        .expect(404);
+    });
+
+    it('ne touche à rien d’autre', async () => {
+      const item = await createItem({
+        name: 'Eau',
+        trackingType: 'quantity',
+        quantity: 6,
+        lowThreshold: 2,
+      });
+
+      const res = await auth(app, bob)
+        .patch(`/items/${item.id}/format`)
+        .send({ format: '1,5 L' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({
+        quantity: 6,
+        lowThreshold: 2,
+        status: 'available',
+      });
+    });
+  });
+
+  describe('quantités précisées', () => {
+    it("prend le nombre d'unités demandé", async () => {
+      const item = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: 10,
+        lowThreshold: 2,
+      });
+
+      const res = await auth(app, bob)
+        .post(`/items/${item.id}/take`)
+        .send({ quantity: 3 })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ quantity: 7, status: 'available' });
+    });
+
+    it("s'arrête au stock disponible sans se plaindre", async () => {
+      const item = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: 2,
+      });
+
+      const res = await auth(app, bob)
+        .post(`/items/${item.id}/take`)
+        .send({ quantity: 5 })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ quantity: 0, status: 'to_restock' });
+    });
+
+    it('ajoute au stock au rachat au lieu de l’écraser', async () => {
+      // « J'ai racheté 6 rouleaux » alors qu'il en restait 2 → 8, pas 6.
+      const item = await createItem({
+        name: 'Papier toilette',
+        trackingType: 'quantity',
+        quantity: 2,
+        lowThreshold: 2,
+      });
+
+      const res = await auth(app, bob)
+        .post(`/items/${item.id}/restock`)
+        .send({ quantity: 6 })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ quantity: 8, status: 'available' });
+    });
+
+    it('ignore la quantité en suivi binaire', async () => {
+      const item = await createItem({ name: 'Ampoules' });
+
+      const res = await auth(app, bob)
+        .post(`/items/${item.id}/take`)
+        .send({ quantity: 4 })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ quantity: null, status: 'to_restock' });
+    });
+
+    it.each([
+      ['zéro', 0],
+      ['négative', -2],
+      ['décimale', 1.5],
+    ])('rejette une quantité %s', async (_label, quantity) => {
+      const item = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: 10,
+      });
+
+      await auth(app, bob)
+        .post(`/items/${item.id}/take`)
+        .send({ quantity })
+        .expect(400);
+    });
+
+    it("consigne dans l'historique combien a bougé", async () => {
+      const item = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: 10,
+        lowThreshold: 2,
+      });
+      await auth(app, bob)
+        .post(`/items/${item.id}/take`)
+        .send({ quantity: 3 })
+        .expect(200);
+      await auth(app, alice)
+        .post(`/items/${item.id}/restock`)
+        .send({ quantity: 6 })
+        .expect(200);
+
+      const res = await auth(app, bob)
+        .get(`/items/${item.id}/history`)
+        .expect(200);
+
+      expect(res.body[0]).toMatchObject({
+        actionType: 'restocked',
+        quantity: 6,
+      });
+      expect(res.body[1]).toMatchObject({ actionType: 'taken', quantity: 3 });
+    });
+
+    it("laisse la quantité à null quand il n'y a rien à compter", async () => {
+      const item = await createItem({ name: 'Ampoules' });
+      await auth(app, bob).post(`/items/${item.id}/take`).expect(200);
+
+      const res = await auth(app, bob)
+        .get(`/items/${item.id}/history`)
+        .expect(200);
+
+      expect(res.body[0].quantity).toBeNull();
+    });
+  });
+
   describe('GET /items', () => {
     it('remonte en tête ce qui demande une action', async () => {
       const pq = await createItem({ name: 'Papier toilette' });

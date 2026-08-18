@@ -11,3 +11,18 @@ coverage-e2e/
 .DS_Store
 
 .expo/
+
+# Firebase — clé de compte de service FCM. Secret : quiconque l'a peut envoyer
+# des notifications à l'app. Ne jamais committer.
+**/service-account*.json
+**/*-firebase-adminsdk-*.json
+google-service-account*.json
+
+# Skills d'agent : `skills-lock.json` est versionné — source et empreinte de
+# chacun — mais pas les copies qu'il permet de restaurer
+# (`npx skills experimental_install`). Même partage que package.json et
+# node_modules. `settings.local.json` est, par convention de nom, propre à
+# chaque poste.
+.agents/
+.claude/skills/
+.claude/settings.local.json

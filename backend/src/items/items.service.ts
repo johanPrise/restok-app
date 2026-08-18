@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionHistoryService } from '../action-history/action-history.service';
@@ -10,6 +11,7 @@ import type { LastAction } from '../action-history/action-history.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { Item, ItemStatus, TrackingType } from './entities/item.entity';
+import { ITEM_DELETED, ItemDeletedEvent } from './events/item-deleted.event';
 import { autoTransition } from './item-state-machine';
 import { statusForQuantity } from './strategies/quantity-tracking.strategy';
 
@@ -34,6 +36,7 @@ export class ItemsService {
     @InjectRepository(Item)
     private readonly itemRepo: Repository<Item>,
     private readonly actionHistoryService: ActionHistoryService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -81,6 +84,11 @@ export class ItemsService {
         // ce que j'ai en créant l'item ».
         targetQuantity:
           quantity === null ? null : (dto.targetQuantity ?? quantity),
+        // `unit` et `packSize` décrivent l'item, pas son stock : ils valent
+        // aussi en suivi binaire, où ils ne s'affichent simplement nulle part.
+        unit: dto.unit ?? null,
+        packSize: dto.packSize ?? null,
+        format: dto.format ?? null,
         groupId,
         status:
           quantity === null
@@ -103,6 +111,11 @@ export class ItemsService {
 
     if (dto.name !== undefined) item.name = dto.name;
     if (dto.lowThreshold !== undefined) item.lowThreshold = dto.lowThreshold;
+    // Survivent au changement de mode, contrairement à `quantity` : décrire un
+    // item en rouleaux reste vrai même quand on cesse de les compter.
+    if (dto.unit !== undefined) item.unit = dto.unit;
+    if (dto.packSize !== undefined) item.packSize = dto.packSize;
+    if (dto.format !== undefined) item.format = dto.format;
 
     const trackingType = dto.trackingType ?? item.trackingType;
 
@@ -128,9 +141,35 @@ export class ItemsService {
     return this.itemRepo.save(item);
   }
 
+  /**
+   * Le format se corrige **sans être admin**, contrairement au reste de la
+   * configuration d'un item.
+   *
+   * C'est une observation, pas un réglage : celui qui rentre du magasin lit
+   * l'étiquette et sait ce qu'il a pris. Lui demander de passer par un admin,
+   * c'est garantir que l'information ne sera jamais donnée.
+   */
+  async setFormat(
+    itemId: string,
+    groupId: string,
+    format: string | undefined,
+  ): Promise<Item> {
+    const item = await this.findOneInGroup(itemId, groupId);
+    const trimmed = format?.trim();
+
+    // Une chaîne vide efface : se tromper ne doit pas être définitif.
+    item.format = trimmed ? trimmed : null;
+
+    return this.itemRepo.save(item);
+  }
+
   async remove(itemId: string, groupId: string): Promise<void> {
     const item = await this.findOneInGroup(itemId, groupId);
     await this.itemRepo.softRemove(item);
+
+    // La suppression est douce : rien ne cascade. L'event laisse le reste de
+    // l'app faire le ménage sans que l'étagère ait à savoir qui l'écoute.
+    this.eventEmitter.emit(ITEM_DELETED, new ItemDeletedEvent(itemId, groupId));
   }
 
   /** Le filtre sur groupId isole les groupes : un item d'ailleurs est introuvable. */

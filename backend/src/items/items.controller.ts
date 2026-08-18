@@ -19,6 +19,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/types/jwt-payload.type';
 import { CreateItemDto } from './dto/create-item.dto';
 import { RestockItemDto } from './dto/restock-item.dto';
+import { TakeItemDto } from './dto/take-item.dto';
+import { UpdateItemFormatDto } from './dto/update-item-format.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemActionsFacade } from './item-actions.facade';
 import { ItemsService } from './items.service';
@@ -53,6 +55,20 @@ export class ItemsController {
     return this.itemsService.update(itemId, user.groupId!, dto);
   }
 
+  /**
+   * Route à part, et **sans `AdminGuard`** : le format est ce qui est écrit sur
+   * l'étiquette, pas un réglage. Celui qui revient du magasin doit pouvoir le
+   * corriger, sinon l'information ne sera jamais donnée.
+   */
+  @Patch(':id/format')
+  setFormat(
+    @Param('id', ParseUUIDPipe) itemId: string,
+    @Body() dto: UpdateItemFormatDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.itemsService.setFormat(itemId, user.groupId!, dto.format);
+  }
+
   @Delete(':id')
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -67,9 +83,10 @@ export class ItemsController {
   @HttpCode(HttpStatus.OK)
   take(
     @Param('id', ParseUUIDPipe) itemId: string,
+    @Body() dto: TakeItemDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.itemActions.take(itemId, user.groupId!, user.id);
+    return this.itemActions.take(itemId, user.groupId!, user.id, dto.quantity);
   }
 
   @Post(':id/restock')

@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { Repository } from 'typeorm';
@@ -44,6 +45,7 @@ describe('ItemsService', () => {
             findLastActionByItem: jest.fn().mockResolvedValue(new Map()),
           },
         },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 
@@ -124,6 +126,49 @@ describe('ItemsService', () => {
 
         expect(item.lowThreshold).toBe(2);
         expect(item.targetQuantity).toBe(24);
+      });
+    });
+
+    describe('unité et conditionnement', () => {
+      it("retient le nom de l'unité et la taille du paquet", async () => {
+        const item = await service.create(
+          {
+            name: 'Papier toilette',
+            trackingType: TrackingType.QUANTITY,
+            quantity: 12,
+            unit: 'rouleau',
+            packSize: 6,
+          },
+          'group-1',
+        );
+
+        expect(item).toMatchObject({ unit: 'rouleau', packSize: 6 });
+      });
+
+      it('les laisse nuls quand rien n’est précisé', async () => {
+        const item = await service.create({ name: 'Ampoules' }, 'group-1');
+
+        expect(item).toMatchObject({ unit: null, packSize: null });
+      });
+
+      it('les conserve au retour en suivi binaire', async () => {
+        // Contrairement à la quantité : décrire un item en rouleaux reste vrai
+        // même quand on cesse de les compter.
+        itemRepo.findOne.mockResolvedValue(
+          buildItem({
+            trackingType: TrackingType.QUANTITY,
+            quantity: 12,
+            unit: 'rouleau',
+            packSize: 6,
+          }),
+        );
+
+        const item = await service.update('item-1', 'group-1', {
+          trackingType: TrackingType.THRESHOLD,
+        });
+
+        expect(item).toMatchObject({ unit: 'rouleau', packSize: 6 });
+        expect(item.quantity).toBeNull();
       });
     });
 

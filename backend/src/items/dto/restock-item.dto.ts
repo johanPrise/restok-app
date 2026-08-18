@@ -2,11 +2,14 @@ import { IsInt, IsOptional, Min } from 'class-validator';
 
 export class RestockItemDto {
   /**
-   * Quantité en stock après le rachat.
+   * Nombre d'unités rapportées — **ce qu'on a acheté**, pas le stock final.
    *
-   * Obligatoire pour un item suivi en `quantity` — sans elle, impossible de
-   * savoir si l'item est reparti à 1 ou à 12. Inutile en mode `threshold`, qui
-   * ne compte rien.
+   * On sait dire « j'ai racheté six rouleaux » en sortant du magasin ; savoir
+   * qu'il faut saisir huit parce qu'il en restait deux, c'est faire l'addition
+   * à la place de l'app.
+   *
+   * Obligatoire en suivi `quantity` : sans elle, impossible de savoir si
+   * l'item repart avec une unité ou avec douze. Inutile en suivi binaire.
    */
   @IsOptional()
   @IsInt()

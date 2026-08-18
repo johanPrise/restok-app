@@ -1,0 +1,50 @@
+import { useRouter } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+import { ChoiceCard } from '@/components/ChoiceCard';
+import { CreateGroupIcon, JoinGroupIcon } from '@/components/icons';
+import { Screen } from '@/components/Screen';
+import { SystemFooter } from '@/components/SystemFooter';
+import { Text } from '@/components/Text';
+import { spacing, useTheme } from '@/theme';
+
+export default function Choose() {
+  const router = useRouter();
+  const { colors } = useTheme();
+
+  return (
+    <Screen>
+      <View style={styles.header}>
+        <Text variant="monoLabel" color="inkSoft">
+          Onboarding / Étape 02
+        </Text>
+        <Text variant="title">Votre espace</Text>
+      </View>
+
+      <View style={styles.choices}>
+        <ChoiceCard
+          badge="Nouveau"
+          title="Créer un groupe"
+          description="Commencer un nouvel inventaire partagé"
+          action="start_new"
+          icon={<CreateGroupIcon color={colors.choiceBorder} />}
+          onPress={() => router.push('/create-group')}
+        />
+        <ChoiceCard
+          badge="Invitation"
+          title="Rejoindre un groupe"
+          description="Utiliser un code d'invitation"
+          action="connect_existing"
+          icon={<JoinGroupIcon color={colors.choiceBorder} />}
+          onPress={() => router.push('/join')}
+        />
+      </View>
+
+      <SystemFooter left="Restock_os // system_ready // ver_2.4" />
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: { paddingTop: spacing.xl, gap: spacing.xs, alignItems: 'center' },
+  choices: { flex: 1, justifyContent: 'center', gap: spacing.md },
+});

@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { auth, createGroupWith, signUp, TestMember } from './utils/api';
 import { createE2EApp, E2EContext } from './utils/e2e-app';
 
@@ -205,6 +206,268 @@ describe('Groups & members (e2e)', () => {
       await createGroupWith(app, alice, [bob]);
 
       await auth(app, alice).delete('/members/pas-un-uuid').expect(400);
+    });
+  });
+
+  describe('PATCH /members/me — son propre profil', () => {
+    it('change son nom', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      const res = await auth(app, bob)
+        .patch('/members/me')
+        .send({ name: 'Bobby' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ id: bob.id, name: 'Bobby' });
+    });
+
+    it('ne demande aucun mot de passe pour le seul nom', async () => {
+      // Le nom ne donne accès à rien : le protéger n'ajouterait que de la
+      // friction.
+      await auth(app, alice)
+        .patch('/members/me')
+        .send({ name: 'Alicia' })
+        .expect(200);
+    });
+
+    it("marche sans groupe, juste après l'inscription", async () => {
+      // C'est là qu'on corrige une faute de frappe dans son email.
+      const res = await auth(app, alice)
+        .patch('/members/me')
+        .send({
+          email: 'alice.corrigee@test.dev',
+          currentPassword: 'motdepasse123',
+        })
+        .expect(200);
+
+      expect(res.body.email).toBe('alice.corrigee@test.dev');
+    });
+
+    it('permet de se reconnecter avec le nouvel email', async () => {
+      await auth(app, alice)
+        .patch('/members/me')
+        .send({ email: 'nouvelle@test.dev', currentPassword: 'motdepasse123' })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: 'nouvelle@test.dev', password: 'motdepasse123' })
+        .expect(200);
+    });
+
+    it('refuse un email déjà pris', async () => {
+      await auth(app, alice)
+        .patch('/members/me')
+        .send({ email: bob.email, currentPassword: 'motdepasse123' })
+        .expect(409);
+    });
+
+    it('normalise la casse', async () => {
+      const res = await auth(app, alice)
+        .patch('/members/me')
+        .send({
+          email: '  Majuscules@Test.DEV ',
+          currentPassword: 'motdepasse123',
+        })
+        .expect(200);
+
+      expect(res.body.email).toBe('majuscules@test.dev');
+    });
+
+    describe("le mot de passe garde l'identifiant de connexion", () => {
+      it("refuse un changement d'email sans mot de passe", async () => {
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ email: 'pirate@test.dev' })
+          .expect(400);
+
+        // L'email n'a pas bougé : l'ancien fonctionne toujours.
+        await request(app.getHttpServer())
+          .post('/auth/login')
+          .send({ email: alice.email, password: 'motdepasse123' })
+          .expect(200);
+      });
+
+      it('refuse un mot de passe faux', async () => {
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ email: 'pirate@test.dev', currentPassword: 'pas-le-bon' })
+          .expect(400);
+      });
+
+      it('ne déconnecte pas sur un mot de passe faux', async () => {
+        // Un 401 ici terminerait la session côté client, alors que le token est
+        // parfaitement valide : c'est le corps qui est en cause, pas lui.
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ email: 'pirate@test.dev', currentPassword: 'pas-le-bon' })
+          .expect(400);
+
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ name: 'Toujours connectée' })
+          .expect(200);
+      });
+
+      it('ne le demande pas quand l’email ne change pas', async () => {
+        await auth(app, alice)
+          .patch('/members/me')
+          .send({ name: 'Alicia', email: alice.email })
+          .expect(200);
+      });
+    });
+
+    it.each([
+      ['email invalide', { email: 'pas-un-email' }],
+      ['nom trop court', { name: 'x' }],
+    ])('rejette un %s', async (_label, body) => {
+      await auth(app, alice).patch('/members/me').send(body).expect(400);
+    });
+
+    it("n'expose ni mot de passe ni push token", async () => {
+      const res = await auth(app, alice)
+        .patch('/members/me')
+        .send({ name: 'Alicia' })
+        .expect(200);
+
+      expect(res.body).not.toHaveProperty('password');
+      expect(res.body).not.toHaveProperty('pushToken');
+    });
+
+    it.each([
+      ['rôle', { name: 'Bobby', role: 'admin' }],
+      ['groupe', { name: 'Bobby', groupId: null }],
+      ['mot de passe', { password: 'nouveau123' }],
+      ['identifiant', { id: 'autre' }],
+    ])('refuse une tentative de changer son %s', async (_label, body) => {
+      // `forbidNonWhitelisted` rejette au lieu d'ignorer : une tentative
+      // d'élévation de privilège échoue bruyamment plutôt qu'en silence.
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob).patch('/members/me').send(body).expect(400);
+      await auth(app, bob).post('/items').send({ name: 'Pirate' }).expect(403);
+    });
+  });
+
+  describe('DELETE /members/me', () => {
+    it('laisse un membre partir de lui-même', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob).delete('/members/me').expect(204);
+
+      await auth(app, bob).get('/members').expect(403);
+      // L'admin, lui, reste en place.
+      await auth(app, alice).get('/members').expect(200);
+    });
+
+    it("n'est pas confondue avec la suppression d'un membre par son id", async () => {
+      // `me` n'est pas un UUID : déclarée après `:id`, la route se ferait
+      // intercepter par ParseUUIDPipe et répondrait 400.
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob).delete('/members/me').expect(204);
+    });
+
+    it('retient le dernier admin quand il laisse du monde derrière lui', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice).delete('/members/me').expect(409);
+      await auth(app, alice).get('/members').expect(200);
+    });
+
+    it('laisse partir un admin seul dans son groupe', async () => {
+      await createGroupWith(app, alice);
+
+      await auth(app, alice).delete('/members/me').expect(204);
+      await auth(app, alice).get('/members').expect(403);
+    });
+
+    it('libère le dernier admin une fois quelqu’un promu', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(200);
+      await auth(app, alice).delete('/members/me').expect(204);
+
+      // Bob tient le groupe : il peut désormais créer un item.
+      await auth(app, bob).post('/items').send({ name: 'Éponges' }).expect(201);
+    });
+
+    it('refuse à quelqu’un sans groupe', async () => {
+      await auth(app, alice).delete('/members/me').expect(403);
+    });
+  });
+
+  describe('PATCH /members/:id/role', () => {
+    it('promeut un membre, qui gagne les droits admin', async () => {
+      await createGroupWith(app, alice, [bob]);
+      await auth(app, bob).post('/items').send({ name: 'Pirate' }).expect(403);
+
+      const res = await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ id: bob.id, role: 'admin' });
+      await auth(app, bob).post('/items').send({ name: 'Éponges' }).expect(201);
+    });
+
+    it('rétrograde un admin, qui perd les siens', async () => {
+      await createGroupWith(app, alice, [bob]);
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(200);
+
+      await auth(app, bob)
+        .patch(`/members/${alice.id}/role`)
+        .send({ role: 'member' })
+        .expect(200);
+
+      await auth(app, alice)
+        .post('/items')
+        .send({ name: 'Pirate' })
+        .expect(403);
+    });
+
+    it('refuse à un simple membre', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, bob)
+        .patch(`/members/${alice.id}/role`)
+        .send({ role: 'member' })
+        .expect(403);
+    });
+
+    it('refuse de changer son propre rôle', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${alice.id}/role`)
+        .send({ role: 'member' })
+        .expect(400);
+    });
+
+    it('rejette un rôle inconnu', async () => {
+      await createGroupWith(app, alice, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'sudo' })
+        .expect(400);
+    });
+
+    it("traite un membre d'un autre groupe comme introuvable", async () => {
+      await createGroupWith(app, alice);
+      const carol = await signUp(app, 'Carol');
+      await createGroupWith(app, carol, [bob]);
+
+      await auth(app, alice)
+        .patch(`/members/${bob.id}/role`)
+        .send({ role: 'admin' })
+        .expect(404);
     });
   });
 

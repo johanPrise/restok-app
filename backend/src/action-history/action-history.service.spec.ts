@@ -46,6 +46,7 @@ describe('ActionHistoryService', () => {
         itemId: 'item-1',
         memberId: 'member-1',
         actionType: ActionType.TAKEN,
+        quantity: null,
       });
       expect(historyRepo.save).toHaveBeenCalled();
     });
@@ -60,10 +61,25 @@ describe('ActionHistoryService', () => {
         getRepository: () => txRepo,
       } as unknown as EntityManager;
 
-      await service.record('item-1', 'member-1', ActionType.RESTOCKED, manager);
+      await service.record(
+        'item-1',
+        'member-1',
+        ActionType.RESTOCKED,
+        6,
+        manager,
+      );
 
       expect(txRepo.save).toHaveBeenCalled();
       expect(historyRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('consigne combien a bougé', () => {
+      // Sans ça, l'historique dit qui a agi mais jamais à quelle hauteur.
+      void service.record('item-1', 'member-1', ActionType.TAKEN, 3);
+
+      expect(historyRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ quantity: 3 }),
+      );
     });
   });
 
