@@ -1,4 +1,3 @@
-import { useMutationState } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import {
   Alert,
@@ -30,6 +29,7 @@ import { Text } from '@/components/Text';
 import { BasketIcon } from '@/components/icons';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
 import { completeBlockedReason, offlineNotice } from '@/lib/offline';
+import { usePendingGestures } from '@/lib/usePendingGestures';
 import {
   checkedCount,
   checkedSummary,
@@ -58,11 +58,9 @@ export default function Shopping() {
   const shopping = useShoppingList();
   const items = useItems();
   const online = useIsOnline();
-  // Les gestes que la bibliothèque a mis en pause faute de réseau. Ils
-  // repartiront seuls — encore faut-il le dire.
-  const paused = useMutationState({
-    filters: { predicate: (mutation) => mutation.state.isPaused },
-  }).length;
+  // Répartis par garantie : ce qui repartira seul, et ce qui ne survivrait pas
+  // à une fermeture de l'app.
+  const pending = usePendingGestures();
   const [draft, setDraft] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   // Une seule ligne en correction à la fois : deux compteurs ouverts, et on ne
@@ -95,7 +93,7 @@ export default function Shopping() {
     complete,
   ]);
 
-  const notice = offlineNotice(online, paused);
+  const notice = offlineNotice(online, pending.durable, pending.volatile);
   const blocked = completeBlockedReason(online);
 
   const label = draft.trim();
@@ -228,7 +226,7 @@ export default function Shopping() {
         {/* Le hors-ligne passe avant l'erreur : un geste qui échoue parce que
             le réseau est coupé n'a pas à se raconter deux fois. */}
         {notice !== null && (
-          <Text variant="caption" color="mustard">
+          <Text variant="caption" color="inkSoft">
             {notice}
           </Text>
         )}

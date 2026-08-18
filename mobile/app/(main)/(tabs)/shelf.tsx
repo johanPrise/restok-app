@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
+import { useIsOnline } from '@/api/network';
 import { useShoppingList } from '@/api/shopping';
 import { Button } from '@/components/Button';
 import { EditableGroupName } from '@/components/EditableGroupName';
@@ -21,7 +22,9 @@ import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { apiErrorMessage } from '@/lib/api-error';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
+import { offlineNotice } from '@/lib/offline';
 import { itemsOnList } from '@/lib/shopping-list';
+import { usePendingGestures } from '@/lib/usePendingGestures';
 import { useSession } from '@/store/session';
 import {
   border,
@@ -39,6 +42,8 @@ export default function Shelf() {
   const group = useGroup();
   const items = useItems();
   const shopping = useShoppingList();
+  const online = useIsOnline();
+  const pending = usePendingGestures();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -64,6 +69,11 @@ export default function Shelf() {
     : summary(toRestock, items.data?.length ?? 0);
   const headerSummaryColor =
     items.isError || toRestock > 0 ? 'rustClay' : 'inkSoft';
+
+  // Prendre et racheter ne sont pas persistés : hors-ligne, le balayage se
+  // mettait en pause sans que rien ne bouge à l'écran, et le geste disparaissait
+  // à la fermeture de l'app. Il faut au moins le dire.
+  const notice = offlineNotice(online, pending.durable, pending.volatile);
 
   const toggle = (key: string) =>
     setCollapsed((state) => ({ ...state, [key]: !state[key] }));
@@ -102,6 +112,12 @@ export default function Shelf() {
           },
         ]}
       />
+
+      {notice !== null && (
+        <Text variant="caption" color="inkSoft" style={styles.notice}>
+          {notice}
+        </Text>
+      )}
 
       <ScrollView
         contentContainerStyle={[
@@ -243,6 +259,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     fontSize: fontSize.body,
   },
+  notice: { marginTop: spacing.xs },
   list: { paddingTop: spacing.md, gap: spacing.md },
   section: { gap: spacing.xs },
   empty: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },
