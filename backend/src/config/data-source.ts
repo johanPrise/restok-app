@@ -4,6 +4,8 @@ import { ActionHistory } from '../action-history/entities/action-history.entity'
 import { Group } from '../groups/entities/group.entity';
 import { Item } from '../items/entities/item.entity';
 import { Member } from '../members/entities/member.entity';
+import { Recipe } from '../recipes/entities/recipe.entity';
+import { RecipeIngredient } from '../recipes/entities/recipe-ingredient.entity';
 import { ShoppingLine } from '../shopping/entities/shopping-line.entity';
 import { MIGRATIONS_TABLE } from './migrations';
 
@@ -29,7 +31,15 @@ export default new DataSource({
   username: process.env.DB_USER ?? 'restock',
   password: process.env.DB_PASSWORD ?? 'restock',
   database: process.env.DB_NAME ?? 'restock',
-  entities: [Group, Member, Item, ActionHistory, ShoppingLine],
+  entities: [
+    Group,
+    Member,
+    Item,
+    ActionHistory,
+    ShoppingLine,
+    Recipe,
+    RecipeIngredient,
+  ],
   migrations: ['src/migrations/*.ts'],
   migrationsTableName: MIGRATIONS_TABLE,
   synchronize: false,

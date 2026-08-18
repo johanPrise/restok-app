@@ -8,6 +8,7 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { ActionHistoryModule } from './action-history/action-history.module';
 import { GroupsModule } from './groups/groups.module';
 import { ItemsModule } from './items/items.module';
+import { RecipesModule } from './recipes/recipes.module';
 import { ShoppingModule } from './shopping/shopping.module';
 import { MembersModule } from './members/members.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -26,6 +27,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     MembersModule,
     ItemsModule,
     ShoppingModule,
+    RecipesModule,
     ActionHistoryModule,
     NotificationsModule,
   ],
