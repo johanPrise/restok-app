@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useImportRecipe } from '@/api/recipes';
 import { BackLink } from '@/components/BackLink';
@@ -9,15 +9,29 @@ import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
-import { border, spacing, useTheme } from '@/theme';
+import {
+  border,
+  fontFamily,
+  fontSize,
+  MIN_TOUCH_TARGET,
+  radius,
+  spacing,
+  useTheme,
+} from '@/theme';
 
 /**
- * Là où l'on cherche. Un site de recettes plutôt qu'un moteur : on arrive
- * directement sur des recettes, et c'est celui dont on a vérifié qu'il publie
- * ses données structurées. Rien n'empêche de naviguer ailleurs — c'est un
- * navigateur.
+ * La recherche du site, pas sa page d'accueil.
+ *
+ * Déposer quelqu'un sur un site de cuisine en lui disant « cherche » n'est pas
+ * une recherche de recettes, c'est lui refiler le travail. Ici il tape ce qu'il
+ * veut manger et voit des résultats.
+ *
+ * Aucune API française de recettes n'existe : les deux qui font ce métier —
+ * Spoonacular, Edamam — demandent un compte et ne renvoient que de l'anglais,
+ * et « salade » n'y donne rien. Faute de mieux, on interroge la recherche d'un
+ * site qui, lui, publie ses recettes en données structurées.
  */
-const START_URL = 'https://www.marmiton.org/';
+const SEARCH_URL = 'https://www.marmiton.org/recettes/recherche.aspx?aqt=';
 
 /**
  * Chercher une recette sans quitter l'app.
@@ -33,9 +47,18 @@ export default function BrowseRecipes() {
   const { colors } = useTheme();
   const importRecipe = useImportRecipe();
 
-  const [url, setUrl] = useState(START_URL);
+  const [query, setQuery] = useState('');
+  const [target, setTarget] = useState(SEARCH_URL);
+  const [url, setUrl] = useState(SEARCH_URL);
   const [title, setTitle] = useState('');
   const webview = useRef<WebView>(null);
+
+  const search = () => {
+    const wanted = query.trim();
+    if (wanted.length === 0) return;
+    // La clé force le rechargement même si l'on relance la même recherche.
+    setTarget(SEARCH_URL + encodeURIComponent(wanted) + `#${Date.now()}`);
+  };
 
   const save = () =>
     importRecipe.mutate(url, {
@@ -51,6 +74,33 @@ export default function BrowseRecipes() {
         </Text>
       </View>
 
+      <View style={styles.searchRow}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          onSubmitEditing={search}
+          placeholder="Qu’est-ce que tu veux manger ?"
+          placeholderTextColor={colors.inkSoft}
+          returnKeyType="search"
+          autoCapitalize="none"
+          accessibilityLabel="Chercher une recette"
+          style={[
+            styles.search,
+            {
+              backgroundColor: colors.paperRaised,
+              borderColor: colors.thread,
+              color: colors.ink,
+            },
+          ]}
+        />
+        <Button
+          variant="secondary"
+          label="Chercher"
+          disabled={query.trim().length === 0}
+          onPress={search}
+        />
+      </View>
+
       {/* `react-native-webview` n'existe pas sur le web : là-bas on n'a de toute
           façon pas besoin d'un navigateur dans un navigateur. */}
       {Platform.OS === 'web' ? (
@@ -62,7 +112,7 @@ export default function BrowseRecipes() {
       ) : (
         <WebView
           ref={webview}
-          source={{ uri: START_URL }}
+          source={{ uri: target }}
           onNavigationStateChange={(state) => {
             setUrl(state.url);
             setTitle(state.title ?? '');
@@ -102,6 +152,22 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xs,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  search: {
+    flex: 1,
+    minHeight: MIN_TOUCH_TARGET,
+    paddingHorizontal: spacing.sm,
+    borderWidth: border.hairline,
+    borderRadius: radius.button,
+    fontFamily: fontFamily.body,
+    fontSize: fontSize.body,
   },
   web: { flex: 1 },
   unsupported: { flex: 1, justifyContent: 'center', padding: spacing.lg },

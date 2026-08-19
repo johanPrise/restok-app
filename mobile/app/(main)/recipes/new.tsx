@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useItems } from '@/api/items';
 import { useCreateRecipe } from '@/api/recipes';
 import { BackLink } from '@/components/BackLink';
@@ -8,10 +8,18 @@ import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { Text } from '@/components/Text';
 import { BasketIcon } from '@/components/icons';
-import { latestFailure } from '@/lib/api-error';
+import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import type { IngredientInput, Item } from '@/types/api';
-import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
+import {
+  border,
+  fontFamily,
+  fontSize,
+  MIN_TOUCH_TARGET,
+  radius,
+  spacing,
+  useTheme,
+} from '@/theme';
 
 const MIN_NAME = 2;
 const MAX_SUGGESTIONS = 3;
@@ -22,6 +30,14 @@ interface Draft {
   name: string;
 }
 
+/**
+ * Écriture d'une recette à la main.
+ *
+ * Même structure que la création d'item : un en-tête, **un seul conteneur de
+ * formulaire à écart constant**, le bouton détaché en bas. Les ingrédients
+ * forment un groupe avec son propre rythme interne, parce qu'ils sont une
+ * liste et pas un champ.
+ */
 export default function NewRecipe() {
   const goBack = useGoBack('/recipes');
   const { colors } = useTheme();
@@ -29,9 +45,9 @@ export default function NewRecipe() {
   const create = useCreateRecipe();
 
   const [name, setName] = useState('');
+  const [steps, setSteps] = useState('');
   const [source, setSource] = useState('');
   const [servings, setServings] = useState('');
-  const [description, setDescription] = useState('');
   const [ingredients, setIngredients] = useState<Draft[]>([]);
   const [draft, setDraft] = useState('');
 
@@ -53,16 +69,17 @@ export default function NewRecipe() {
     setIngredients((current) => [...current, ingredient]);
   };
 
+  const canAddDraft = draft.trim().length >= MIN_NAME;
   const canSave = name.trim().length >= MIN_NAME;
 
-  const save = () => {
+  const submit = () => {
     if (!canSave) return;
 
     create.mutate(
       {
         name: name.trim(),
         source: source.trim() || undefined,
-        description: description.trim() || undefined,
+        description: steps.trim() || undefined,
         servings: Number(servings) > 0 ? Number(servings) : undefined,
         ingredients: ingredients.map((ingredient): IngredientInput =>
           ingredient.itemId
@@ -77,125 +94,152 @@ export default function NewRecipe() {
   return (
     <FormScreen>
       <BackLink onPress={goBack} />
-      <Text variant="title">Nouvelle recette</Text>
 
-      <Field
-        label="Nom du plat"
-        value={name}
-        onChangeText={setName}
-        placeholder="Risotto"
-        autoFocus
-      />
+      <View style={styles.header}>
+        <Text variant="title">Nouvelle recette</Text>
+        <Text variant="monoLabel" color="inkSoft">
+          Recettes / Ajout
+        </Text>
+      </View>
 
-      <Text variant="monoLabel" color="inkSoft" style={styles.section}>
-        Ingrédients
-      </Text>
-
-      {/* Le lien vers un item de l'étagère est ce qui rend la recette utile :
-          un ingrédient libre ne dira jamais si on l'a. D'où la suggestion en
-          premier, et le texte libre en repli. */}
-      {ingredients.map((ingredient, index) => (
-        <Pressable
-          key={`${ingredient.name}-${index}`}
-          accessibilityRole="button"
-          accessibilityLabel={`Retirer ${ingredient.name}`}
-          onPress={() =>
-            setIngredients((current) =>
-              current.filter((_, position) => position !== index),
-            )
-          }
-          style={[styles.chosen, { borderColor: colors.thread }]}
-        >
-          {ingredient.itemId !== undefined && (
-            <BasketIcon color={colors.inkSoft} size={14} />
-          )}
-          <Text variant="body" style={styles.chosenName} numberOfLines={1}>
-            {ingredient.name}
-          </Text>
-          <Text variant="monoLabel" color="inkSoft">
-            Retirer
-          </Text>
-        </Pressable>
-      ))}
-
-      {suggestions.map((item: Item) => (
-        <Pressable
-          key={item.id}
-          accessibilityRole="button"
-          accessibilityLabel={`Ajouter ${item.name} depuis l'étagère`}
-          onPress={() => add({ itemId: item.id, name: item.name })}
-          style={[
-            styles.suggestion,
-            { backgroundColor: colors.paperRaised, borderColor: colors.thread },
-          ]}
-        >
-          <BasketIcon color={colors.inkSoft} size={14} />
-          <Text variant="body" numberOfLines={1}>
-            {item.name}
-          </Text>
-        </Pressable>
-      ))}
-
-      <View style={styles.addRow}>
+      <View style={styles.form}>
         <Field
-          label=""
-          value={draft}
-          onChangeText={setDraft}
-          placeholder="Riz, sel, tomates…"
-          onSubmitEditing={() =>
-            draft.trim().length >= MIN_NAME && add({ name: draft.trim() })
-          }
-          style={styles.addField}
+          label="Nom du plat"
+          value={name}
+          onChangeText={setName}
+          placeholder="Risotto aux champignons"
+          autoCapitalize="sentences"
+          returnKeyType="next"
         />
-        <Button
-          variant="secondary"
-          label="Ajouter"
-          disabled={draft.trim().length < MIN_NAME}
-          onPress={() => add({ name: draft.trim() })}
+
+        <View style={styles.group}>
+          <Text variant="monoLabel" color="inkSoft">
+            Ingrédients
+          </Text>
+
+          {ingredients.map((ingredient, index) => (
+            <Pressable
+              key={`${ingredient.name}-${index}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Retirer ${ingredient.name}`}
+              onPress={() =>
+                setIngredients((current) =>
+                  current.filter((_, position) => position !== index),
+                )
+              }
+              style={[
+                styles.row,
+                {
+                  backgroundColor: colors.paperRaised,
+                  borderColor: colors.thread,
+                },
+              ]}
+            >
+              {/* Le panier distingue d'un coup d'œil ce que l'étagère suit —
+                  donc ce qui comptera pour la faisabilité — du texte libre. */}
+              {ingredient.itemId !== undefined && (
+                <BasketIcon color={colors.inkSoft} size={14} />
+              )}
+              <Text variant="body" style={styles.rowName} numberOfLines={1}>
+                {ingredient.name}
+              </Text>
+              <Text variant="monoLabel" color="inkSoft">
+                Retirer
+              </Text>
+            </Pressable>
+          ))}
+
+          {suggestions.map((item: Item) => (
+            <Pressable
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Ajouter ${item.name} depuis l'étagère`}
+              onPress={() => add({ itemId: item.id, name: item.name })}
+              style={[
+                styles.row,
+                styles.suggestion,
+                { borderColor: colors.pantryTeal },
+              ]}
+            >
+              <BasketIcon color={colors.pantryTeal} size={14} />
+              <Text variant="body" style={styles.rowName} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text variant="monoLabel" color="pantryTeal">
+                Depuis l’étagère
+              </Text>
+            </Pressable>
+          ))}
+
+          {/* Un `TextInput` nu plutôt qu'un `Field` : celui-ci impose un
+              libellé, et un libellé vide laisse une ligne fantôme qui
+              désaligne le bouton et creuse l'écart au-dessus. */}
+          <View style={styles.addRow}>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Riz, sel, tomates…"
+              placeholderTextColor={colors.inkSoft}
+              onSubmitEditing={() => canAddDraft && add({ name: draft.trim() })}
+              returnKeyType="done"
+              accessibilityLabel="Nom d’un ingrédient"
+              style={[
+                styles.addInput,
+                {
+                  backgroundColor: colors.paperRaised,
+                  borderColor: colors.thread,
+                  color: colors.ink,
+                },
+              ]}
+            />
+            <Button
+              variant="secondary"
+              label="Ajouter"
+              disabled={!canAddDraft}
+              onPress={() => add({ name: draft.trim() })}
+            />
+          </View>
+        </View>
+
+        <Field
+          label="Indications"
+          value={steps}
+          onChangeText={setSteps}
+          placeholder={
+            'Laver la salade et l’essorer.\n' +
+            'Égoutter le thon, l’émietter.\n' +
+            'Mélanger, assaisonner au dernier moment.'
+          }
+          multiline
+          style={styles.steps}
+        />
+
+        <Text variant="caption" color="inkSoft" style={styles.hint}>
+          Une étape par ligne. C’est ce qu’on relit en cuisinant.
+        </Text>
+
+        <Field
+          label="Où la trouver"
+          value={source}
+          onChangeText={setSource}
+          placeholder="https://… ou « le livre rouge, p. 42 »"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+
+        <Field
+          label="Pour combien de personnes"
+          value={servings}
+          onChangeText={setServings}
+          placeholder="4"
+          keyboardType="number-pad"
+          inputMode="numeric"
         />
       </View>
 
-      <Field
-        label="Où la trouver (facultatif)"
-        value={source}
-        onChangeText={setSource}
-        placeholder="https://… ou « le livre rouge, p. 42 »"
-        autoCapitalize="none"
-      />
-
-      <Field
-        label="Pour combien de personnes (facultatif)"
-        value={servings}
-        onChangeText={setServings}
-        placeholder="4"
-        keyboardType="number-pad"
-      />
-
-      {/* Ce qui fait une recette, ce n'est pas la liste de ce qu'on sort du
-          placard : c'est ce qu'on en fait. Le champ était intitulé « Notes »
-          avec un exemple d'ingrédients — il fabriquait donc une seconde liste
-          de courses, et personne n'aurait su comment cuisiner le plat. */}
-      <Field
-        label="Indications"
-        value={description}
-        onChangeText={setDescription}
-        placeholder={
-          'Laver la salade et l’essorer.\n' +
-          'Égoutter le thon, l’émietter.\n' +
-          'Mélanger, assaisonner au dernier moment.'
-        }
-        multiline
-        style={styles.steps}
-      />
-
-      <Text variant="caption" color="inkSoft">
-        Une étape par ligne. C’est ce qu’on relit en cuisinant — sans ça, la
-        fiche ne dit que ce qu’il faut sortir du placard.
-      </Text>
-
       {create.isError && (
-        <Text variant="caption" color="rustClay">
-          {latestFailure([create])}
+        <Text variant="caption" color="rustClay" style={styles.error}>
+          {apiErrorMessage(create.error)}
         </Text>
       )}
 
@@ -203,15 +247,20 @@ export default function NewRecipe() {
         label="Enregistrer"
         disabled={!canSave}
         loading={create.isPending}
-        onPress={save}
+        onPress={submit}
+        style={styles.submit}
       />
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: spacing.sm },
-  chosen: {
+  header: { gap: 2, marginBottom: spacing.lg },
+  form: { gap: spacing.md },
+  // Les ingrédients sont une liste : leur rythme interne est plus serré que
+  // celui qui sépare les champs, sinon le groupe se disloque.
+  group: { gap: spacing.xs },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -220,17 +269,22 @@ const styles = StyleSheet.create({
     borderWidth: border.hairline,
     borderRadius: radius.button,
   },
-  chosenName: { flex: 1 },
-  suggestion: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+  // La suggestion se distingue d'un ingrédient déjà retenu : bord teal, fond
+  // transparent — elle est une proposition, pas un acquis.
+  suggestion: { backgroundColor: 'transparent' },
+  rowName: { flex: 1 },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  addInput: {
+    flex: 1,
     minHeight: MIN_TOUCH_TARGET,
     paddingHorizontal: spacing.sm,
     borderWidth: border.hairline,
     borderRadius: radius.button,
+    fontFamily: fontFamily.body,
+    fontSize: fontSize.body,
   },
-  addRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs },
-  addField: { flex: 1 },
-  steps: { minHeight: 132 },
+  steps: { minHeight: 132, paddingTop: spacing.sm },
+  hint: { marginTop: -spacing.xs },
+  error: { marginTop: spacing.sm },
+  submit: { marginTop: spacing.lg },
 });
