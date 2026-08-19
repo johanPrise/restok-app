@@ -10,7 +10,15 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { fillPercent, fillRatio } from '@/lib/stock';
 import { statusBadge, statusColor, tagMeta } from '@/lib/item-display';
-import { border, gauge, motion, radius, spacing, useTheme } from '@/theme';
+import {
+  border,
+  gauge,
+  motion,
+  radius,
+  spacing,
+  textOn,
+  useTheme,
+} from '@/theme';
 import type { Item } from '@/types/api';
 import { BasketIcon } from './icons';
 import { Text } from './Text';
@@ -121,7 +129,9 @@ export function StockTag({
         {onList && <BasketIcon color={colors.inkSoft} size={14} />}
         {badge !== null && (
           <View style={[styles.badge, { backgroundColor: accent }]}>
-            <Text variant="monoLabel" color="paperRaised">
+            {/* L'encre suit l'aplat : « Stock bas » s'écrivait en clair sur
+                mustard, à 2,16:1. */}
+            <Text variant="monoLabel" color={textOn(statusColor(item.status))}>
               {badge}
             </Text>
           </View>

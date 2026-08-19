@@ -50,14 +50,24 @@ export default function TabsLayout() {
             impose la hauteur disponible. */}
         <TabSlot style={styles.slot} />
 
-        {pathname === '/shelf' && isAdmin && (
+        {/* Les recettes sont ouvertes à tous : le bouton n'y est pas réservé
+            aux admins, contrairement à l'étagère. */}
+        {(pathname === '/recipes' || (pathname === '/shelf' && isAdmin)) && (
           // La barre ne flotte plus au-dessus du contenu, mais le FAB, lui,
           // continue de le faire : `bottom` reste un simple espacement fixe,
           // plus besoin de calculer la hauteur d'une barre qui n'est plus là.
           <View style={styles.fabSlot} pointerEvents="box-none">
             <Fab
-              accessibilityLabel="Ajouter un item"
-              onPress={() => router.push('/items/new')}
+              accessibilityLabel={
+                pathname === '/recipes'
+                  ? 'Ajouter une recette'
+                  : 'Ajouter un item'
+              }
+              onPress={() =>
+                router.push(
+                  pathname === '/recipes' ? '/recipes/new' : '/items/new',
+                )
+              }
             />
           </View>
         )}

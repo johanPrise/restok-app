@@ -2,6 +2,7 @@ import { useColorScheme } from 'react-native';
 import { darkPalette, lightPalette, Palette } from './colors';
 
 export * from './colors';
+export * from './contrast';
 export * from './layout';
 export * from './typography';
 
