@@ -79,12 +79,21 @@ export function sortByFeasibility(
     );
 }
 
-/** Le libellé de la pastille. */
+/**
+ * Le libellé de la pastille.
+ *
+ * Court, parce que la pastille partage sa ligne avec le nom du plat : chaque
+ * caractère de trop pousse « Risotto aux champignons » sur une ligne de plus.
+ * « choses » disparaît donc — les manquants sont nommés juste en dessous, le
+ * compte suffit à annoncer la couleur.
+ *
+ * « On ne sait pas » plutôt que « Rien de suivi » : c'est ce que la pastille
+ * veut dire, et un écran qui admet son ignorance est plus fiable qu'un écran
+ * qui la déguise en constat.
+ */
 export function feasibilityLabel(state: Feasibility): string {
   if (state.kind === 'ready') return 'Tout est là';
-  if (state.kind === 'unknown') return 'Rien de suivi';
+  if (state.kind === 'unknown') return 'On ne sait pas';
 
-  const count = state.items.length;
-
-  return `Il manque ${count} chose${count > 1 ? 's' : ''}`;
+  return `Il manque ${state.items.length}`;
 }

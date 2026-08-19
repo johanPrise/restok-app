@@ -181,9 +181,9 @@ describe('sortByFeasibility', () => {
 describe('feasibilityLabel', () => {
   const cases: [Feasibility, string][] = [
     [{ kind: 'ready' }, 'Tout est là'],
-    [{ kind: 'unknown' }, 'Rien de suivi'],
-    [{ kind: 'missing', items: ['Riz'] }, 'Il manque 1 chose'],
-    [{ kind: 'missing', items: ['Riz', 'Sel'] }, 'Il manque 2 choses'],
+    [{ kind: 'unknown' }, 'On ne sait pas'],
+    [{ kind: 'missing', items: ['Riz'] }, 'Il manque 1'],
+    [{ kind: 'missing', items: ['Riz', 'Sel'] }, 'Il manque 2'],
   ];
 
   it.each(cases)('rend %j lisible', (state, expected) => {
