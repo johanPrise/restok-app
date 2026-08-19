@@ -2,6 +2,7 @@ import type { Item, ItemStatus, Recipe } from '@/types/api';
 import {
   feasibility,
   feasibilityLabel,
+  feasibleNow,
   sortByFeasibility,
   type Feasibility,
 } from './recipes';
@@ -188,5 +189,47 @@ describe('feasibilityLabel', () => {
 
   it.each(cases)('rend %j lisible', (state, expected) => {
     expect(feasibilityLabel(state)).toBe(expected);
+  });
+});
+
+describe('feasibleNow', () => {
+  const shelf = [
+    item('a', 'Riz', 'available'),
+    item('b', 'Bouillon', 'to_restock'),
+  ];
+
+  it('ne retient que ce qui se cuisine tout de suite', () => {
+    const found = feasibleNow(
+      [
+        recipe('Soupe', [{ itemId: 'b', name: 'Bouillon' }]),
+        recipe('Risotto', [{ itemId: 'a', name: 'Riz' }]),
+      ],
+      shelf,
+    );
+
+    expect(found.map((r) => r.name)).toEqual(['Risotto']);
+  });
+
+  it('écarte les muettes : on n’annonce pas ce dont on ne sait rien', () => {
+    expect(
+      feasibleNow([recipe('Vinaigrette', [{ name: 'Sel' }])], shelf),
+    ).toEqual([]);
+  });
+
+  it('s’arrête à trois — au-delà c’est une seconde liste', () => {
+    const many = Array.from({ length: 5 }, (_, index) =>
+      recipe(`Plat ${index}`, [{ itemId: 'a', name: 'Riz' }]),
+    );
+
+    expect(feasibleNow(many, shelf)).toHaveLength(3);
+  });
+
+  it('rend une liste vide quand rien n’est faisable', () => {
+    expect(
+      feasibleNow(
+        [recipe('Soupe', [{ itemId: 'b', name: 'Bouillon' }])],
+        shelf,
+      ),
+    ).toEqual([]);
   });
 });

@@ -79,6 +79,30 @@ export function sortByFeasibility(
     );
 }
 
+/** Trois : au-delà, ce n'est plus un rappel, c'est une seconde liste. */
+const TONIGHT_LIMIT = 3;
+
+/**
+ * Ce qui se cuisine tout de suite, pour l'annoncer ailleurs que dans l'onglet.
+ *
+ * Le risque numéro un de cette fonctionnalité est que personne ne détourne son
+ * chemin pour aller voir un quatrième onglet. Autant porter la réponse là où
+ * les gens passent déjà.
+ *
+ * Les recettes muettes n'y figurent jamais : on n'annonce pas « faisable » ce
+ * dont on ne sait rien.
+ */
+export function feasibleNow(
+  recipes: readonly Recipe[],
+  items: readonly Item[],
+  limit: number = TONIGHT_LIMIT,
+): Recipe[] {
+  return sortByFeasibility(recipes, items)
+    .filter((entry) => entry.state.kind === 'ready')
+    .slice(0, limit)
+    .map((entry) => entry.recipe);
+}
+
 /**
  * Le libellé de la pastille.
  *

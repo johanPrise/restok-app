@@ -11,9 +11,11 @@ import {
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
 import { useIsOnline } from '@/api/network';
+import { useRecipes } from '@/api/recipes';
 import { useShoppingList } from '@/api/shopping';
 import { Button } from '@/components/Button';
 import { EditableGroupName } from '@/components/EditableGroupName';
+import { FeasibleTonight } from '@/components/FeasibleTonight';
 import { FAB_SIZE } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -23,6 +25,7 @@ import { Text } from '@/components/Text';
 import { apiErrorMessage } from '@/lib/api-error';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
 import { offlineNotice } from '@/lib/offline';
+import { feasibleNow } from '@/lib/recipes';
 import { itemsOnList } from '@/lib/shopping-list';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import { useSession } from '@/store/session';
@@ -42,6 +45,7 @@ export default function Shelf() {
   const group = useGroup();
   const items = useItems();
   const shopping = useShoppingList();
+  const recipes = useRecipes();
   const online = useIsOnline();
   const pending = usePendingGestures();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
@@ -53,6 +57,11 @@ export default function Shelf() {
   const onList = useMemo(
     () => itemsOnList(shopping.data ?? []),
     [shopping.data],
+  );
+
+  const tonight = useMemo(
+    () => feasibleNow(recipes.data ?? [], items.data ?? []),
+    [recipes.data, items.data],
   );
 
   const sections = useMemo(
@@ -137,6 +146,11 @@ export default function Shelf() {
           />
         }
       >
+        <FeasibleTonight
+          recipes={tonight}
+          onPress={(recipe) => router.push(`/recipes/${recipe.id}`)}
+        />
+
         {items.isPending &&
           Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
 
