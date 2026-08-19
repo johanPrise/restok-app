@@ -100,12 +100,6 @@ export default function RecipeDetail() {
           />
         )}
 
-        {recipe.description !== null && (
-          <TagCard>
-            <Text variant="body">{recipe.description}</Text>
-          </TagCard>
-        )}
-
         <Text variant="monoLabel" color="inkSoft">
           Ingrédients
         </Text>
@@ -127,6 +121,24 @@ export default function RecipeDetail() {
             }
           />
         ))}
+
+        <Text variant="monoLabel" color="inkSoft" style={styles.section}>
+          Indications
+        </Text>
+
+        {/* La partie qu'on relit en cuisinant. Une fiche qui ne dit que les
+            ingrédients ne permet pas de faire le plat — savoir qu'il y a du
+            thon et de la salade n'apprend pas qu'il faut laver l'une avant de
+            la mélanger à l'autre. */}
+        {recipe.description !== null ? (
+          <Steps text={recipe.description} />
+        ) : (
+          <Text variant="body" color="inkSoft">
+            {recipe.source !== null
+              ? 'Rien de noté ici — la recette est au bout du lien.'
+              : 'Rien de noté. Sans indications, cette fiche ne dit que ce qu’il faut sortir du placard.'}
+          </Text>
+        )}
 
         {failure !== null && (
           <Text variant="caption" color="rustClay">
@@ -165,6 +177,44 @@ export default function RecipeDetail() {
         />
       </ScrollView>
     </Screen>
+  );
+}
+
+/**
+ * Les indications, une étape par ligne.
+ *
+ * Numérotées à l'affichage plutôt qu'à la saisie : personne n'a envie de taper
+ * « 1. » « 2. » au pouce, et une ligne renumérotée à la main se désaccorde dès
+ * qu'on en insère une. Un paragraphe unique reste un paragraphe — on ne
+ * découpe que ce que l'auteur a séparé.
+ */
+function Steps({ text }: Readonly<{ text: string }>) {
+  const lines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length < 2) {
+    return (
+      <TagCard>
+        <Text variant="body">{text}</Text>
+      </TagCard>
+    );
+  }
+
+  return (
+    <TagCard style={styles.steps}>
+      {lines.map((line, index) => (
+        <View key={`${index}-${line}`} style={styles.step}>
+          <Text variant="mono" color="pantryTeal" style={styles.stepNumber}>
+            {index + 1}
+          </Text>
+          <Text variant="body" style={styles.stepText}>
+            {line}
+          </Text>
+        </View>
+      ))}
+    </TagCard>
   );
 }
 
@@ -236,6 +286,11 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   ingredientText: { flex: 1 },
+  section: { marginTop: spacing.sm },
+  steps: { gap: spacing.sm },
+  step: { flexDirection: 'row', gap: spacing.sm },
+  stepNumber: { minWidth: spacing.md },
+  stepText: { flex: 1 },
   pill: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 3,

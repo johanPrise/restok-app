@@ -171,14 +171,27 @@ export default function NewRecipe() {
         keyboardType="number-pad"
       />
 
+      {/* Ce qui fait une recette, ce n'est pas la liste de ce qu'on sort du
+          placard : c'est ce qu'on en fait. Le champ était intitulé « Notes »
+          avec un exemple d'ingrédients — il fabriquait donc une seconde liste
+          de courses, et personne n'aurait su comment cuisiner le plat. */}
       <Field
-        label="Notes (facultatif)"
+        label="Indications"
         value={description}
         onChangeText={setDescription}
-        placeholder="200 g de riz, 2 c. à soupe d’huile…"
+        placeholder={
+          'Laver la salade et l’essorer.\n' +
+          'Égoutter le thon, l’émietter.\n' +
+          'Mélanger, assaisonner au dernier moment.'
+        }
         multiline
-        style={styles.notes}
+        style={styles.steps}
       />
+
+      <Text variant="caption" color="inkSoft">
+        Une étape par ligne. C’est ce qu’on relit en cuisinant — sans ça, la
+        fiche ne dit que ce qu’il faut sortir du placard.
+      </Text>
 
       {create.isError && (
         <Text variant="caption" color="rustClay">
@@ -219,5 +232,5 @@ const styles = StyleSheet.create({
   },
   addRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs },
   addField: { flex: 1 },
-  notes: { minHeight: 88 },
+  steps: { minHeight: 132 },
 });
