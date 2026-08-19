@@ -4,6 +4,8 @@ import { AuthModule } from '../auth/auth.module';
 import { Item } from '../items/entities/item.entity';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
 import { Recipe } from './entities/recipe.entity';
+import { fetchPage } from './import/fetch-page';
+import { PAGE_FETCHER } from './import/fetch-page.token';
 import { RecipeItemDeletedListener } from './listeners/item-deleted.listener';
 import { RecipesController } from './recipes.controller';
 import { RecipesService } from './recipes.service';
@@ -20,6 +22,10 @@ import { RecipesService } from './recipes.service';
     AuthModule,
   ],
   controllers: [RecipesController],
-  providers: [RecipesService, RecipeItemDeletedListener],
+  providers: [
+    RecipesService,
+    RecipeItemDeletedListener,
+    { provide: PAGE_FETCHER, useValue: fetchPage },
+  ],
 })
 export class RecipesModule {}

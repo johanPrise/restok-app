@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/types/jwt-payload.type';
 import { AddIngredientDto } from './dto/add-ingredient.dto';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
+import { ImportRecipeDto } from './dto/import-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipesService } from './recipes.service';
 
@@ -47,6 +48,12 @@ export class RecipesController {
   @Post()
   create(@Body() dto: CreateRecipeDto, @CurrentUser() user: AuthenticatedUser) {
     return this.recipesService.create(dto, user.groupId!, user.id);
+  }
+
+  /** Déclarée avant `:id` — sinon « import » serait lu comme un identifiant. */
+  @Post('import')
+  import(@Body() dto: ImportRecipeDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.recipesService.importFromUrl(dto.url, user.groupId!, user.id);
   }
 
   @Patch(':id')

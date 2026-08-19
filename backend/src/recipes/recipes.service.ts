@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +9,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { Item } from '../items/entities/item.entity';
 import { AddIngredientDto } from './dto/add-ingredient.dto';
+import { PAGE_FETCHER } from './import/fetch-page.token';
+import type { PageFetcher } from './import/fetch-page';
+import { matchItem } from './import/match-items';
+import { parseRecipePage } from './import/recipe-page';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
@@ -53,7 +58,54 @@ export class RecipesService {
     @InjectRepository(Item)
     private readonly itemRepo: Repository<Item>,
     private readonly dataSource: DataSource,
+    @Inject(PAGE_FETCHER)
+    private readonly fetchPage: PageFetcher,
   ) {}
+
+  /**
+   * Sauvegarde la recette que l'utilisateur est en train de lire.
+   *
+   * Le geste est celui qu'on connaît : on met de côté, comme une vidéo. Pas de
+   * lien à copier — le navigateur intégré sait déjà où l'on est.
+   *
+   * Les ingrédients arrivent en texte (« 100 g de riz basmati ») et sont
+   * **rattachés à l'étagère quand c'est possible**. Sans ça, la recette
+   * n'aurait que des lignes libres : elle serait « on ne sait pas », classée en
+   * bas, et le tri par faisabilité — la seule chose que l'app apporte à une
+   * recette — ne dirait rien.
+   */
+  async importFromUrl(
+    url: string,
+    groupId: string,
+    memberId: string,
+  ): Promise<RecipeView> {
+    const parsed = parseRecipePage(await this.fetchPage(url));
+    if (!parsed) {
+      throw new BadRequestException(
+        'Cette page ne publie pas sa recette. Note-la à la main, ou garde le lien.',
+      );
+    }
+
+    const shelf = await this.itemRepo.find({ where: { groupId } });
+
+    return this.create(
+      {
+        name: parsed.name.slice(0, 100),
+        source: url,
+        description: parsed.steps || undefined,
+        servings: parsed.servings ?? undefined,
+        ingredients: parsed.ingredients.map((line) => {
+          const item = matchItem(line, shelf);
+
+          // La ligne brute est conservée quand rien ne correspond : « 3 foie de
+          // volaille » reste lisible même si le groupe ne le suit pas.
+          return item ? { itemId: item.id } : { label: line.slice(0, 100) };
+        }),
+      },
+      groupId,
+      memberId,
+    );
+  }
 
   async findAllInGroup(groupId: string): Promise<RecipeView[]> {
     const recipes = await this.recipeRepo.find({

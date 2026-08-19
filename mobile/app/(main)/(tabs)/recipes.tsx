@@ -75,7 +75,10 @@ export default function Recipes() {
         )}
 
         {!recipes.isPending && !recipes.isError && sorted.length === 0 && (
-          <EmptyState onAdd={() => router.push('/recipes/new')} />
+          <EmptyState
+            onBrowse={() => router.push('/recipes/browse')}
+            onWrite={() => router.push('/recipes/new')}
+          />
         )}
 
         {sorted.map(({ recipe, state }) => (
@@ -101,20 +104,31 @@ function summary(ready: number): string {
   return `${ready} plat${ready > 1 ? 's' : ''} faisable${ready > 1 ? 's' : ''}`;
 }
 
-function EmptyState({ onAdd }: Readonly<{ onAdd: () => void }>) {
+function EmptyState({
+  onBrowse,
+  onWrite,
+}: Readonly<{ onBrowse: () => void; onWrite: () => void }>) {
   return (
     <TagCard style={styles.empty}>
       <Text variant="tagName" color="inkSoft" style={styles.centered}>
         Aucune recette
       </Text>
+      {/* La recherche d'abord : personne ne connaît par cœur les plats qu'il
+          voudrait cuisiner, et le lui demander serait exiger la réponse avant
+          la question. */}
       <Text variant="body" color="inkSoft" style={styles.centered}>
-        Note les plats que vous cuisinez souvent : l’app dira lesquels sont
-        faisables avec ce qu’il y a dans le placard.
+        Cherche des recettes et garde celles qui te tentent. L’app dira
+        lesquelles sont faisables avec ce qu’il y a dans le placard.
       </Text>
       <Button
+        label="Chercher une recette"
+        onPress={onBrowse}
+        style={styles.emptyAction}
+      />
+      <Button
         variant="secondary"
-        label="Ajouter une recette"
-        onPress={onAdd}
+        label="Écrire à la main"
+        onPress={onWrite}
         style={styles.emptyAction}
       />
     </TagCard>

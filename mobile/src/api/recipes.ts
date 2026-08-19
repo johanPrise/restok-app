@@ -38,6 +38,26 @@ export function useCreateRecipe() {
   });
 }
 
+/**
+ * Sauvegarde la page qu'on est en train de lire.
+ *
+ * Pas de clé de file d'attente : l'import demande le réseau par nature — il va
+ * chercher une page. Le mettre en attente n'aurait aucun sens.
+ */
+export function useImportRecipe() {
+  const invalidate = useInvalidateRecipes();
+
+  return useMutation({
+    networkMode: 'always',
+    mutationFn: (url: string) =>
+      authedRequest<Recipe>('/recipes/import', {
+        method: 'POST',
+        body: { url },
+      }),
+    onSuccess: () => void invalidate(),
+  });
+}
+
 export function useUpdateRecipe() {
   const invalidate = useInvalidateRecipes();
 

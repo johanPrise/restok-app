@@ -60,12 +60,12 @@ export default function TabsLayout() {
             <Fab
               accessibilityLabel={
                 pathname === '/recipes'
-                  ? 'Ajouter une recette'
+                  ? 'Chercher une recette'
                   : 'Ajouter un item'
               }
               onPress={() =>
                 router.push(
-                  pathname === '/recipes' ? '/recipes/new' : '/items/new',
+                  pathname === '/recipes' ? '/recipes/browse' : '/items/new',
                 )
               }
             />
