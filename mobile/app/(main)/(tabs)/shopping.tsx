@@ -26,6 +26,7 @@ import { ShoppingRow } from '@/components/ShoppingRow';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
 import { completeBlockedReason, offlineNotice } from '@/lib/offline';
@@ -58,6 +59,7 @@ export default function Shopping() {
   const shopping = useShoppingList();
   const items = useItems();
   const online = useIsOnline();
+  const toast = useToast();
   // Répartis par garantie : ce qui repartira seul, et ce qui ne survivrait pas
   // à une fermeture de l'app.
   const pending = usePendingGestures();
@@ -289,7 +291,16 @@ export default function Shopping() {
           label="J’ai fait les courses"
           disabled={checked === 0 || blocked !== null}
           loading={complete.isPending}
-          onPress={() => complete.mutate()}
+          // La liste se vide sous les yeux, mais ce qui compte s'est passé
+          // ailleurs : le stock est remonté et le journal l'a enregistré.
+          onPress={() =>
+            complete.mutate(undefined, {
+              onSuccess: () =>
+                toast(
+                  `${checked} rachat${checked > 1 ? 's' : ''} enregistré${checked > 1 ? 's' : ''} sur l’étagère`,
+                ),
+            })
+          }
         />
       </View>
     </Screen>

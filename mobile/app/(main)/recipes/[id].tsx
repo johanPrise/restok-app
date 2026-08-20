@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { latestFailure } from '@/lib/api-error';
 import { statusBadge, statusColor } from '@/lib/item-display';
 import { feasibility } from '@/lib/recipes';
@@ -21,6 +22,7 @@ import { border, radius, spacing, textOn, useTheme } from '@/theme';
 export default function RecipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const goBack = useGoBack('/recipes');
+  const toast = useToast();
   const recipes = useRecipes();
   const items = useItems();
   const shopping = useShoppingList();
@@ -111,13 +113,18 @@ export default function RecipeDetail() {
             item={ingredient.itemId ? byId.get(ingredient.itemId) : undefined}
             busy={take.isPending}
             onEmpty={(item) =>
-              take.mutate({
-                itemId: item.id,
-                // La quantité connue au moment du geste, jamais un nombre
-                // volontairement trop grand : mis en file, celui-ci effacerait
-                // un rachat fait entre-temps par quelqu'un d'autre.
-                quantity: item.quantity ?? undefined,
-              })
+              take.mutate(
+                {
+                  itemId: item.id,
+                  // La quantité connue au moment du geste, jamais un nombre
+                  // volontairement trop grand : mis en file, celui-ci
+                  // effacerait un rachat fait entre-temps par quelqu'un
+                  // d'autre.
+                  quantity: item.quantity ?? undefined,
+                },
+                // L'étagère et le journal changent ailleurs qu'ici.
+                { onSuccess: () => toast(`${item.name} signalé épuisé`) },
+              )
             }
           />
         ))}
@@ -159,14 +166,19 @@ export default function RecipeDetail() {
             label={`Ajouter ${toBuy.length} manquant${toBuy.length > 1 ? 's' : ''} aux courses`}
             loading={addLine.isPending}
             disabled={!online}
-            onPress={() =>
+            onPress={() => {
+              // Les lignes atterrissent dans un autre onglet : sans un mot,
+              // rien ici ne dit que le geste a porté.
               toBuy.forEach((item) =>
                 addLine.mutate({
                   itemId: item.id,
                   quantity: suggestedQuantity(item),
                 }),
-              )
-            }
+              );
+              toast(
+                `${toBuy.length} manquant${toBuy.length > 1 ? 's' : ''} ajouté${toBuy.length > 1 ? 's' : ''} aux courses`,
+              );
+            }}
           />
         )}
 
