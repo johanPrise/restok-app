@@ -126,6 +126,21 @@ export interface Recipe {
   ingredients: RecipeIngredient[];
 }
 
+/**
+ * Une proposition de recherche, avant qu'on la garde.
+ *
+ * Elle porte déjà ce qui manque : le tri se fait donc côté serveur, qui seul a
+ * les ingrédients du catalogue. C'est l'exception assumée à la règle « la
+ * faisabilité se calcule côté client » — chercher exige le réseau de toute
+ * façon.
+ */
+export interface RecipeSuggestion {
+  ref: string;
+  name: string;
+  have: string[];
+  missing: string[];
+}
+
 export interface CreateRecipeInput {
   name: string;
   source?: string;

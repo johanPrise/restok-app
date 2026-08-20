@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/store/session';
-import type { CreateRecipeInput, IngredientInput, Recipe } from '@/types/api';
+import type {
+  CreateRecipeInput,
+  IngredientInput,
+  Recipe,
+  RecipeSuggestion,
+} from '@/types/api';
 import { authedRequest } from './authed';
 import { queryKeys } from './query-client';
 
@@ -11,6 +16,40 @@ export function useRecipes() {
     queryKey: queryKeys.recipes,
     queryFn: () => authedRequest<Recipe[]>('/recipes'),
     enabled: Boolean(groupId),
+  });
+}
+
+/**
+ * Cherche dans le catalogue. Les propositions arrivent **déjà triées par ce
+ * qui manque le moins** — c'est le serveur qui trie, parce que lui seul
+ * connaît les ingrédients des recettes qu'on ne possède pas encore.
+ */
+export function useRecipeSearch(query: string) {
+  const trimmed = query.trim();
+
+  return useQuery({
+    queryKey: [...queryKeys.recipeSearch, trimmed],
+    queryFn: () =>
+      authedRequest<RecipeSuggestion[]>(
+        `/recipes/search?q=${encodeURIComponent(trimmed)}`,
+      ),
+    enabled: trimmed.length >= 2,
+    // Une recherche ne se périme pas : la même requête rend la même chose.
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useSaveFromCatalogue() {
+  const invalidate = useInvalidateRecipes();
+
+  return useMutation({
+    networkMode: 'always',
+    mutationFn: (ref: string) =>
+      authedRequest<Recipe>('/recipes/catalogue', {
+        method: 'POST',
+        body: { ref },
+      }),
+    onSuccess: () => void invalidate(),
   });
 }
 

@@ -19,6 +19,7 @@ export const queryKeys = {
   items: ['items'] as const,
   shopping: ['shopping'] as const,
   recipes: ['recipes'] as const,
+  recipeSearch: ['recipe-search'] as const,
   /**
    * Racine distincte de `items`, et non `['items', id, 'history']` :
    * l'invalidation de TanStack Query se fait par préfixe, donc la moindre

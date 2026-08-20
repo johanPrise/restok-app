@@ -9,6 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { Item } from '../items/entities/item.entity';
 import { AddIngredientDto } from './dto/add-ingredient.dto';
+import { CATALOGUE, type Catalogue } from './catalogue/catalogue';
+import { parseWikiRecipe } from './catalogue/parse-wiki';
 import { PAGE_FETCHER } from './import/fetch-page.token';
 import type { PageFetcher } from './import/fetch-page';
 import { matchItem } from './import/match-items';
@@ -20,6 +22,28 @@ import { Recipe } from './entities/recipe.entity';
 
 /** Code PostgreSQL d'une violation de contrainte d'unicité. */
 const UNIQUE_VIOLATION = '23505';
+
+/** Dix propositions : de quoi choisir sans avoir à lire une liste. */
+const SEARCH_LIMIT = 10;
+
+/**
+ * Les pages sont sous CC BY-SA : garder le lien vers la source n'est pas une
+ * politesse, c'est la condition de la licence.
+ */
+const CATALOGUE_SOURCE = 'https://fr.wikibooks.org/wiki/';
+
+/**
+ * Une proposition de recherche, avant qu'on la garde.
+ *
+ * Elle porte déjà ce qui manque : c'est ce qui permet de trier, et de décider
+ * sans ouvrir.
+ */
+export interface RecipeSuggestion {
+  ref: string;
+  name: string;
+  have: string[];
+  missing: string[];
+}
 
 /**
  * Ce que le client reçoit d'un ingrédient.
@@ -60,7 +84,78 @@ export class RecipesService {
     private readonly dataSource: DataSource,
     @Inject(PAGE_FETCHER)
     private readonly fetchPage: PageFetcher,
+    @Inject(CATALOGUE)
+    private readonly catalogue: Catalogue,
   ) {}
+
+  /**
+   * Cherche des recettes, et les classe **par ce qui manque le moins**.
+   *
+   * C'est le tri qui fait la valeur de cet écran : n'importe quel site sait
+   * lister des plats au poulet, aucun ne sait lequel te demandera deux courses
+   * plutôt que six.
+   *
+   * L'appariement se fait ici et non côté client, contrairement au tri des
+   * recettes déjà gardées : chercher exige le réseau de toute façon, et les
+   * ingrédients du catalogue ne sont dans aucun cache.
+   */
+  async search(query: string, groupId: string): Promise<RecipeSuggestion[]> {
+    const entries = await this.catalogue.search(query, SEARCH_LIMIT);
+    const pages = await this.catalogue.fetch(entries.map((e) => e.ref));
+    const shelf = await this.itemRepo.find({ where: { groupId } });
+
+    const suggestions = entries.flatMap((entry) => {
+      const wikitext = pages.get(entry.ref);
+      if (!wikitext) return [];
+
+      const recipe = parseWikiRecipe(entry.ref, wikitext);
+      // Sans ingrédient balisé, on ne peut rien dire de ce qui manque : la
+      // proposer serait proposer une carte muette.
+      if (recipe.ingredients.length === 0) return [];
+
+      const have: string[] = [];
+      const missing: string[] = [];
+      for (const ingredient of recipe.ingredients) {
+        (matchItem(ingredient, shelf) ? have : missing).push(ingredient);
+      }
+
+      return [{ ref: entry.ref, name: recipe.name, have, missing }];
+    });
+
+    return suggestions.sort(
+      (a, b) =>
+        a.missing.length - b.missing.length ||
+        a.name.localeCompare(b.name, 'fr'),
+    );
+  }
+
+  /** Garde une recette du catalogue, ingrédients déjà rattachés à l'étagère. */
+  async saveFromCatalogue(
+    ref: string,
+    groupId: string,
+    memberId: string,
+  ): Promise<RecipeView> {
+    const wikitext = (await this.catalogue.fetch([ref])).get(ref);
+    if (!wikitext) throw new NotFoundException('Recette introuvable');
+
+    const parsed = parseWikiRecipe(ref, wikitext);
+    const shelf = await this.itemRepo.find({ where: { groupId } });
+
+    return this.create(
+      {
+        name: parsed.name.slice(0, 100),
+        source: CATALOGUE_SOURCE + encodeURIComponent(ref.replace(/ /g, '_')),
+        description: parsed.steps || undefined,
+        ingredients: parsed.ingredients.map((name) => {
+          const item = matchItem(name, shelf);
+
+          return item ? { itemId: item.id } : { label: name.slice(0, 100) };
+        }),
+      },
+      groupId,
+      memberId,
+    );
+  }
 
   /**
    * Sauvegarde la recette que l'utilisateur est en train de lire.

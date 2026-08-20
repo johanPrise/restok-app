@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -17,6 +18,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/types/jwt-payload.type';
 import { AddIngredientDto } from './dto/add-ingredient.dto';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
+import { SaveFromCatalogueDto } from './dto/save-from-catalogue.dto';
+import { SearchRecipesDto } from './dto/search-recipes.dto';
 import { ImportRecipeDto } from './dto/import-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipesService } from './recipes.service';
@@ -37,6 +40,20 @@ export class RecipesController {
     return this.recipesService.findAllInGroup(user.groupId!);
   }
 
+  /**
+   * Déclarée avant `:id` — sinon « search » serait lu comme un identifiant.
+   *
+   * Les propositions arrivent **triées par ce qui manque le moins** : c'est la
+   * seule chose que cet écran apporte qu'un site de cuisine ne sait pas faire.
+   */
+  @Get('search')
+  search(
+    @Query() dto: SearchRecipesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.recipesService.search(dto.q, user.groupId!);
+  }
+
   @Get(':id')
   findOne(
     @Param('id', ParseUUIDPipe) recipeId: string,
@@ -51,6 +68,19 @@ export class RecipesController {
   }
 
   /** Déclarée avant `:id` — sinon « import » serait lu comme un identifiant. */
+  /** Garder une proposition du catalogue, ingrédients déjà rattachés. */
+  @Post('catalogue')
+  saveFromCatalogue(
+    @Body() dto: SaveFromCatalogueDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.recipesService.saveFromCatalogue(
+      dto.ref,
+      user.groupId!,
+      user.id,
+    );
+  }
+
   @Post('import')
   import(@Body() dto: ImportRecipeDto, @CurrentUser() user: AuthenticatedUser) {
     return this.recipesService.importFromUrl(dto.url, user.groupId!, user.id);

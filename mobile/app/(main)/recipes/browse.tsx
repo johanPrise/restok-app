@@ -1,14 +1,23 @@
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Platform, StyleSheet, TextInput, View } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { useImportRecipe } from '@/api/recipes';
+import { useState } from 'react';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
+import { useRecipeSearch, useSaveFromCatalogue } from '@/api/recipes';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
+import { TagCard } from '@/components/TagCard';
+import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
+import type { RecipeSuggestion } from '@/types/api';
 import {
   border,
   fontFamily,
@@ -20,69 +29,52 @@ import {
 } from '@/theme';
 
 /**
- * La recherche du site, pas sa page d'accueil.
+ * Chercher une recette, sans en connaître aucune.
  *
- * Déposer quelqu'un sur un site de cuisine en lui disant « cherche » n'est pas
- * une recherche de recettes, c'est lui refiler le travail. Ici il tape ce qu'il
- * veut manger et voit des résultats.
+ * Le catalogue est celui de Wikilivres : gratuit, sans compte, en français —
+ * ce qu'aucune API de recettes commerciale ne propose, y compris payante.
  *
- * Aucune API française de recettes n'existe : les deux qui font ce métier —
- * Spoonacular, Edamam — demandent un compte et ne renvoient que de l'anglais,
- * et « salade » n'y donne rien. Faute de mieux, on interroge la recherche d'un
- * site qui, lui, publie ses recettes en données structurées.
- */
-const SEARCH_URL = 'https://www.marmiton.org/recettes/recherche.aspx?aqt=';
-
-/**
- * Chercher une recette sans quitter l'app.
- *
- * C'est la réponse à la vraie objection : on ne peut pas demander à quelqu'un
- * de connaître ses recettes pour lui montrer ce qu'il peut cuisiner. Ici il
- * cherche, il trouve, il met de côté — comme on garde une vidéo. Le lien, il ne
- * le voit jamais : l'app sait sur quelle page il est.
+ * Les propositions arrivent **triées par ce qui manque le moins**. C'est la
+ * seule chose que cet écran apporte qu'un site de cuisine ne saurait pas
+ * faire : n'importe qui sait lister des plats au poulet, personne d'autre ne
+ * sait lequel te demandera deux courses plutôt que six.
  */
 export default function BrowseRecipes() {
   const router = useRouter();
   const goBack = useGoBack('/recipes');
   const { colors } = useTheme();
-  const importRecipe = useImportRecipe();
 
+  const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
-  const [target, setTarget] = useState(SEARCH_URL);
-  const [url, setUrl] = useState(SEARCH_URL);
-  const [title, setTitle] = useState('');
-  const webview = useRef<WebView>(null);
+  const results = useRecipeSearch(query);
+  const save = useSaveFromCatalogue();
 
-  const search = () => {
-    const wanted = query.trim();
-    if (wanted.length === 0) return;
-    // La clé force le rechargement même si l'on relance la même recherche.
-    setTarget(SEARCH_URL + encodeURIComponent(wanted) + `#${Date.now()}`);
-  };
-
-  const save = () =>
-    importRecipe.mutate(url, {
+  const keep = (suggestion: RecipeSuggestion) =>
+    save.mutate(suggestion.ref, {
       onSuccess: (recipe) => router.replace(`/recipes/${recipe.id}`),
     });
 
   return (
-    <Screen padded={false} edges={['top']}>
-      <View style={styles.bar}>
-        <BackLink onPress={goBack} />
-        <Text variant="caption" color="inkSoft" numberOfLines={1}>
-          {title || 'Chercher une recette'}
+    <Screen edges={['top']}>
+      <BackLink onPress={goBack} />
+
+      <View style={styles.header}>
+        <Text variant="title">Chercher</Text>
+        <Text variant="monoLabel" color="inkSoft">
+          Recettes / Catalogue
         </Text>
       </View>
 
       <View style={styles.searchRow}>
         <TextInput
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={search}
+          value={draft}
+          onChangeText={setDraft}
+          onSubmitEditing={() => setQuery(draft)}
           placeholder="Qu’est-ce que tu veux manger ?"
           placeholderTextColor={colors.inkSoft}
           returnKeyType="search"
           autoCapitalize="none"
+          autoCorrect={false}
           accessibilityLabel="Chercher une recette"
           style={[
             styles.search,
@@ -96,70 +88,115 @@ export default function BrowseRecipes() {
         <Button
           variant="secondary"
           label="Chercher"
-          disabled={query.trim().length === 0}
-          onPress={search}
+          disabled={draft.trim().length < 2}
+          onPress={() => setQuery(draft)}
         />
       </View>
 
-      {/* `react-native-webview` n'existe pas sur le web : là-bas on n'a de toute
-          façon pas besoin d'un navigateur dans un navigateur. */}
-      {Platform.OS === 'web' ? (
-        <View style={styles.unsupported}>
-          <Text variant="body" color="inkSoft" style={styles.centered}>
-            La recherche de recettes se fait depuis l’app mobile.
-          </Text>
-        </View>
-      ) : (
-        <WebView
-          ref={webview}
-          source={{ uri: target }}
-          onNavigationStateChange={(state) => {
-            setUrl(state.url);
-            setTitle(state.title ?? '');
-          }}
-          style={styles.web}
-        />
-      )}
-
-      <View style={[styles.footer, { borderTopColor: colors.thread }]}>
-        {importRecipe.isError && (
-          <Text variant="caption" color="rustClay">
-            {apiErrorMessage(importRecipe.error)}
+      <ScrollView
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={results.isRefetching}
+            onRefresh={() => void results.refetch()}
+            tintColor={colors.pantryTeal}
+          />
+        }
+      >
+        {query.trim().length < 2 && (
+          <Text variant="body" color="inkSoft" style={styles.hint}>
+            Tape un plat, un ingrédient, une envie. Les propositions arrivent
+            classées par ce qu’il te reste à acheter.
           </Text>
         )}
 
-        <Button
-          label="Sauvegarder cette recette"
-          loading={importRecipe.isPending}
-          onPress={save}
-        />
+        {results.isPending &&
+          query.trim().length >= 2 &&
+          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
 
-        {/* Le repli quand la page ne publie rien d'exploitable. */}
-        <Button
-          variant="secondary"
-          label="Écrire à la main"
-          onPress={() => router.replace('/recipes/new')}
-        />
-      </View>
+        {results.isError && (
+          <Text variant="body" color="rustClay" style={styles.hint}>
+            {apiErrorMessage(results.error)}
+          </Text>
+        )}
+
+        {results.isSuccess && results.data.length === 0 && (
+          <Text variant="body" color="inkSoft" style={styles.hint}>
+            Rien trouvé pour « {query} ». Essaie un mot plus simple — « poulet »
+            plutôt que « poulet du dimanche ».
+          </Text>
+        )}
+
+        {save.isError && (
+          <Text variant="caption" color="rustClay">
+            {apiErrorMessage(save.error)}
+          </Text>
+        )}
+
+        {(results.data ?? []).map((suggestion) => (
+          <Suggestion
+            key={suggestion.ref}
+            suggestion={suggestion}
+            busy={save.isPending}
+            onKeep={() => keep(suggestion)}
+          />
+        ))}
+      </ScrollView>
     </Screen>
   );
 }
 
+function Suggestion({
+  suggestion,
+  busy,
+  onKeep,
+}: Readonly<{
+  suggestion: RecipeSuggestion;
+  busy: boolean;
+  onKeep: () => void;
+}>) {
+  const { colors } = useTheme();
+  const total = suggestion.have.length + suggestion.missing.length;
+  const missing = suggestion.missing.length;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${suggestion.name}, il te manque ${missing} ingrédient${missing > 1 ? 's' : ''}`}
+      onPress={onKeep}
+      disabled={busy}
+    >
+      <TagCard
+        accentColor={missing === 0 ? colors.sage : undefined}
+        style={styles.card}
+      >
+        <Text variant="tagName" numberOfLines={2}>
+          {suggestion.name}
+        </Text>
+
+        {/* Le compte d'abord, les noms ensuite : on décide sur le nombre, on
+            vérifie sur la liste. */}
+        <Text variant="monoLabel" color={missing === 0 ? 'sage' : 'inkSoft'}>
+          {missing === 0
+            ? `Tout est là — ${total} ingrédients`
+            : `${total} ingrédients · il te manque ${missing}`}
+        </Text>
+
+        {missing > 0 && (
+          <Text variant="caption" color="inkSoft" numberOfLines={2}>
+            {suggestion.missing.join(' · ')}
+          </Text>
+        )}
+      </TagCard>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
+  header: { gap: 2, marginBottom: spacing.md },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   search: {
     flex: 1,
     minHeight: MIN_TOUCH_TARGET,
@@ -169,12 +206,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     fontSize: fontSize.body,
   },
-  web: { flex: 1 },
-  unsupported: { flex: 1, justifyContent: 'center', padding: spacing.lg },
-  centered: { textAlign: 'center' },
-  footer: {
-    padding: spacing.md,
-    gap: spacing.xs,
-    borderTopWidth: border.hairline,
-  },
+  list: { paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
+  card: { gap: spacing.xs },
+  hint: { paddingVertical: spacing.md },
 });

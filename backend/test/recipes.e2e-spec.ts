@@ -318,6 +318,117 @@ describe('Recipes (e2e)', () => {
     });
   });
 
+  describe('GET /recipes/search', () => {
+    const pages = JSON.parse(
+      readFileSync(join(__dirname, 'fixtures/wikibooks.json'), 'utf-8'),
+    ) as Record<string, string>;
+
+    const search = (member: TestMember, q: string) =>
+      auth(app, member).get(`/recipes/search?q=${encodeURIComponent(q)}`);
+
+    beforeEach(() => ctx.setCatalogue(pages));
+
+    it('classe par ce qui manque le moins', async () => {
+      // C'est la seule chose que cet écran apporte qu'un site de cuisine ne
+      // sait pas faire : dire lequel demandera deux courses plutôt que six.
+      await createItem('Riz');
+      await createItem('Tomate');
+      await createItem('Oignon');
+
+      const res = await search(bob, 'Poulet').expect(200);
+
+      const counts = res.body.map(
+        (r: { missing: string[] }) => r.missing.length,
+      );
+      expect(counts).toEqual([...counts].sort((a: number, b: number) => a - b));
+
+      // La basquaise (7 ingrédients, 5 manquants) passe devant le poulet au riz
+      // (11, 8) alors que celui-ci utilise *plus* de ce qu'on a. C'est voulu :
+      // ce qui compte est ce qu'il reste à acheter, pas ce qu'on possède déjà —
+      // et ça favorise mécaniquement les plats courts.
+      expect(res.body[0].name).toBe('Poulet basquaise');
+    });
+
+    it('sépare ce qu’on a de ce qui manque', async () => {
+      await createItem('Riz');
+
+      const res = await search(bob, 'Poulet au riz').expect(200);
+
+      expect(res.body[0].have).toContain('riz');
+      expect(res.body[0].missing).toContain('poulet');
+    });
+
+    it('compte tout comme manquant sur une étagère vide', async () => {
+      const res = await search(bob, 'Poulet basquaise').expect(200);
+
+      expect(res.body[0].have).toEqual([]);
+      expect(res.body[0].missing.length).toBeGreaterThan(4);
+    });
+
+    it('rend une liste vide quand rien ne correspond', async () => {
+      const res = await search(bob, 'tiramisu').expect(200);
+
+      expect(res.body).toEqual([]);
+    });
+
+    it('est ouverte à un simple membre', async () => {
+      await search(bob, 'Poulet').expect(200);
+    });
+
+    it('rejette une recherche trop courte', async () => {
+      await search(bob, 'a').expect(400);
+    });
+  });
+
+  describe('POST /recipes/catalogue', () => {
+    const pages = JSON.parse(
+      readFileSync(join(__dirname, 'fixtures/wikibooks.json'), 'utf-8'),
+    ) as Record<string, string>;
+
+    beforeEach(() => ctx.setCatalogue(pages));
+
+    const save = (member: TestMember, ref: string) =>
+      auth(app, member).post('/recipes/catalogue').send({ ref });
+
+    it('garde la recette avec ses étapes et sa source', async () => {
+      const res = await save(bob, 'Livre de cuisine/Poulet basquaise').expect(
+        201,
+      );
+
+      expect(res.body.name).toBe('Poulet basquaise');
+      // CC BY-SA : garder le lien vers la page n'est pas une politesse.
+      expect(res.body.source).toContain('fr.wikibooks.org');
+      expect(res.body.description.length).toBeGreaterThan(80);
+    });
+
+    it('rattache à l’étagère ce qu’elle suit déjà', async () => {
+      await createItem('Tomate');
+
+      const res = await save(bob, 'Livre de cuisine/Poulet basquaise').expect(
+        201,
+      );
+
+      const tomate = res.body.ingredients.find(
+        (i: { name: string }) => i.name === 'Tomate',
+      );
+      expect(tomate?.itemId).not.toBeNull();
+    });
+
+    it('garde en texte libre ce que le groupe ne suit pas', async () => {
+      const res = await save(bob, 'Livre de cuisine/Poulet basquaise').expect(
+        201,
+      );
+
+      expect(
+        res.body.ingredients.map((i: { name: string }) => i.name),
+      ).toContain('poulet');
+    });
+
+    it('refuse une référence inconnue', async () => {
+      await save(bob, 'Livre de cuisine/Inexistante').expect(404);
+    });
+  });
+
   describe('POST /recipes/import', () => {
     const marmiton = readFileSync(
       join(__dirname, 'fixtures/marmiton.html'),
