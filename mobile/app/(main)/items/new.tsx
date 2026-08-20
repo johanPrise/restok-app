@@ -7,6 +7,7 @@ import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { useGoBack } from '@/lib/useGoBack';
 import { useSession } from '@/store/session';
 import { spacing } from '@/theme';
@@ -29,6 +30,7 @@ const HINTS: Record<TrackingType, string> = {
  */
 export default function NewItem() {
   const goBack = useGoBack();
+  const toast = useToast();
   const create = useCreateItem();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
 
@@ -70,7 +72,12 @@ export default function NewItem() {
       if (target.trim()) input.targetQuantity = Number(target);
     }
 
-    create.mutate(input, { onSuccess: goBack });
+    create.mutate(input, {
+      onSuccess: (item) => {
+        toast(`${item.name} ajouté à l’étagère`);
+        goBack();
+      },
+    });
   };
 
   if (!isAdmin) {

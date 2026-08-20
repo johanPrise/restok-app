@@ -71,7 +71,13 @@ export default function RecipeDetail() {
       {
         text: 'Supprimer',
         style: 'destructive',
-        onPress: () => remove.mutate(recipe.id, { onSuccess: goBack }),
+        onPress: () =>
+          remove.mutate(recipe.id, {
+            onSuccess: () => {
+              toast(`« ${recipe.name} » supprimée`);
+              goBack();
+            },
+          }),
       },
     ]);
 

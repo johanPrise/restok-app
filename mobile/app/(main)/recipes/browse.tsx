@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import type { RecipeSuggestion } from '@/types/api';
@@ -42,6 +43,7 @@ import {
 export default function BrowseRecipes() {
   const router = useRouter();
   const goBack = useGoBack('/recipes');
+  const toast = useToast();
   const { colors } = useTheme();
 
   const [draft, setDraft] = useState('');
@@ -51,7 +53,10 @@ export default function BrowseRecipes() {
 
   const keep = (suggestion: RecipeSuggestion) =>
     save.mutate(suggestion.ref, {
-      onSuccess: (recipe) => router.replace(`/recipes/${recipe.id}`),
+      onSuccess: (recipe) => {
+        toast(`« ${recipe.name} » gardée dans tes recettes`);
+        router.replace(`/recipes/${recipe.id}`);
+      },
     });
 
   return (

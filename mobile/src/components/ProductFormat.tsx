@@ -12,6 +12,7 @@ import {
 } from '@/theme';
 import type { Item } from '@/types/api';
 import { Text } from './Text';
+import { useToast } from './Toast';
 
 interface ProductFormatProps {
   item: Item;
@@ -32,6 +33,7 @@ const MAX_LENGTH = 20;
 export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
   const { colors } = useTheme();
   const setFormat = useSetItemFormat();
+  const toast = useToast();
   const [draft, setDraft] = useState<string | null>(null);
 
   const commit = () => {
@@ -39,7 +41,10 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
     setDraft(null);
 
     if (next === (item.format ?? '')) return;
-    setFormat.mutate({ itemId: item.id, format: next });
+    setFormat.mutate(
+      { itemId: item.id, format: next },
+      { onSuccess: () => toast('Format enregistré') },
+    );
   };
 
   if (draft !== null) {

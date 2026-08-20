@@ -105,7 +105,10 @@ export default function Shopping() {
   const submit = () => {
     if (!canAdd) return;
     setDraft('');
-    add.mutate({ label });
+    add.mutate(
+      { label },
+      { onSuccess: () => toast(`${label} ajouté aux courses`) },
+    );
   };
 
   /**
@@ -114,13 +117,19 @@ export default function Shopping() {
    */
   const addFromShelf = (item: Item) => {
     setDraft('');
-    add.mutate({ itemId: item.id, quantity: suggestedQuantity(item) });
+    add.mutate(
+      { itemId: item.id, quantity: suggestedQuantity(item) },
+      { onSuccess: () => toast(`${item.name} ajouté aux courses`) },
+    );
   };
 
   const commitQuantity = (line: ShoppingLine, units: number) => {
     setEditingId(null);
     if (units !== line.quantity)
-      setQuantity.mutate({ id: line.id, quantity: units });
+      setQuantity.mutate(
+        { id: line.id, quantity: units },
+        { onSuccess: () => toast(`${line.name} : quantité corrigée`) },
+      );
   };
 
   const confirmRemove = (line: ShoppingLine) =>
@@ -129,7 +138,10 @@ export default function Shopping() {
       {
         text: 'Retirer',
         style: 'destructive',
-        onPress: () => remove.mutate(line.id),
+        onPress: () =>
+          remove.mutate(line.id, {
+            onSuccess: () => toast(`${line.name} retiré de la liste`),
+          }),
       },
     ]);
 
@@ -201,7 +213,14 @@ export default function Shopping() {
             missing={missing.length}
             loading={refill.isPending}
             online={online}
-            onRefill={() => refill.mutate()}
+            onRefill={() =>
+              refill.mutate(undefined, {
+                onSuccess: () =>
+                  toast(
+                    `${missing.length} item${missing.length > 1 ? 's' : ''} versé${missing.length > 1 ? 's' : ''} dans la liste`,
+                  ),
+              })
+            }
           />
         )}
 
@@ -214,7 +233,14 @@ export default function Shopping() {
             label={`Récupérer ${missing.length} item${missing.length > 1 ? 's' : ''} à racheter`}
             loading={refill.isPending}
             disabled={!online}
-            onPress={() => refill.mutate()}
+            onPress={() =>
+              refill.mutate(undefined, {
+                onSuccess: () =>
+                  toast(
+                    `${missing.length} item${missing.length > 1 ? 's' : ''} versé${missing.length > 1 ? 's' : ''} dans la liste`,
+                  ),
+              })
+            }
           />
         )}
 

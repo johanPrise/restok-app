@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { useGoBack } from '@/lib/useGoBack';
 import {
   defaultRestockPacks,
@@ -92,7 +93,9 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
         />
       </View>
 
-      {isAdmin && <DeleteItem itemId={item.id} onDeleted={goBack} />}
+      {isAdmin && (
+        <DeleteItem itemId={item.id} name={item.name} onDeleted={goBack} />
+      )}
     </ScrollView>
   );
 }
@@ -223,8 +226,10 @@ function ItemActionsPanel({
  */
 function DeleteItem({
   itemId,
+  name,
   onDeleted,
-}: Readonly<{ itemId: string; onDeleted: () => void }>) {
+}: Readonly<{ itemId: string; name: string; onDeleted: () => void }>) {
+  const toast = useToast();
   const [confirming, setConfirming] = useState(false);
   const remove = useDeleteItem();
 
@@ -256,7 +261,14 @@ function DeleteItem({
           label="Supprimer"
           variant="danger"
           loading={remove.isPending}
-          onPress={() => remove.mutate(itemId, { onSuccess: onDeleted })}
+          onPress={() =>
+            remove.mutate(itemId, {
+              onSuccess: () => {
+                toast(`${name} supprimé de l’étagère`);
+                onDeleted();
+              },
+            })
+          }
           style={styles.action}
         />
       </View>

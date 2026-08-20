@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useRenameGroup } from '@/api/groups';
 import { border, radius, spacing, textStyles, useTheme } from '@/theme';
 import { Text } from './Text';
+import { useToast } from './Toast';
 
 interface EditableGroupNameProps {
   name: string;
@@ -24,6 +25,7 @@ export function EditableGroupName({
 }: Readonly<EditableGroupNameProps>) {
   const { colors } = useTheme();
   const rename = useRenameGroup();
+  const toast = useToast();
   const [draft, setDraft] = useState<string | null>(null);
 
   const commit = () => {
@@ -32,7 +34,9 @@ export function EditableGroupName({
 
     // Un nom trop court ou inchangé n'a pas à faire un aller-retour réseau.
     if (next.length < MIN_LENGTH || next === name) return;
-    rename.mutate(next);
+    rename.mutate(next, {
+      onSuccess: () => toast(`Groupe renommé « ${next} »`),
+    });
   };
 
   if (draft === null) {

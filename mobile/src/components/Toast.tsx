@@ -35,17 +35,18 @@ const TABS = ['/shelf', '/shopping', '/recipes', '/settings'];
 const ToastContext = createContext<(message: string) => void>(() => {});
 
 /**
- * Confirmer une action **dont l'effet ne se voit pas ici**.
+ * Accuser réception d'un geste délibéré.
  *
- * C'est le seul cas où un toast se justifie. Cocher une ligne coche la case,
- * balayer un tag décroche le tag, créer une recette la fait apparaître dans la
- * liste : répéter ça par-dessus l'écran, c'est du bruit qui apprend à ignorer
- * les messages — y compris ceux qui comptent.
+ * La règle n'est **pas** « seulement quand le résultat est invisible ». Voir un
+ * écran changer ne dit pas que l'action a été enregistrée : la liste peut se
+ * réordonner pour dix raisons. L'accusé de réception nomme ce qui vient d'être
+ * fait — « Pain ajouté aux courses », « Tu as quitté le groupe » — et c'est ce
+ * qui distingue une app qui répond d'une app qui laisse deviner.
  *
- * Restent les actions qui écrivent **ailleurs** : verser des manquants dans les
- * courses depuis une recette, signaler un item épuisé depuis une fiche, clore
- * les courses et remettre du stock. Là, sans un mot, on ne sait pas si le geste
- * a porté.
+ * Une seule exception, et pour une raison précise : les gestes qui partent en
+ * rafale. Cocher huit lignes au magasin ferait huit messages, chacun chassant
+ * le précédent — la coche est déjà sa propre réponse, immédiate et réversible.
+ * Partout ailleurs, un geste délibéré mérite un mot.
  */
 export function useToast(): (message: string) => void {
   return useContext(ToastContext);

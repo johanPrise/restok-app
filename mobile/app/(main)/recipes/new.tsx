@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
@@ -40,6 +41,7 @@ interface Draft {
  */
 export default function NewRecipe() {
   const goBack = useGoBack('/recipes');
+  const toast = useToast();
   const { colors } = useTheme();
   const items = useItems();
   const create = useCreateRecipe();
@@ -87,7 +89,12 @@ export default function NewRecipe() {
             : { label: ingredient.name },
         ),
       },
-      { onSuccess: goBack },
+      {
+        onSuccess: (recipe) => {
+          toast(`Recette « ${recipe.name} » ajoutée`);
+          goBack();
+        },
+      },
     );
   };
 
