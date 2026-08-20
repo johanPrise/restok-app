@@ -5,13 +5,10 @@ import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/app.setup';
 import { PUSH_PROVIDER } from '../../src/notifications/providers/push-provider.interface';
 import { CATALOGUE } from '../../src/recipes/catalogue/catalogue';
-import { PAGE_FETCHER } from '../../src/recipes/import/fetch-page.token';
 import { RecordingPushProvider } from './recording-push.provider';
 
 export interface E2EContext {
   app: INestApplication;
-  /** Ce que le prochain import lira, au lieu d'aller sur le web. */
-  setPage(html: string | Error): void;
   /** Le catalogue que la recherche verra, au lieu d'interroger Wikilivres. */
   setCatalogue(pages: Record<string, string>): void;
   push: RecordingPushProvider;
@@ -23,7 +20,6 @@ export interface E2EContext {
 export async function createE2EApp(): Promise<E2EContext> {
   // La suite ne sort jamais sur le réseau : elle échouerait le jour où un site
   // change, ou dès qu'on la lance sans connexion.
-  let page: string | Error = '<html></html>';
   let catalogue: Record<string, string> = {};
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -47,10 +43,6 @@ export async function createE2EApp(): Promise<E2EContext> {
           ),
         ),
     })
-    .overrideProvider(PAGE_FETCHER)
-    .useValue(() =>
-      page instanceof Error ? Promise.reject(page) : Promise.resolve(page),
-    )
     .compile();
 
   const app = configureApp(moduleRef.createNestApplication());
@@ -67,9 +59,6 @@ export async function createE2EApp(): Promise<E2EContext> {
   return {
     app,
     push,
-    setPage(html) {
-      page = html;
-    },
     setCatalogue(pages) {
       catalogue = pages;
     },

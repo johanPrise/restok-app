@@ -20,7 +20,6 @@ import { AddIngredientDto } from './dto/add-ingredient.dto';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { SaveFromCatalogueDto } from './dto/save-from-catalogue.dto';
 import { SearchRecipesDto } from './dto/search-recipes.dto';
-import { ImportRecipeDto } from './dto/import-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipesService } from './recipes.service';
 
@@ -79,11 +78,6 @@ export class RecipesController {
       user.groupId!,
       user.id,
     );
-  }
-
-  @Post('import')
-  import(@Body() dto: ImportRecipeDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.recipesService.importFromUrl(dto.url, user.groupId!, user.id);
   }
 
   @Patch(':id')

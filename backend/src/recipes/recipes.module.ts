@@ -6,8 +6,6 @@ import { RecipeIngredient } from './entities/recipe-ingredient.entity';
 import { Recipe } from './entities/recipe.entity';
 import { CATALOGUE } from './catalogue/catalogue';
 import { WikibooksCatalogue } from './catalogue/wikibooks.catalogue';
-import { fetchPage } from './import/fetch-page';
-import { PAGE_FETCHER } from './import/fetch-page.token';
 import { RecipeItemDeletedListener } from './listeners/item-deleted.listener';
 import { RecipesController } from './recipes.controller';
 import { RecipesService } from './recipes.service';
@@ -27,7 +25,6 @@ import { RecipesService } from './recipes.service';
   providers: [
     RecipesService,
     RecipeItemDeletedListener,
-    { provide: PAGE_FETCHER, useValue: fetchPage },
     { provide: CATALOGUE, useClass: WikibooksCatalogue },
   ],
 })
