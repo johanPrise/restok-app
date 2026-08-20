@@ -13,12 +13,9 @@
  * - ajouter une ligne libre peut produire un doublon si la réponse s'est
  *   perdue. Une ligne en trop se retire d'un appui long : le coût est visible
  *   et réparable.
- * - **valider les courses** transforme les coches en rachats : c'est une
- *   incrémentation, qui écrit dans le stock *et* dans le journal. Rejouée, elle
- *   double l'inventaire et le journal jure que c'est vrai. Elle n'a pas de clé,
- *   et l'écran l'interdit hors-ligne.
- * - verser depuis l'étagère calcule ce qui manque **au moment de l'appel** :
- *   différée d'une heure, elle verserait un état qui n'est plus le bon.
+ * - **valider les courses**, **prendre** et **racheter** sont des
+ *   incrémentations. Rejouées, elles comptent deux fois — et pour les deux
+ *   dernières, dans le journal, qui est censé dire la vérité.
  */
 export const mutationKeys = {
   addShoppingLine: ['shopping', 'add'] as const,
@@ -26,3 +23,31 @@ export const mutationKeys = {
   setShoppingLineQuantity: ['shopping', 'quantity'] as const,
   removeShoppingLine: ['shopping', 'remove'] as const,
 };
+
+/**
+ * **Décision du 18 août 2026 — à rouvrir, pas une fatalité.**
+ *
+ * Ce qui interdit une clé à `take` et `restock` n'est pas leur nature, c'est
+ * l'absence de déduplication côté serveur. Un identifiant d'opération engendré
+ * par le client, porté par la mutation, plus une contrainte d'unicité sur
+ * `action_history`, et une prise devient rejouable sans compter deux fois —
+ * donc persistable, donc restaurable après un redémarrage.
+ *
+ * Pourquoi ça vaut mieux qu'un confort d'interface : **une prise perdue est une
+ * ligne de journal perdue.** L'app existe pour dire qui a sorti quoi. Un geste
+ * qui disparaît en silence n'est pas un défaut d'affichage, c'est la promesse
+ * centrale du produit qui se dément.
+ *
+ * En attendant, les écrans doivent **dire la vérité** sur ce qu'ils garantissent
+ * — d'où `isResumableKey`, qui sert à ne pas promettre une livraison qu'on
+ * n'assure pas.
+ */
+export function isResumableKey(key: unknown): boolean {
+  if (!Array.isArray(key)) return false;
+
+  return Object.values(mutationKeys).some(
+    (known) =>
+      known.length === key.length &&
+      known.every((part, index) => part === key[index]),
+  );
+}

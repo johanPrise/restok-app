@@ -16,6 +16,7 @@ import { InviteCodeCard } from '@/components/InviteCodeCard';
 import { MemberRow } from '@/components/MemberRow';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { useSession } from '@/store/session';
 import { MIN_TOUCH_TARGET, spacing } from '@/theme';
 import type { GroupDetail, MemberSummary } from '@/types/api';
@@ -34,6 +35,7 @@ export default function Settings() {
   const group = useGroup();
   const members = useMembers();
   const signOut = useSignOut();
+  const toast = useToast();
   const router = useRouter();
   const isAdmin = member?.role === 'admin';
 
@@ -92,7 +94,10 @@ export default function Settings() {
           <Button
             label="Se déconnecter"
             variant="secondary"
-            onPress={() => void signOut()}
+            onPress={() => {
+              void signOut();
+              toast('Tu es déconnecté');
+            }}
           />
         </View>
       </ScrollView>
@@ -114,6 +119,7 @@ function Members({
   const [managing, setManaging] = useState(false);
   const setRole = useSetMemberRole();
   const remove = useRemoveMember();
+  const toast = useToast();
 
   return (
     <View style={styles.section}>
@@ -138,13 +144,25 @@ function Members({
           member={entry}
           isSelf={entry.id === selfId}
           managing={managing}
-          onToggleRole={() =>
-            setRole.mutate({
-              memberId: entry.id,
-              role: entry.role === 'admin' ? 'member' : 'admin',
+          onToggleRole={() => {
+            const role = entry.role === 'admin' ? 'member' : 'admin';
+            setRole.mutate(
+              { memberId: entry.id, role },
+              {
+                onSuccess: () =>
+                  toast(
+                    role === 'admin'
+                      ? `${entry.name} est admin`
+                      : `${entry.name} n’est plus admin`,
+                  ),
+              },
+            );
+          }}
+          onRemove={() =>
+            remove.mutate(entry.id, {
+              onSuccess: () => toast(`${entry.name} retiré du groupe`),
             })
           }
-          onRemove={() => remove.mutate(entry.id)}
         />
       ))}
 
@@ -165,6 +183,7 @@ function DeleteGroup({ group }: Readonly<{ group: GroupDetail }>) {
   const [arming, setArming] = useState(false);
   const [typed, setTyped] = useState('');
   const remove = useDeleteGroup();
+  const toast = useToast();
 
   const matches =
     typed.trim().toLowerCase() === group.name.trim().toLowerCase();
@@ -217,7 +236,11 @@ function DeleteGroup({ group }: Readonly<{ group: GroupDetail }>) {
           variant="danger"
           disabled={!matches}
           loading={remove.isPending}
-          onPress={() => remove.mutate()}
+          onPress={() =>
+            remove.mutate(undefined, {
+              onSuccess: () => toast(`Groupe « ${group.name} » supprimé`),
+            })
+          }
           style={styles.action}
         />
       </View>
@@ -234,6 +257,7 @@ function DeleteGroup({ group }: Readonly<{ group: GroupDetail }>) {
 function LeaveGroup() {
   const [confirming, setConfirming] = useState(false);
   const leave = useLeaveGroup();
+  const toast = useToast();
 
   if (!confirming) {
     return (
@@ -269,7 +293,11 @@ function LeaveGroup() {
           label="Quitter"
           variant="danger"
           loading={leave.isPending}
-          onPress={() => leave.mutate()}
+          onPress={() =>
+            leave.mutate(undefined, {
+              onSuccess: () => toast('Tu as quitté le groupe'),
+            })
+          }
           style={styles.action}
         />
       </View>

@@ -169,7 +169,10 @@ export class ItemsService {
 
     // La suppression est douce : rien ne cascade. L'event laisse le reste de
     // l'app faire le ménage sans que l'étagère ait à savoir qui l'écoute.
-    this.eventEmitter.emit(ITEM_DELETED, new ItemDeletedEvent(itemId, groupId));
+    this.eventEmitter.emit(
+      ITEM_DELETED,
+      new ItemDeletedEvent(itemId, groupId, item.name),
+    );
   }
 
   /** Le filtre sur groupId isole les groupes : un item d'ailleurs est introuvable. */

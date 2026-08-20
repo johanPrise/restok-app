@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { trackNetwork } from '@/api/network';
 import { persistOptions } from '@/api/persist';
 import { queryClient } from '@/api/query-client';
+import { ToastProvider } from '@/components/Toast';
 import { useNotificationSync } from '@/lib/useNotificationSync';
 import { useSession } from '@/store/session';
 import { appFonts } from '@/theme/fonts';
@@ -63,7 +64,11 @@ export default function RootLayout() {
       >
         <SafeAreaProvider>
           <StatusBar style="auto" />
-          <NavigationTree />
+          {/* Dans le `SafeAreaProvider` : le toast se pose au-dessus de la
+              barre d'onglets, il a besoin des encoches. */}
+          <ToastProvider>
+            <NavigationTree />
+          </ToastProvider>
         </SafeAreaProvider>
       </PersistQueryClientProvider>
     </GestureHandlerRootView>

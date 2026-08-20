@@ -1,4 +1,3 @@
-import { useMutationState } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import {
   Alert,
@@ -27,9 +26,11 @@ import { ShoppingRow } from '@/components/ShoppingRow';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
 import { completeBlockedReason, offlineNotice } from '@/lib/offline';
+import { usePendingGestures } from '@/lib/usePendingGestures';
 import {
   checkedCount,
   checkedSummary,
@@ -58,11 +59,10 @@ export default function Shopping() {
   const shopping = useShoppingList();
   const items = useItems();
   const online = useIsOnline();
-  // Les gestes que la bibliothèque a mis en pause faute de réseau. Ils
-  // repartiront seuls — encore faut-il le dire.
-  const paused = useMutationState({
-    filters: { predicate: (mutation) => mutation.state.isPaused },
-  }).length;
+  const toast = useToast();
+  // Répartis par garantie : ce qui repartira seul, et ce qui ne survivrait pas
+  // à une fermeture de l'app.
+  const pending = usePendingGestures();
   const [draft, setDraft] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   // Une seule ligne en correction à la fois : deux compteurs ouverts, et on ne
@@ -95,7 +95,7 @@ export default function Shopping() {
     complete,
   ]);
 
-  const notice = offlineNotice(online, paused);
+  const notice = offlineNotice(online, pending.durable, pending.volatile);
   const blocked = completeBlockedReason(online);
 
   const label = draft.trim();
@@ -105,7 +105,10 @@ export default function Shopping() {
   const submit = () => {
     if (!canAdd) return;
     setDraft('');
-    add.mutate({ label });
+    add.mutate(
+      { label },
+      { onSuccess: () => toast(`${label} ajouté aux courses`) },
+    );
   };
 
   /**
@@ -114,13 +117,19 @@ export default function Shopping() {
    */
   const addFromShelf = (item: Item) => {
     setDraft('');
-    add.mutate({ itemId: item.id, quantity: suggestedQuantity(item) });
+    add.mutate(
+      { itemId: item.id, quantity: suggestedQuantity(item) },
+      { onSuccess: () => toast(`${item.name} ajouté aux courses`) },
+    );
   };
 
   const commitQuantity = (line: ShoppingLine, units: number) => {
     setEditingId(null);
     if (units !== line.quantity)
-      setQuantity.mutate({ id: line.id, quantity: units });
+      setQuantity.mutate(
+        { id: line.id, quantity: units },
+        { onSuccess: () => toast(`${line.name} : quantité corrigée`) },
+      );
   };
 
   const confirmRemove = (line: ShoppingLine) =>
@@ -129,7 +138,10 @@ export default function Shopping() {
       {
         text: 'Retirer',
         style: 'destructive',
-        onPress: () => remove.mutate(line.id),
+        onPress: () =>
+          remove.mutate(line.id, {
+            onSuccess: () => toast(`${line.name} retiré de la liste`),
+          }),
       },
     ]);
 
@@ -201,7 +213,14 @@ export default function Shopping() {
             missing={missing.length}
             loading={refill.isPending}
             online={online}
-            onRefill={() => refill.mutate()}
+            onRefill={() =>
+              refill.mutate(undefined, {
+                onSuccess: () =>
+                  toast(
+                    `${missing.length} item${missing.length > 1 ? 's' : ''} versé${missing.length > 1 ? 's' : ''} dans la liste`,
+                  ),
+              })
+            }
           />
         )}
 
@@ -214,7 +233,14 @@ export default function Shopping() {
             label={`Récupérer ${missing.length} item${missing.length > 1 ? 's' : ''} à racheter`}
             loading={refill.isPending}
             disabled={!online}
-            onPress={() => refill.mutate()}
+            onPress={() =>
+              refill.mutate(undefined, {
+                onSuccess: () =>
+                  toast(
+                    `${missing.length} item${missing.length > 1 ? 's' : ''} versé${missing.length > 1 ? 's' : ''} dans la liste`,
+                  ),
+              })
+            }
           />
         )}
 
@@ -228,7 +254,7 @@ export default function Shopping() {
         {/* Le hors-ligne passe avant l'erreur : un geste qui échoue parce que
             le réseau est coupé n'a pas à se raconter deux fois. */}
         {notice !== null && (
-          <Text variant="caption" color="mustard">
+          <Text variant="caption" color="inkSoft">
             {notice}
           </Text>
         )}
@@ -291,7 +317,16 @@ export default function Shopping() {
           label="J’ai fait les courses"
           disabled={checked === 0 || blocked !== null}
           loading={complete.isPending}
-          onPress={() => complete.mutate()}
+          // La liste se vide sous les yeux, mais ce qui compte s'est passé
+          // ailleurs : le stock est remonté et le journal l'a enregistré.
+          onPress={() =>
+            complete.mutate(undefined, {
+              onSuccess: () =>
+                toast(
+                  `${checked} rachat${checked > 1 ? 's' : ''} enregistré${checked > 1 ? 's' : ''} sur l’étagère`,
+                ),
+            })
+          }
         />
       </View>
     </Screen>

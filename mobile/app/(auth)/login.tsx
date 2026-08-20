@@ -8,10 +8,12 @@ import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { border, spacing, useTheme } from '@/theme';
 
 export default function Login() {
   const router = useRouter();
+  const toast = useToast();
   const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +25,15 @@ export default function Login() {
   // qu'on ne traverse pas depuis ici. `replace` pour que le retour arrière ne
   // ramène pas sur l'écran de connexion une fois connecté.
   const submit = () =>
-    login.mutate({ email, password }, { onSuccess: () => router.replace('/') });
+    login.mutate(
+      { email, password },
+      {
+        onSuccess: (auth) => {
+          toast(`Bienvenue, ${auth.member.name}`);
+          router.replace('/');
+        },
+      },
+    );
 
   return (
     <FormScreen>

@@ -1,19 +1,38 @@
 /**
  * Ce que la barre hors-ligne annonce.
  *
- * Un mode hors-ligne muet ment : l'utilisateur coche, l'app paraît d'accord, et
- * rien ne dit que rien n'est parti. Le compte des gestes en attente est la
- * seule chose qui rende la file croyable.
+ * Un mode hors-ligne muet ment par omission : l'utilisateur agit, l'app paraît
+ * d'accord, et rien ne dit que rien n'est parti.
+ *
+ * Mais un mode hors-ligne trop confiant ment tout court. Les gestes n'ont pas
+ * tous la même garantie : ceux des courses sont écrits sur disque et repartent
+ * après un redémarrage, ceux de l'étagère — prendre, racheter — vivent en
+ * mémoire et disparaissent si l'app se ferme. Annoncer « en attente » sur les
+ * seconds, ce serait remplacer une erreur silencieuse par une erreur
+ * rassurante, ce qui est pire.
+ *
+ * D'où deux compteurs plutôt qu'un.
  */
-export function offlineNotice(online: boolean, pending: number): string | null {
-  if (online) {
-    // En ligne avec des gestes encore en vol : on ne dit rien. Ils partent.
-    return null;
+export function offlineNotice(
+  online: boolean,
+  durable: number,
+  volatile: number,
+): string | null {
+  // En ligne, même avec des gestes en vol : on ne dit rien. Ils partent.
+  if (online) return null;
+
+  const pending = durable + volatile;
+  if (pending === 0) return 'Hors-ligne';
+
+  const plural = pending > 1 ? 's' : '';
+
+  // Dès qu'un seul geste est volatile, c'est la garantie la plus faible qui
+  // gouverne le message entier : on ne trie pas les rassurances par lot.
+  if (volatile > 0) {
+    return `Hors-ligne — ${pending} geste${plural} pas encore envoyé${plural}, garde l’app ouverte`;
   }
 
-  if (pending === 0) return 'Hors-ligne — tes gestes seront envoyés au retour';
-
-  return `Hors-ligne — ${pending} geste${pending > 1 ? 's' : ''} en attente`;
+  return `Hors-ligne — ${pending} geste${plural} en attente`;
 }
 
 /**

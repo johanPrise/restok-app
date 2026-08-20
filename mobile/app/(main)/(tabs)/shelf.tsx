@@ -10,18 +10,25 @@ import {
 } from 'react-native';
 import { useGroup } from '@/api/groups';
 import { useItems } from '@/api/items';
+import { useIsOnline } from '@/api/network';
+import { useRecipes } from '@/api/recipes';
 import { useShoppingList } from '@/api/shopping';
 import { Button } from '@/components/Button';
 import { EditableGroupName } from '@/components/EditableGroupName';
+import { FeasibleTonight } from '@/components/FeasibleTonight';
 import { FAB_SIZE } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
+import { SwipeHint } from '@/components/SwipeHint';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { apiErrorMessage } from '@/lib/api-error';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
+import { offlineNotice } from '@/lib/offline';
+import { feasibleNow } from '@/lib/recipes';
 import { itemsOnList } from '@/lib/shopping-list';
+import { usePendingGestures } from '@/lib/usePendingGestures';
 import { useSession } from '@/store/session';
 import {
   border,
@@ -39,7 +46,12 @@ export default function Shelf() {
   const group = useGroup();
   const items = useItems();
   const shopping = useShoppingList();
+  const recipes = useRecipes();
+  const online = useIsOnline();
+  const pending = usePendingGestures();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
+  const swipeLearned = useSession((s) => s.swipeLearned);
+  const markSwipeLearned = useSession((s) => s.markSwipeLearned);
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -48,6 +60,11 @@ export default function Shelf() {
   const onList = useMemo(
     () => itemsOnList(shopping.data ?? []),
     [shopping.data],
+  );
+
+  const tonight = useMemo(
+    () => feasibleNow(recipes.data ?? [], items.data ?? []),
+    [recipes.data, items.data],
   );
 
   const sections = useMemo(
@@ -64,6 +81,11 @@ export default function Shelf() {
     : summary(toRestock, items.data?.length ?? 0);
   const headerSummaryColor =
     items.isError || toRestock > 0 ? 'rustClay' : 'inkSoft';
+
+  // Prendre et racheter ne sont pas persistés : hors-ligne, le balayage se
+  // mettait en pause sans que rien ne bouge à l'écran, et le geste disparaissait
+  // à la fermeture de l'app. Il faut au moins le dire.
+  const notice = offlineNotice(online, pending.durable, pending.volatile);
 
   const toggle = (key: string) =>
     setCollapsed((state) => ({ ...state, [key]: !state[key] }));
@@ -103,6 +125,12 @@ export default function Shelf() {
         ]}
       />
 
+      {notice !== null && (
+        <Text variant="caption" color="inkSoft" style={styles.notice}>
+          {notice}
+        </Text>
+      )}
+
       <ScrollView
         contentContainerStyle={[
           styles.list,
@@ -121,6 +149,17 @@ export default function Shelf() {
           />
         }
       >
+        {/* Au-dessus du premier tag, et seulement s'il y en a un : un geste
+            s'explique là où il s'exerce, pas sur une étagère vide. */}
+        {!swipeLearned && sections.length > 0 && (
+          <SwipeHint onDismiss={() => void markSwipeLearned()} />
+        )}
+
+        <FeasibleTonight
+          recipes={tonight}
+          onPress={(recipe) => router.push(`/recipes/${recipe.id}`)}
+        />
+
         {items.isPending &&
           Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
 
@@ -243,6 +282,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     fontSize: fontSize.body,
   },
+  notice: { marginTop: spacing.xs },
   list: { paddingTop: spacing.md, gap: spacing.md },
   section: { gap: spacing.xs },
   empty: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },

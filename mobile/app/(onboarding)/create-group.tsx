@@ -10,6 +10,7 @@ import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import type { GroupType } from '@/types/api';
 import { border, radius, spacing, useTheme } from '@/theme';
 
@@ -20,6 +21,7 @@ const TYPES: { value: GroupType; label: string }[] = [
 
 export default function CreateGroup() {
   const router = useRouter();
+  const toast = useToast();
   const goBack = useGoBack('/choose');
   const { colors } = useTheme();
   const [name, setName] = useState('');
@@ -91,7 +93,12 @@ export default function CreateGroup() {
           onPress={() =>
             create.mutate(
               { name: name.trim(), type },
-              { onSuccess: () => router.replace('/') },
+              {
+                onSuccess: (group) => {
+                  toast(`Groupe « ${group.name} » créé`);
+                  router.replace('/');
+                },
+              },
             )
           }
           disabled={!isValid}

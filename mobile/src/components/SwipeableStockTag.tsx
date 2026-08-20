@@ -25,6 +25,7 @@ import {
 } from '@/lib/tag-swipe';
 import { unitsInPacks } from '@/lib/units';
 import { useItemActions } from '@/lib/useItemActions';
+import { useSession } from '@/store/session';
 import {
   motion,
   radius,
@@ -77,6 +78,7 @@ export function SwipeableStockTag({
 }: Readonly<SwipeableStockTagProps>) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
+  const markSwipeLearned = useSession((state) => state.markSwipeLearned);
   const actions = useItemActions(item);
 
   const base = fillRatio(item);
@@ -179,6 +181,8 @@ export function SwipeableStockTag({
   const commit = (action: SwipeAction, count: number) => {
     void feedback(action);
     pending.value = 0;
+    // Le repère qui enseigne ce geste a fait son travail : il ne reviendra pas.
+    void markSwipeLearned();
 
     if (action === 'restock') {
       translateX.value = withSpring(0, SNAP_BACK);

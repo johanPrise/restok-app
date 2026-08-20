@@ -101,6 +101,57 @@ export interface ShoppingLine {
 export type AddShoppingLineInput =
   { itemId: string; quantity?: number } | { label: string; quantity?: number };
 
+/**
+ * Un ingrédient, tel que le serveur le rend.
+ *
+ * Aucun statut : la faisabilité se calcule ici, en croisant `itemId` avec
+ * l'étagère déjà en cache. C'est ce qui la fait marcher hors-ligne.
+ */
+export interface RecipeIngredient {
+  id: string;
+  /** `null` sur un ingrédient libre — le sel, ou un item disparu de l'étagère. */
+  itemId: string | null;
+  /** Calculé côté serveur : le nom de l'item, ou le texte libre. */
+  name: string;
+}
+
+export interface Recipe {
+  id: string;
+  name: string;
+  /** URL ou simple mention — « le livre rouge, page 42 ». */
+  source: string | null;
+  description: string | null;
+  servings: number | null;
+  createdBy: string | null;
+  ingredients: RecipeIngredient[];
+}
+
+/**
+ * Une proposition de recherche, avant qu'on la garde.
+ *
+ * Elle porte déjà ce qui manque : le tri se fait donc côté serveur, qui seul a
+ * les ingrédients du catalogue. C'est l'exception assumée à la règle « la
+ * faisabilité se calcule côté client » — chercher exige le réseau de toute
+ * façon.
+ */
+export interface RecipeSuggestion {
+  ref: string;
+  name: string;
+  have: string[];
+  missing: string[];
+}
+
+export interface CreateRecipeInput {
+  name: string;
+  source?: string;
+  description?: string;
+  servings?: number;
+  ingredients?: IngredientInput[];
+}
+
+/** Un ingrédient porte un item **ou** un texte libre, jamais les deux. */
+export type IngredientInput = { itemId: string } | { label: string };
+
 export interface HistoryEntry {
   id: string;
   actionType: ActionType;

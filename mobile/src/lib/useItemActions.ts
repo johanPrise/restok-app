@@ -1,6 +1,8 @@
 import { useRestockItem, useTakeItem } from '@/api/items';
+import { useToast } from '@/components/Toast';
 import type { Item } from '@/types/api';
 import { canSwipe, movement } from './tag-swipe';
+import { withUnit } from './units';
 
 interface RunOptions {
   /** Nombre d'unités. Une seule par défaut. */
@@ -31,6 +33,23 @@ export interface ItemActions {
 export function useItemActions(item: Item): ItemActions {
   const take = useTakeItem();
   const restock = useRestockItem();
+  const toast = useToast();
+
+  /**
+   * L'accusé de réception vit ici, dans le code partagé, plutôt que sur chaque
+   * écran : le balayage d'un tag et le bouton de la fiche déclenchent la même
+   * action, ils doivent donc dire la même chose. Et une prise écrit au journal
+   * — c'est exactement ce qu'on ne veut pas laisser passer en silence.
+   */
+  const said = (verb: string, units: number) => {
+    // `movement` rend `undefined` en suivi binaire, qui ne compte rien : on
+    // nomme alors l'item plutôt qu'une quantité qui n'existe pas.
+    const moved = movement(item, units);
+
+    return moved === undefined
+      ? `${item.name} ${verb}`
+      : `${withUnit(item, moved)} ${verb}`;
+  };
 
   return {
     canTake: canSwipe(item, 'take'),
@@ -44,7 +63,10 @@ export function useItemActions(item: Item): ItemActions {
       restock.reset();
       take.mutate(
         { itemId: item.id, quantity: movement(item, units), settleDelayMs },
-        { onError },
+        {
+          onError,
+          onSuccess: () => toast(said('pris', units)),
+        },
       );
     },
 
@@ -52,7 +74,10 @@ export function useItemActions(item: Item): ItemActions {
       take.reset();
       restock.mutate(
         { itemId: item.id, quantity: movement(item, units), settleDelayMs },
-        { onError },
+        {
+          onError,
+          onSuccess: () => toast(said('racheté', units)),
+        },
       );
     },
   };

@@ -8,12 +8,14 @@ import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { BackLink } from '@/components/BackLink';
 import { useGoBack } from '@/lib/useGoBack';
 import { border, spacing, useTheme } from '@/theme';
 
 export default function Join() {
   const router = useRouter();
+  const toast = useToast();
   const goBack = useGoBack('/choose');
   const { colors } = useTheme();
   const [code, setCode] = useState('');
@@ -25,7 +27,10 @@ export default function Join() {
     join.mutate(code, {
       // La redirection est portée par l'aiguillage racine une fois le membre
       // rattaché — inutile de nommer la destination ici.
-      onSuccess: () => router.replace('/'),
+      onSuccess: (group) => {
+        toast(`Tu as rejoint « ${group.name} »`);
+        router.replace('/');
+      },
     });
   };
 

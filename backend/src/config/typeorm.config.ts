@@ -4,6 +4,8 @@ import { ActionHistory } from '../action-history/entities/action-history.entity'
 import { Group } from '../groups/entities/group.entity';
 import { Item } from '../items/entities/item.entity';
 import { Member } from '../members/entities/member.entity';
+import { Recipe } from '../recipes/entities/recipe.entity';
+import { RecipeIngredient } from '../recipes/entities/recipe-ingredient.entity';
 import { ShoppingLine } from '../shopping/entities/shopping-line.entity';
 import { MIGRATIONS_TABLE } from './migrations';
 
@@ -21,7 +23,15 @@ export function typeOrmConfig(config: ConfigService): TypeOrmModuleOptions {
     database: config.get<string>('DB_NAME', 'restock'),
     // Liste explicite plutôt qu'autoLoadEntities : les entités doivent être
     // connues même avant que leur module respectif n'existe.
-    entities: [Group, Member, Item, ActionHistory, ShoppingLine],
+    entities: [
+      Group,
+      Member,
+      Item,
+      ActionHistory,
+      ShoppingLine,
+      Recipe,
+      RecipeIngredient,
+    ],
     // Itération rapide en dev et dans les tests, où la base est recréée sans
     // cesse. En production, c'est aux migrations de fabriquer le schéma : sans
     // elles, `synchronize: false` démarrait contre une base vide et n'y créait

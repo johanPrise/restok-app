@@ -10,6 +10,7 @@ import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
+import { useToast } from '@/components/Toast';
 import { border, spacing, useTheme } from '@/theme';
 
 /** Aligné sur RegisterDto côté backend, pour ne pas dépendre d'un aller-retour. */
@@ -18,6 +19,7 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export default function Register() {
   const router = useRouter();
+  const toast = useToast();
   const goBack = useGoBack('/login');
   const { colors } = useTheme();
   const [name, setName] = useState('');
@@ -30,7 +32,12 @@ export default function Register() {
       { name: name.trim(), email, password },
       // Même raison qu'à la connexion : l'aiguillage racine ne se traverse pas
       // depuis ici.
-      { onSuccess: () => router.replace('/') },
+      {
+        onSuccess: (auth) => {
+          toast(`Compte créé — bienvenue, ${auth.member.name}`);
+          router.replace('/');
+        },
+      },
     );
 
   const passwordTooShort =

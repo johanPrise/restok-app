@@ -330,6 +330,17 @@ describe('Items (e2e)', () => {
       expect(res.body).toMatchObject({ quantity: 7, status: 'available' });
     });
 
+    /**
+     * Trois écrans en dépendent, et tous lisent une quantité qui peut être
+     * périmée — le cache client, pas la base : le balayage de l'étagère, le
+     * compteur de l'écran de détail, et le bouton « il n'y en a plus » de la
+     * fiche recette. Aucun ne peut connaître le stock réel au moment où le
+     * geste part, a fortiori quand il a attendu dans la file hors-ligne.
+     *
+     * Borner ici plutôt que valider est donc ce qui les autorise à demander
+     * de bonne foi plus qu'il n'y a. Ajouter un `@Max` sur le DTO les casserait
+     * tous les trois, en silence : ce test est là pour que ça saigne d'abord.
+     */
     it("s'arrête au stock disponible sans se plaindre", async () => {
       const item = await createItem({
         name: 'Café',
