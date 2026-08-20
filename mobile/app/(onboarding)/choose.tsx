@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useCreateGroup } from '@/api/groups';
 import { ChoiceCard } from '@/components/ChoiceCard';
 import { CreateGroupIcon, JoinGroupIcon, ShelfIcon } from '@/components/icons';
@@ -28,7 +28,14 @@ export default function Choose() {
         <Text variant="title">Votre espace</Text>
       </View>
 
-      <View style={styles.choices}>
+      {/* Défilant : à deux cartes tout tenait, la troisième débordait et
+          passait par-dessus le titre. `flexGrow` garde le centrage tant qu'il
+          y a de la place, et rend la liste défilable dès qu'il n'y en a plus —
+          même compromis que `FormScreen`. */}
+      <ScrollView
+        contentContainerStyle={styles.choices}
+        showsVerticalScrollIndicator={false}
+      >
         <ChoiceCard
           badge="Nouveau"
           title="Créer un groupe"
@@ -71,7 +78,7 @@ export default function Choose() {
             )
           }
         />
-      </View>
+      </ScrollView>
 
       <SystemFooter left="Restock_os // system_ready // ver_2.4" />
     </Screen>
@@ -80,5 +87,10 @@ export default function Choose() {
 
 const styles = StyleSheet.create({
   header: { paddingTop: spacing.xl, gap: spacing.xs, alignItems: 'center' },
-  choices: { flex: 1, justifyContent: 'center', gap: spacing.md },
+  choices: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+  },
 });

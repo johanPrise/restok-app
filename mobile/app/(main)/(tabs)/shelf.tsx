@@ -179,6 +179,7 @@ export default function Shelf() {
         {!items.isPending && !items.isError && sections.length === 0 && (
           <EmptyState
             searching={query.trim().length > 0}
+            solo={solo}
             onAdd={isAdmin ? () => router.push('/items/new') : undefined}
           />
         )}
@@ -238,8 +239,9 @@ function ErrorState({
 
 function EmptyState({
   searching,
+  solo,
   onAdd,
-}: Readonly<{ searching: boolean; onAdd?: () => void }>) {
+}: Readonly<{ searching: boolean; solo: boolean; onAdd?: () => void }>) {
   return (
     <View style={styles.empty}>
       {/* Seule l'étagère vraiment vide montre l'étagère vide : une recherche
@@ -256,9 +258,13 @@ function EmptyState({
         {searching ? 'Aucun résultat' : 'Étagère vide'}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.emptyBody}>
+        {/* « ton groupe » ne veut rien dire pour quelqu'un qui vit seul : c'est
+            exactement le genre de reste que le mode doit attraper. */}
         {searching
           ? 'Aucun item ne porte ce nom.'
-          : 'Ajoute le premier item que ton groupe suit.'}
+          : solo
+            ? 'Ajoute le premier item que tu veux suivre.'
+            : 'Ajoute le premier item que ton groupe suit.'}
       </Text>
       {/* §5 : l'étagère vide propose l'action directement, sans faire chercher
           le bouton flottant. */}
