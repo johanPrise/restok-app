@@ -49,6 +49,34 @@ function words(text: string): string[] {
 }
 
 /**
+ * « lait **de** coco » n'est pas du lait ; « riz basmati » est du riz.
+ *
+ * Les deux ont pourtant la même forme — le nom de l'item, plus un mot. Aucune
+ * comparaison de chaînes ne les distingue, mais le français donne un indice :
+ * un complément introduit par une préposition nomme le plus souvent **un autre
+ * produit** (lait de coco, sucre de canne, huile de tournesol), là où un
+ * adjectif nomme une variété (riz basmati, lait entier, sucre roux).
+ *
+ * La règle se trompe parfois — « farine de blé » sera refusée alors que c'est
+ * bien de la farine. Ce sens-là est le bon : un faux positif fait **mentir
+ * l'app sur ce qu'on possède**, et quelqu'un part cuisiner sans son ingrédient.
+ * Un faux négatif la rend seulement trop prudente — l'ingrédient reste en texte
+ * libre, il compte comme manquant, et on rachète quelque chose qu'on avait.
+ */
+const COMPLEMENT = /^(de|des|du|d|a|au|aux)\b/;
+
+function namesAnotherProduct(itemName: string, line: string): boolean {
+  const phrase = normalise(itemName);
+  const text = normalise(line);
+  const at = text.indexOf(phrase);
+  // Le nom de l'item n'apparaît pas d'un seul tenant : la question ne se pose
+  // pas, les mots sont dispersés dans la ligne.
+  if (phrase.length === 0 || at < 0) return false;
+
+  return COMPLEMENT.test(text.slice(at + phrase.length).trim());
+}
+
+/**
  * L'item que cette ligne désigne, ou `undefined`.
  *
  * On exige que **tous** les mots du nom de l'item apparaissent dans la ligne :
@@ -70,7 +98,9 @@ export function matchItem(
     const needle = words(item.name);
     if (needle.length === 0) continue;
 
-    const matches = needle.every((word) => haystack.includes(word));
+    const matches =
+      needle.every((word) => haystack.includes(word)) &&
+      !namesAnotherProduct(item.name, line);
     if (matches && needle.join(' ').length > bestLength) {
       best = item;
       bestLength = needle.join(' ').length;
