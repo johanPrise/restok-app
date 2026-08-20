@@ -20,6 +20,7 @@ import { FAB_SIZE } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
+import { SwipeHint } from '@/components/SwipeHint';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -49,6 +50,8 @@ export default function Shelf() {
   const online = useIsOnline();
   const pending = usePendingGestures();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
+  const swipeLearned = useSession((s) => s.swipeLearned);
+  const markSwipeLearned = useSession((s) => s.markSwipeLearned);
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -146,6 +149,12 @@ export default function Shelf() {
           />
         }
       >
+        {/* Au-dessus du premier tag, et seulement s'il y en a un : un geste
+            s'explique là où il s'exerce, pas sur une étagère vide. */}
+        {!swipeLearned && sections.length > 0 && (
+          <SwipeHint onDismiss={() => void markSwipeLearned()} />
+        )}
+
         <FeasibleTonight
           recipes={tonight}
           onPress={(recipe) => router.push(`/recipes/${recipe.id}`)}

@@ -13,12 +13,18 @@ interface PersistedSession {
    * ce qui est le comportement voulu.
    */
   notificationsPrompted: boolean;
+  /**
+   * Le balayage d'un tag a-t-il déjà été fait ? Persisté par compte, comme
+   * ci-dessus : le geste s'apprend une fois, pas à chaque installation.
+   */
+  swipeLearned: boolean;
 }
 
 interface SessionState {
   token: string | null;
   member: AuthenticatedMember | null;
   notificationsPrompted: boolean;
+  swipeLearned: boolean;
   /** Faux tant que la session n'a pas été relue du stockage sécurisé. */
   isHydrated: boolean;
 
@@ -31,12 +37,18 @@ interface SessionState {
    */
   setMember: (member: AuthenticatedMember) => Promise<void>;
   markNotificationsPrompted: () => Promise<void>;
+  /**
+   * Le balayage d'un tag a été fait au moins une fois — le repère qui
+   * l'enseigne n'a plus lieu d'être.
+   */
+  markSwipeLearned: () => Promise<void>;
 }
 
 const EMPTY = {
   token: null,
   member: null,
   notificationsPrompted: false,
+  swipeLearned: false,
 } as const;
 
 /**
@@ -51,7 +63,10 @@ const EMPTY = {
 export const useSession = create<SessionState>((set, get) => {
   /** Écrit l'état courant dans le stockage sécurisé, token présent ou non. */
   const persist = async (next: Partial<PersistedSession>) => {
-    const { token, member, notificationsPrompted } = { ...get(), ...next };
+    const { token, member, notificationsPrompted, swipeLearned } = {
+      ...get(),
+      ...next,
+    };
     if (!token || !member) return;
 
     await secureStorage.set(
@@ -60,6 +75,7 @@ export const useSession = create<SessionState>((set, get) => {
         token,
         member,
         notificationsPrompted,
+        swipeLearned,
       } satisfies PersistedSession),
     );
   };
@@ -76,6 +92,7 @@ export const useSession = create<SessionState>((set, get) => {
           token: session?.token ?? null,
           member: session?.member ?? null,
           notificationsPrompted: session?.notificationsPrompted ?? false,
+          swipeLearned: session?.swipeLearned ?? false,
           isHydrated: true,
         });
       } catch {
@@ -86,8 +103,18 @@ export const useSession = create<SessionState>((set, get) => {
     },
 
     signIn: async (token, member) => {
-      await persist({ token, member, notificationsPrompted: false });
-      set({ token, member, notificationsPrompted: false });
+      await persist({
+        token,
+        member,
+        notificationsPrompted: false,
+        swipeLearned: false,
+      });
+      set({
+        token,
+        member,
+        notificationsPrompted: false,
+        swipeLearned: false,
+      });
     },
 
     signOut: async () => {
@@ -103,6 +130,12 @@ export const useSession = create<SessionState>((set, get) => {
     markNotificationsPrompted: async () => {
       await persist({ notificationsPrompted: true });
       set({ notificationsPrompted: true });
+    },
+
+    markSwipeLearned: async () => {
+      if (get().swipeLearned) return;
+      await persist({ swipeLearned: true });
+      set({ swipeLearned: true });
     },
   };
 });
