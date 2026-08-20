@@ -15,6 +15,8 @@ const MAX_PACKS = 99;
 
 interface ShoppingRowProps {
   line: ShoppingLine;
+  /** Dans un groupe d'une personne, nommer l'auteur n'apprend rien. */
+  solo: boolean;
   onToggle: () => void;
   onRemove: () => void;
   /** Corriger ce qu'on prend vraiment. `null` ferme la correction. */
@@ -40,6 +42,7 @@ interface ShoppingRowProps {
  */
 export function ShoppingRow({
   line,
+  solo,
   onToggle,
   onRemove,
   editing,
@@ -49,7 +52,9 @@ export function ShoppingRow({
 }: Readonly<ShoppingRowProps>) {
   const { colors } = useTheme();
   const quantity = lineQuantity(line);
-  const who = line.checked && line.checkedBy ? line.checkedBy : null;
+  // Seul, la pastille dirait toujours la même initiale : elle n'apprend rien
+  // et occupe la place à côté de la case.
+  const who = solo || !line.checked ? null : line.checkedBy;
   // Un item suivi en présence n'a rien à compter : ni quantité, ni invite à en
   // saisir une.
   const editable = countable(line);

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRegisterPushToken } from '@/api/groups';
@@ -8,6 +8,7 @@ import { Screen } from '@/components/Screen';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { registerForPush } from '@/lib/push';
+import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
 import { border, spacing, useTheme } from '@/theme';
 
@@ -28,6 +29,7 @@ const UNAVAILABLE_REASONS = {
 
 export default function NotificationsStep() {
   const router = useRouter();
+  const solo = useIsSolo();
   const { colors } = useTheme();
   const markPrompted = useSession((s) => s.markNotificationsPrompted);
   const registerToken = useRegisterPushToken();
@@ -70,6 +72,12 @@ export default function NotificationsStep() {
       setBusy(false);
     }
   };
+
+  // Seul, le listener notifie le groupe **en excluant celui qui a agi** : la
+  // cible est toujours vide, aucune notification ne partira jamais. Le saut est
+  // déjà fait à la création du groupe, mais il est local à l'appareil — sur un
+  // second téléphone, la question reviendrait. Ici elle ne peut plus.
+  if (solo) return <Redirect href="/shelf" />;
 
   return (
     <Screen>

@@ -30,6 +30,7 @@ import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
 import { completeBlockedReason, offlineNotice } from '@/lib/offline';
+import { useIsSolo } from '@/lib/useIsSolo';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import {
   checkedCount,
@@ -60,6 +61,7 @@ export default function Shopping() {
   const items = useItems();
   const online = useIsOnline();
   const toast = useToast();
+  const solo = useIsSolo();
   // Répartis par garantie : ce qui repartira seul, et ce qui ne survivrait pas
   // à une fermeture de l'app.
   const pending = usePendingGestures();
@@ -162,6 +164,7 @@ export default function Shopping() {
             <ShoppingRow
               key={line.id}
               line={line}
+              solo={solo}
               onToggle={() =>
                 toggle.mutate({ id: line.id, checked: !line.checked })
               }

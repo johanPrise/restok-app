@@ -113,3 +113,21 @@ describe('tagMeta', () => {
     );
   });
 });
+
+describe('en solo, l’auteur disparaît', () => {
+  const action = {
+    actionType: 'taken' as const,
+    at: new Date().toISOString(),
+    memberName: 'Lea',
+  };
+
+  it('ne garde que la date', () => {
+    // Le nom est toujours le même : il n'apprend rien, la date si.
+    expect(lastActionLabel(action, true)).not.toContain('Lea');
+    expect(lastActionLabel(action, true)).toMatch(/il y a|aujourd|\d/);
+  });
+
+  it('nomme l’auteur dès qu’ils sont plusieurs', () => {
+    expect(lastActionLabel(action)).toContain('Lea');
+  });
+});

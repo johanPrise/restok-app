@@ -28,6 +28,7 @@ import { groupByUrgency, searchItems } from '@/lib/group-items';
 import { offlineNotice } from '@/lib/offline';
 import { feasibleNow } from '@/lib/recipes';
 import { itemsOnList } from '@/lib/shopping-list';
+import { useIsSolo } from '@/lib/useIsSolo';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import { useSession } from '@/store/session';
 import {
@@ -50,6 +51,7 @@ export default function Shelf() {
   const online = useIsOnline();
   const pending = usePendingGestures();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
+  const solo = useIsSolo();
   const swipeLearned = useSession((s) => s.swipeLearned);
   const markSwipeLearned = useSession((s) => s.markSwipeLearned);
   const [query, setQuery] = useState('');
@@ -196,6 +198,7 @@ export default function Shelf() {
                   key={item.id}
                   item={item}
                   onList={onList.has(item.id)}
+                  solo={solo}
                   onPress={() => router.push(`/items/${item.id}`)}
                 />
               ))}
