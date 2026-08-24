@@ -1,0 +1,61 @@
+# Déploiement du backend sur Render, décrit ici plutôt que cliqué dans une
+# interface : ce qui tourne en production doit être relisible dans le dépôt.
+#
+# Le mobile n'y figure pas — une app Expo se distribue par EAS, pas par un
+# serveur web.
+
+databases:
+  - name: restock-db
+    databaseName: restock
+    user: restock
+    # Postgres 17, comme en développement et comme dans la CI. Une base qui
+    # teste sur une version et sert sur une autre ne prouve rien.
+    postgresMajorVersion: '17'
+    plan: free
+
+services:
+  - type: web
+    name: restock-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    # Le contexte est `backend/`, pas la racine : le Dockerfile copie
+    # `package.json` et `pnpm-lock.yaml` sans préfixe de dossier.
+    dockerContext: ./backend
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Render impose son port par sa propre variable ; `main.ts` lit `PORT`.
+      - key: PORT
+        value: '3000'
+
+      # Les identifiants viennent de la base déclarée au-dessus. Rien n'est
+      # recopié à la main : une chaîne de connexion recopiée finit toujours par
+      # diverger de la base qu'elle décrit.
+      - key: DB_HOST
+        fromDatabase: { name: restock-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: restock-db, property: port }
+      - key: DB_USER
+        fromDatabase: { name: restock-db, property: user }
+      - key: DB_PASSWORD
+        fromDatabase: { name: restock-db, property: password }
+      - key: DB_NAME
+        fromDatabase: { name: restock-db, property: database }
+
+      # `generateValue` : le secret est tiré au sort par Render et n'existe
+      # nulle part dans le dépôt. Le changer déconnecte tout le monde — c'est
+      # le comportement voulu.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1h
+
+      # Vide en production, l'app refuse toute origine. À renseigner le jour où
+      # une version web existe ; l'app mobile, elle, n'envoie pas d'origine.
+      - key: CORS_ORIGINS
+        sync: false

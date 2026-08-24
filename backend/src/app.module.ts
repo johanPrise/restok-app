@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { typeOrmConfig } from './config/typeorm.config';
 import { ActionHistoryModule } from './action-history/action-history.module';
 import { GroupsModule } from './groups/groups.module';
+import { HealthModule } from './health/health.module';
 import { ItemsModule } from './items/items.module';
 import { RecipesModule } from './recipes/recipes.module';
 import { ShoppingModule } from './shopping/shopping.module';
@@ -23,6 +24,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     AuthModule,
+    HealthModule,
     GroupsModule,
     MembersModule,
     ItemsModule,
