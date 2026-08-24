@@ -17,6 +17,8 @@ import { MemberRow } from '@/components/MemberRow';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { apiErrorMessage } from '@/lib/api-error';
+import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
 import { MIN_TOUCH_TARGET, spacing } from '@/theme';
 import type { GroupDetail, MemberSummary } from '@/types/api';
@@ -38,6 +40,7 @@ export default function Settings() {
   const toast = useToast();
   const router = useRouter();
   const isAdmin = member?.role === 'admin';
+  const solo = useIsSolo();
 
   return (
     <Screen edges={['top']}>
@@ -57,24 +60,34 @@ export default function Settings() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {group.data && (
+        {/* Seul, il n'y a personne à inviter et personne à gérer. Le code
+            existe toujours en base — inviter quelqu'un reste possible depuis
+            « Ouvrir aux autres » — mais l'afficher en permanence, c'est mettre
+            une porte au milieu d'une pièce vide. */}
+        {!solo && group.data && (
           <InviteCodeCard
             code={group.data.inviteCode}
             groupName={group.data.name}
           />
         )}
 
-        <Members
-          members={members.data ?? []}
-          selfId={member?.id}
-          canManage={isAdmin}
-          loading={members.isPending}
-        />
+        {!solo && (
+          <Members
+            members={members.data ?? []}
+            selfId={member?.id}
+            canManage={isAdmin}
+            loading={members.isPending}
+          />
+        )}
 
-        {isAdmin && group.data && <DeleteGroup group={group.data} />}
+        {solo && group.data && <OpenToOthers code={group.data.inviteCode} />}
+
+        {isAdmin && group.data && (
+          <DeleteGroup group={group.data} solo={solo} />
+        )}
 
         <View style={styles.footer}>
-          <LeaveGroup />
+          {!solo && <LeaveGroup />}
 
           <View style={styles.account}>
             <Text variant="monoLabel" color="inkSoft">
@@ -103,6 +116,31 @@ export default function Settings() {
       </ScrollView>
     </Screen>
   );
+}
+
+/**
+ * La porte de sortie du mode solo, repliée.
+ *
+ * On ne supprime pas la possibilité d'inviter, on cesse seulement de la mettre
+ * en avant : quelqu'un qui vit seul aujourd'hui peut prendre un colocataire
+ * demain, et il doit trouver comment. Le code apparaît quand il le demande —
+ * et le groupe cesse d'être solo dès que quelqu'un s'en sert.
+ */
+function OpenToOthers({ code }: Readonly<{ code: string }>) {
+  const [shown, setShown] = useState(false);
+  const group = useGroup();
+
+  if (!shown) {
+    return (
+      <Button
+        variant="secondary"
+        label="Ouvrir aux autres"
+        onPress={() => setShown(true)}
+      />
+    );
+  }
+
+  return <InviteCodeCard code={code} groupName={group.data?.name ?? ''} />;
 }
 
 function Members({
@@ -168,7 +206,7 @@ function Members({
 
       {(setRole.isError || remove.isError) && (
         <Text variant="caption" color="rustClay">
-          {(setRole.error ?? remove.error)?.message}
+          {apiErrorMessage(setRole.error ?? remove.error)}
         </Text>
       )}
     </View>
@@ -179,7 +217,10 @@ function Members({
  * Suppression du groupe. Le §5 demande de **retaper le nom** : c'est
  * irréversible pour tout le monde, pas seulement pour celui qui appuie.
  */
-function DeleteGroup({ group }: Readonly<{ group: GroupDetail }>) {
+function DeleteGroup({
+  group,
+  solo,
+}: Readonly<{ group: GroupDetail; solo: boolean }>) {
   const [arming, setArming] = useState(false);
   const [typed, setTyped] = useState('');
   const remove = useDeleteGroup();
@@ -191,7 +232,10 @@ function DeleteGroup({ group }: Readonly<{ group: GroupDetail }>) {
   if (!arming) {
     return (
       <Button
-        label="Supprimer le groupe"
+        // Seul, on n'a pas de « groupe » : on a son étagère. Employer le mot
+        // du partage devant quelqu'un qui ne partage rien, c'est lui parler
+        // d'une chose qu'il n'a pas.
+        label={solo ? 'Supprimer mon inventaire' : 'Supprimer le groupe'}
         variant="secondary"
         onPress={() => setArming(true)}
         style={styles.section}
@@ -202,22 +246,28 @@ function DeleteGroup({ group }: Readonly<{ group: GroupDetail }>) {
   return (
     <View style={styles.section}>
       <Text variant="caption" color="inkSoft">
-        L&apos;étagère et les {group.memberCount} membres partent avec. Retape{' '}
+        {solo
+          ? 'Ton étagère, tes courses et tes recettes partent avec. Retape '
+          : `L’étagère et les ${group.memberCount} membres partent avec. Retape `}
         <Text variant="bodyStrong">{group.name}</Text> pour confirmer.
       </Text>
 
+      {/* Pas de `placeholder` avec le nom : mettre la réponse dans la case
+          annule ce que retaper le nom cherchait à obtenir — un geste délibéré.
+          Et le champ semblait déjà rempli pendant que « Supprimer » restait
+          gris, sans que rien n'explique pourquoi. La phrase juste au-dessus
+          nomme déjà le groupe. */}
       <Field
-        label="Nom du groupe"
+        label={solo ? 'Nom de ton inventaire' : 'Nom du groupe'}
         value={typed}
         onChangeText={setTyped}
-        placeholder={group.name}
         autoCapitalize="none"
         autoCorrect={false}
       />
 
       {remove.isError && (
         <Text variant="caption" color="rustClay">
-          {remove.error.message}
+          {apiErrorMessage(remove.error)}
         </Text>
       )}
 
@@ -278,7 +328,7 @@ function LeaveGroup() {
 
       {leave.isError && (
         <Text variant="caption" color="rustClay">
-          {leave.error.message}
+          {apiErrorMessage(leave.error)}
         </Text>
       )}
 

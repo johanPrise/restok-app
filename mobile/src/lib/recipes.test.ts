@@ -3,6 +3,7 @@ import {
   feasibility,
   feasibilityLabel,
   feasibleNow,
+  recipeByline,
   sortByFeasibility,
   type Feasibility,
 } from './recipes';
@@ -231,5 +232,27 @@ describe('feasibleNow', () => {
         shelf,
       ),
     ).toEqual([]);
+  });
+});
+
+describe('recipeByline', () => {
+  const signed = (servings: number | null, createdBy: string | null): Recipe => ({
+    ...recipe('Risotto', []),
+    servings,
+    createdBy,
+  });
+
+  it('annonce les parts et l’auteur, séparés', () => {
+    expect(recipeByline(signed(4, 'Sam'))).toBe('Pour 4 · Notée par Sam');
+  });
+
+  it('retire l’auteur en solo — c’est toujours celui qui lit', () => {
+    expect(recipeByline(signed(4, 'Sam'), true)).toBe('Pour 4');
+  });
+
+  it('ne rend rien plutôt qu’une ligne vide quand il n’y a rien à dire', () => {
+    expect(recipeByline(signed(null, null))).toBeNull();
+    // Seul et sans nombre de parts : l’auteur était la dernière chose à dire.
+    expect(recipeByline(signed(null, 'Sam'), true)).toBeNull();
   });
 });

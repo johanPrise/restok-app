@@ -10,6 +10,7 @@ import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BackLink } from '@/components/BackLink';
+import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { border, spacing, useTheme } from '@/theme';
 
@@ -52,7 +53,7 @@ export default function Join() {
 
         {join.isError && (
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {join.error.message}
+            {apiErrorMessage(join.error)}
           </Text>
         )}
 

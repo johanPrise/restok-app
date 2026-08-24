@@ -8,6 +8,7 @@ import { FormScreen } from '@/components/FormScreen';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { useSession } from '@/store/session';
 import { spacing } from '@/theme';
@@ -178,7 +179,7 @@ export default function NewItem() {
 
       {create.isError && (
         <Text variant="caption" color="rustClay" style={styles.error}>
-          {create.error.message}
+          {apiErrorMessage(create.error)}
         </Text>
       )}
 

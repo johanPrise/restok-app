@@ -1,0 +1,109 @@
+name: CI
+
+# Sur chaque poussée dans main et chaque proposition : le but est qu'une PR
+# rouge se voie avant la relecture, pas après la fusion.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Une PR poussée trois fois de suite n'a pas besoin de trois exécutions : seule
+# la dernière dit la vérité sur le code.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — 221 unitaires, 216 e2e
+    runs-on: ubuntu-latest
+
+    # Les e2e parlent à un vrai PostgreSQL : ils vérifient des contraintes
+    # d'unicité, des cascades et des transactions, qu'un faux ne reproduit pas.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: restock
+          POSTGRES_PASSWORD: restock
+          # `setup-e2e` bascule DB_NAME sur `restock_test` : la base doit donc
+          # exister avant que la suite démarre.
+          POSTGRES_DB: restock_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USER: restock
+      DB_PASSWORD: restock
+      DB_NAME: restock_test
+      # `getOrThrow` : sans lui, l'app ne démarre pas du tout.
+      JWT_SECRET: ci-secret-sans-valeur-hors-de-cette-execution
+      JWT_EXPIRES_IN: 1h
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      # `--frozen-lockfile` : une CI qui résout les versions elle-même ne teste
+      # pas ce que la machine de développement exécute.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typage
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint:check
+
+      - name: Tests unitaires
+        run: pnpm test
+
+      - name: Tests e2e
+        run: pnpm test:e2e
+
+  mobile:
+    name: Mobile — 163 tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: mobile/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typage
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm test

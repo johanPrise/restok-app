@@ -50,8 +50,13 @@ export function relativeDate(iso: string): string {
 /**
  * « Sam · il y a 2 jours ». Quand l'auteur a supprimé son compte, l'action
  * reste au tableau mais devient anonyme — l'événement a bien eu lieu.
+ *
+ * Seul, le nom est toujours le même : il ne reste que la date, qui elle
+ * continue d'apprendre quelque chose.
  */
-export function lastActionLabel(action: LastAction): string {
+export function lastActionLabel(action: LastAction, solo = false): string {
+  if (solo) return relativeDate(action.at);
+
   const who = action.memberName ?? "Quelqu'un";
 
   return `${who} · ${relativeDate(action.at)}`;
@@ -64,10 +69,10 @@ export function lastActionLabel(action: LastAction): string {
  * vient en premier parce qu'il sert à celui qui part faire les courses — il
  * décrit quoi acheter, là où la dernière action décrit ce qui s'est passé.
  */
-export function tagMeta(item: Item): string | null {
+export function tagMeta(item: Item, solo = false): string | null {
   const parts = [
     item.format,
-    item.lastAction ? lastActionLabel(item.lastAction) : null,
+    item.lastAction ? lastActionLabel(item.lastAction, solo) : null,
   ].filter((part): part is string => Boolean(part));
 
   return parts.length > 0 ? parts.join(' · ') : null;

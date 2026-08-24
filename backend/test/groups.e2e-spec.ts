@@ -80,6 +80,55 @@ describe('Groups & members (e2e)', () => {
     });
   });
 
+  describe('groupe solo', () => {
+    it('accepte un groupe d’une seule personne', async () => {
+      const alice = await signUp(app, 'Alice');
+
+      const res = await auth(app, alice)
+        .post('/groups')
+        .send({ name: 'Chez moi', type: 'solo' })
+        .expect(201);
+
+      expect(res.body.type).toBe('solo');
+    });
+
+    it('cesse d’être solo dès que quelqu’un rejoint', async () => {
+      // Sans ça le type mentirait : l'app continuerait de cacher la liste des
+      // membres et la mention de qui a pris quoi, alors qu'ils sont deux.
+      const alice = await signUp(app, 'Alice');
+      const created = await auth(app, alice)
+        .post('/groups')
+        .send({ name: 'Chez moi', type: 'solo' })
+        .expect(201);
+
+      const bob = await signUp(app, 'Bob');
+      await auth(app, bob)
+        .post('/groups/join')
+        .send({ inviteCode: created.body.inviteCode })
+        .expect(200);
+
+      const res = await auth(app, alice).get('/groups/me').expect(200);
+      expect(res.body).toMatchObject({ type: 'roommates', memberCount: 2 });
+    });
+
+    it('laisse un groupe partagé tel quel quand on le rejoint', async () => {
+      const alice = await signUp(app, 'Alice');
+      const created = await auth(app, alice)
+        .post('/groups')
+        .send({ name: 'Le local', type: 'association' })
+        .expect(201);
+
+      const bob = await signUp(app, 'Bob');
+      await auth(app, bob)
+        .post('/groups/join')
+        .send({ inviteCode: created.body.inviteCode })
+        .expect(200);
+
+      const res = await auth(app, alice).get('/groups/me').expect(200);
+      expect(res.body.type).toBe('association');
+    });
+  });
+
   describe('POST /groups/join', () => {
     it.each([
       ['minuscules', (code: string) => code.toLowerCase()],

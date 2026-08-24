@@ -11,6 +11,7 @@ import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { apiErrorMessage } from '@/lib/api-error';
 import { border, spacing, useTheme } from '@/theme';
 
 /** Aligné sur RegisterDto côté backend, pour ne pas dépendre d'un aller-retour. */
@@ -54,7 +55,11 @@ export default function Register() {
       <TagCard>
         <Text variant="tagName">Créer un compte</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
-          Vous rejoindrez ou créerez un groupe juste après.
+          {/* Trois portes suivent, pas deux : annoncer un groupe à qui vient
+              ouvrir un inventaire pour lui seul, c'est lui dire que sa porte
+              n'existe pas. */}
+          Vous choisirez juste après : un groupe à créer, un à rejoindre, ou
+          votre inventaire à vous.
         </Text>
 
         <View style={styles.form}>
@@ -94,7 +99,7 @@ export default function Register() {
 
         {register.isError && (
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {register.error.message}
+            {apiErrorMessage(register.error)}
           </Text>
         )}
 

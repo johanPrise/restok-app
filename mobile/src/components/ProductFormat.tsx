@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSetItemFormat } from '@/api/items';
+import { apiErrorMessage } from '@/lib/api-error';
 import {
   border,
   fontFamily,
@@ -91,7 +92,7 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
 
       {setFormat.isError && (
         <Text variant="caption" color="rustClay">
-          {setFormat.error.message}
+          {apiErrorMessage(setFormat.error)}
         </Text>
       )}
     </View>

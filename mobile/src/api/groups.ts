@@ -49,13 +49,45 @@ function useJoinedGroup() {
   };
 }
 
+/**
+ * Aucune des mutations qui suivent n'est rejouable. Chacune décide d'une
+ * **appartenance** — créer, rejoindre, renommer, promouvoir, retirer, partir,
+ * supprimer — et différée d'une heure, elle s'appliquerait à un groupe qui
+ * n'est plus le même. « Quitter le groupe » se déclencherait quand plus
+ * personne ne regarde l'écran.
+ *
+ * D'où `networkMode: 'always'` sur toutes : hors réseau elles échouent
+ * franchement au lieu d'attendre en silence derrière un bouton qui tourne.
+ * C'est déjà la règle du versement des courses.
+ *
+ * `useRegisterPushToken` fait exception et garde la mise en attente : déposer
+ * un jeton plus tard ne coûte rien à personne.
+ */
 export function useCreateGroup() {
+  const queryClient = useQueryClient();
   const onJoined = useJoinedGroup();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: (input: { name: string; type?: GroupType }) =>
       authedRequest<Group>('/groups', { method: 'POST', body: input }),
-    onSuccess: (group) => onJoined(group, 'admin'),
+    onSuccess: (group) => {
+      // Le groupe est semé dans le cache avant l'invalidation : le serveur
+      // vient de le renvoyer, et à la création on est seul dedans — les deux
+      // sont des faits, pas des suppositions. Sans ça, l'écran suivant lit
+      // `undefined` le temps d'un aller-retour et en conclut « ce n'est pas un
+      // solo », ce qui fait clignoter l'étape des notifications sur le chemin
+      // exact d'un nouveau solo.
+      //
+      // La jointure ne peut pas en faire autant : elle entre dans un groupe
+      // dont elle ignore le nombre de membres, et inventer un compte pour
+      // gagner une frame n'en vaut pas le prix.
+      queryClient.setQueryData<GroupDetail>(queryKeys.group, {
+        ...group,
+        memberCount: 1,
+      });
+      onJoined(group, 'admin');
+    },
   });
 }
 
@@ -63,6 +95,7 @@ export function useJoinGroup() {
   const onJoined = useJoinedGroup();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: (inviteCode: string) =>
       authedRequest<Group>('/groups/join', {
         method: 'POST',
@@ -76,6 +109,7 @@ export function useRenameGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: (name: string) =>
       authedRequest<Group>('/groups/me', { method: 'PATCH', body: { name } }),
     onSuccess: () =>
@@ -87,6 +121,7 @@ export function useDeleteGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: () => authedRequest<void>('/groups/me', { method: 'DELETE' }),
     onSuccess: () => {
       // Le backend détache tous les membres, y compris l'admin.
@@ -106,6 +141,7 @@ export function useLeaveGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: () => authedRequest<void>('/members/me', { method: 'DELETE' }),
     onSuccess: () => {
       const { member, setMember } = useSession.getState();
@@ -120,6 +156,7 @@ export function useSetMemberRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: ({ memberId, role }: { memberId: string; role: MemberRole }) =>
       authedRequest<MemberSummary>(`/members/${memberId}/role`, {
         method: 'PATCH',
@@ -134,6 +171,7 @@ export function useRemoveMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: 'always',
     mutationFn: (memberId: string) =>
       authedRequest<void>(`/members/${memberId}`, { method: 'DELETE' }),
     onSuccess: () =>

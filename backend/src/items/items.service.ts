@@ -169,7 +169,17 @@ export class ItemsService {
 
     // La suppression est douce : rien ne cascade. L'event laisse le reste de
     // l'app faire le ménage sans que l'étagère ait à savoir qui l'écoute.
-    this.eventEmitter.emit(
+    //
+    // `emitAsync` et non `emit` : les abonnés écrivent en base — une ligne de
+    // courses supprimée, un ingrédient converti en texte libre — et `emit` ne
+    // les attend pas. La réponse partait donc avant eux, et un appel immédiat
+    // pouvait lire un ingrédient à moitié converti, sans nom. Invisible sur une
+    // base tiède, reproductible sur une base froide.
+    //
+    // Ce n'est pas le cas des events de statut, qu'on émet volontairement après
+    // commit sans les attendre : là, l'abonné notifie, et un échec d'envoi ne
+    // doit pas annuler une prise. Ici l'abonné *complète* la suppression.
+    await this.eventEmitter.emitAsync(
       ITEM_DELETED,
       new ItemDeletedEvent(itemId, groupId, item.name),
     );

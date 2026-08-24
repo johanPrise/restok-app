@@ -29,6 +29,8 @@ interface StockTagProps extends Pick<
 > {
   item: Item;
   onPress?: () => void;
+  /** Dans un groupe d'une personne, nommer l'auteur n'apprend rien. */
+  solo?: boolean;
   /**
    * Déjà sur la liste de courses. Calculé côté client en croisant les deux
    * listes déjà en cache : l'étagère n'a pas à savoir que les courses
@@ -56,6 +58,7 @@ interface StockTagProps extends Pick<
 export function StockTag({
   item,
   onPress,
+  solo = false,
   onList = false,
   level,
   ...accessibility
@@ -64,7 +67,7 @@ export function StockTag({
 
   const accent = colors[statusColor(item.status)];
   const badge = statusBadge(item);
-  const meta = tagMeta(item);
+  const meta = tagMeta(item, solo);
   const ratio = fillRatio(item);
   const isEmpty = ratio === 0;
 

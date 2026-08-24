@@ -65,6 +65,14 @@ export class GroupsService {
       member.role = MemberRole.MEMBER;
       await manager.getRepository(Member).save(member);
 
+      // Un groupe « solo » qui accueille quelqu'un cesse d'en être un. Sans
+      // ça, le type mentirait : l'app continuerait de cacher la liste des
+      // membres et la mention de qui a pris quoi, alors qu'ils sont deux.
+      if (group.type === GroupType.SOLO) {
+        group.type = GroupType.ROOMMATES;
+        await manager.getRepository(Group).save(group);
+      }
+
       return group;
     });
   }

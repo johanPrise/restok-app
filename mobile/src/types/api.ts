@@ -1,7 +1,7 @@
 /** Miroir des types du backend. Toute divergence ici est un bug silencieux. */
 
 export type MemberRole = 'admin' | 'member';
-export type GroupType = 'roommates' | 'association';
+export type GroupType = 'solo' | 'roommates' | 'association';
 export type ItemStatus = 'available' | 'low' | 'out_of_stock' | 'to_restock';
 export type TrackingType = 'threshold' | 'quantity';
 export type ActionType = 'taken' | 'restocked';

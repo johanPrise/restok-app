@@ -11,6 +11,16 @@ import { Item } from '../../items/entities/item.entity';
 import { Member } from '../../members/entities/member.entity';
 
 export enum GroupType {
+  /**
+   * Une seule personne. C'est un groupe comme les autres — même étagère, mêmes
+   * courses, mêmes recettes — et c'est tout l'intérêt : rien du code existant
+   * n'a besoin d'un second chemin.
+   *
+   * Le type ne sert donc pas à ajouter, il sert à **retirer** : à une personne,
+   * le code d'invitation, la liste des membres, les rôles et « qui a pris »
+   * n'ont rien à dire.
+   */
+  SOLO = 'solo',
   ROOMMATES = 'roommates',
   ASSOCIATION = 'association',
 }

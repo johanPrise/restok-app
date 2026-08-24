@@ -13,7 +13,9 @@ export class UpdateProfileDto {
    * `alice@test.dev`.
    */
   @IsOptional()
-  @Transform(({ value }) =>
+  // `value` est typé `any` par class-transformer : le déclarer `unknown` rend
+  // le test de type obligatoire, et c'est lui qui protège le `.toLowerCase()`.
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
   @IsEmail()

@@ -20,6 +20,27 @@ export interface LastAction {
   memberName: string | null;
 }
 
+/** Une ligne du journal du groupe, telle que le client la reçoit. */
+export interface GroupHistoryEntry {
+  id: string;
+  actionType: ActionType;
+  quantity: number | null;
+  createdAt: Date;
+  itemId: string;
+  itemName: string;
+  memberName: string | null;
+}
+
+interface GroupHistoryRow {
+  id: string;
+  action_type: ActionType;
+  quantity: number | null;
+  created_at: Date;
+  item_id: string;
+  item_name: string;
+  member_name: string | null;
+}
+
 interface LastActionRow {
   item_id: string;
   action_type: ActionType;
@@ -88,6 +109,65 @@ export class ActionHistoryService {
         },
       ]),
     );
+  }
+
+  /**
+   * Le journal du groupe entier.
+   *
+   * La donnée était complète depuis le début — item, membre, action, quantité,
+   * date — mais la seule porte était `findByItem`. Pour répondre à « qu'a sorti
+   * Marc ce mois-ci », il fallait ouvrir chaque fiche et recoudre à la main.
+   *
+   * L'item est joint parce qu'un journal sans le nom de la chose ne dit rien,
+   * et il l'est **même supprimé** : ce qui a eu lieu a eu lieu, et une
+   * association doit pouvoir relire l'année passée sans que le ménage de
+   * l'étagère efface ses traces.
+   */
+  async findByGroup(
+    groupId: string,
+    filters: { memberId?: string; since?: Date; limit: number },
+  ): Promise<GroupHistoryEntry[]> {
+    const query = this.historyRepo
+      .createQueryBuilder('h')
+      // `withDeleted` : TypeORM résout « item » comme **entité**, et lui
+      // applique donc sa condition de soft-delete jusque dans la jointure. Le
+      // journal perdait alors toute trace d'un item retiré de l'étagère — soit
+      // exactement ce qu'une association ne peut pas se permettre.
+      .withDeleted()
+      .innerJoin('item', 'i', 'i.id = h.item_id')
+      .leftJoin('member', 'm', 'm.id = h.member_id AND m.deleted_at IS NULL')
+      .select([
+        'h.id AS id',
+        'h.action_type AS action_type',
+        'h.quantity AS quantity',
+        'h.created_at AS created_at',
+        'i.name AS item_name',
+        'i.id AS item_id',
+        'm.name AS member_name',
+      ])
+      .where('i.group_id = :groupId', { groupId })
+      .orderBy('h.created_at', 'DESC')
+      .limit(filters.limit);
+
+    if (filters.memberId) {
+      query.andWhere('h.member_id = :memberId', { memberId: filters.memberId });
+    }
+    if (filters.since) {
+      query.andWhere('h.created_at >= :since', { since: filters.since });
+    }
+
+    const rows = await query.getRawMany<GroupHistoryRow>();
+
+    return rows.map((row) => ({
+      id: row.id,
+      actionType: row.action_type,
+      quantity: row.quantity,
+      createdAt: row.created_at,
+      itemId: row.item_id,
+      itemName: row.item_name,
+      // `null` quand le compte a été supprimé : l'acte survit à son auteur.
+      memberName: row.member_name,
+    }));
   }
 
   async findByItem(itemId: string): Promise<ActionHistoryEntry[]> {

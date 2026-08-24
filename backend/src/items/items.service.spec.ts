@@ -45,7 +45,15 @@ describe('ItemsService', () => {
             findLastActionByItem: jest.fn().mockResolvedValue(new Map()),
           },
         },
-        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
+        {
+          provide: EventEmitter2,
+          // `emitAsync` et non `emit` : la suppression attend ses abonnés,
+          // qui complètent le ménage en base.
+          useValue: {
+            emit: jest.fn(),
+            emitAsync: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 

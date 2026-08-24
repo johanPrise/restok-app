@@ -8,6 +8,8 @@ import { Text } from './Text';
 interface ReceiptHistoryProps {
   entries: HistoryEntry[];
   loading?: boolean;
+  /** Dans un groupe d'une personne, nommer l'auteur n'apprend rien. */
+  solo?: boolean;
 }
 
 /**
@@ -16,10 +18,15 @@ interface ReceiptHistoryProps {
  *
  * La date n'est répétée que lorsqu'elle change — trois prises le même jour se
  * lisent comme un bloc, pas comme trois lignes indépendantes.
+ *
+ * Seul, la colonne « qui » tombe entièrement : elle répéterait le même nom à
+ * chaque ligne, en capitales, sur le quart de la largeur. C'est la place que
+ * la date récupère.
  */
 export function ReceiptHistory({
   entries,
   loading = false,
+  solo = false,
 }: Readonly<ReceiptHistoryProps>) {
   if (loading) {
     return (
@@ -32,8 +39,9 @@ export function ReceiptHistory({
   if (entries.length === 0) {
     return (
       <Text variant="body" color="inkSoft">
-        Aucune action pour l&apos;instant — le premier qui prend quelque chose
-        ouvre le bal.
+        {solo
+          ? "Aucune action pour l'instant — la première fois que tu prends quelque chose s'inscrit ici."
+          : "Aucune action pour l'instant — le premier qui prend quelque chose ouvre le bal."}
       </Text>
     );
   }
@@ -51,12 +59,18 @@ export function ReceiptHistory({
 
         return (
           <View key={entry.id} style={styles.row}>
-            <Text variant="mono" color="inkSoft" style={styles.date}>
+            <Text
+              variant="mono"
+              color="inkSoft"
+              style={[styles.date, solo && styles.dateAlone]}
+            >
               {repeated ? '' : day}
             </Text>
-            <Text variant="mono" style={styles.who} numberOfLines={1}>
-              {(entry.member?.name ?? "Quelqu'un").toUpperCase()}
-            </Text>
+            {!solo && (
+              <Text variant="mono" style={styles.who} numberOfLines={1}>
+                {(entry.member?.name ?? "Quelqu'un").toUpperCase()}
+              </Text>
+            )}
             {/* Vide en suivi binaire : la colonne reste, pour que les lignes
                 s'alignent comme sur un vrai relevé. */}
             <Text variant="mono" style={styles.count}>
@@ -106,6 +120,10 @@ const styles = StyleSheet.create({
   receipt: { gap: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   date: { width: DATE_WIDTH },
+  // Sans la colonne « qui », c'est la date qui prend l'espace restant : sinon
+  // le compte et l'action se recolleraient à elle au lieu de rester alignés à
+  // droite, et le relevé cesserait de ressembler à un relevé.
+  dateAlone: { width: 'auto', flex: 1 },
   who: { flex: 1 },
   count: { width: COUNT_WIDTH, textAlign: 'right' },
   action: { width: ACTION_WIDTH, textAlign: 'right' },
