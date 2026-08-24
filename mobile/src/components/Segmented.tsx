@@ -45,7 +45,12 @@ export function Segmented<T extends string>({
             <Pressable
               key={option.value}
               accessibilityRole="radio"
-              accessibilityState={{ selected, checked: selected }}
+              // `aria-checked` et non `accessibilityState` : react-native-web
+              // ne traduit plus le second, et un lecteur d'écran ne savait donc
+              // pas quelle option était retenue. React Native le retraduit en
+              // `accessibilityState.checked` sur mobile — la forme ARIA est
+              // comprise des deux côtés. Même leçon que `TabBarButton`.
+              aria-checked={selected}
               onPress={() => onChange(option.value)}
               style={[
                 styles.segment,

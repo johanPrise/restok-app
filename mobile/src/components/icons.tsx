@@ -88,6 +88,28 @@ export function RecipeIcon({ color, size = 18 }: Readonly<IconProps>) {
   );
 }
 
+/**
+ * Page réglée — onglet Journal.
+ *
+ * Le seul tracé qui ne vienne pas du Figma : la maquette s'arrêtait à quatre
+ * onglets. Il est donc dessiné à la géométrie, dans la même grammaire de
+ * traits fins — un cadre évidé (le contour et l'intérieur tournent en sens
+ * inverse, ce qui les soustrait) et trois lignes d'écriture.
+ */
+export function JournalIcon({ color, size = 18 }: Readonly<IconProps>) {
+  return (
+    <Svg width={size} height={size * (20 / 18)} viewBox="0 0 18 20">
+      <Path
+        d="M2 0H16C17.1 0 18 0.9 18 2V18C18 19.1 17.1 20 16 20H2C0.9 20 0 19.1 0 18V2C0 0.9 0.9 0 2 0Z M2 2V18H16V2Z"
+        fill={color}
+      />
+      <Rect x="4" y="5.5" width="10" height="1.5" fill={color} />
+      <Rect x="4" y="9.25" width="10" height="1.5" fill={color} />
+      <Rect x="4" y="13" width="6.5" height="1.5" fill={color} />
+    </Svg>
+  );
+}
+
 /** Roue dentée — onglet Paramètres. */
 export function SettingsIcon({ color, size = 20.1 }: Readonly<IconProps>) {
   return (

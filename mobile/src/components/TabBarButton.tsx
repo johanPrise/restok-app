@@ -14,6 +14,14 @@ interface TabBarButtonProps extends TabTriggerSlotProps {
   /** Glyphe du Figma. Sa couleur suit l'état, elle n'est jamais codée en dur. */
   icon: ComponentType<{ color: string }>;
   label: string;
+  /**
+   * Cinq onglets au lieu de quatre. Mesuré à 390 points : chaque onglet passe
+   * de 94 à 76 points, et « Inventaire » comme « Paramètres » réclament 68
+   * points pour 64 disponibles. On rend donc les 4 points manquants en
+   * resserrant le rembourrage interne — la cible tactile, elle, ne bouge pas :
+   * c'est le `Pressable` qui la porte, pas ce conteneur.
+   */
+  compact?: boolean;
 }
 
 /**
@@ -34,6 +42,7 @@ interface TabBarButtonProps extends TabTriggerSlotProps {
 export function TabBarButton({
   icon: Icon,
   label,
+  compact = false,
   isFocused = false,
   children: _ignored,
   style: _replaced,
@@ -74,7 +83,9 @@ export function TabBarButton({
       onPressOut={() => squeeze(1)}
       style={styles.trigger}
     >
-      <Animated.View style={[styles.content, pressStyle]}>
+      <Animated.View
+        style={[styles.content, compact && styles.contentCompact, pressStyle]}
+      >
         <Icon color={colors[tint]} />
         <Text
           variant="tabLabel"
@@ -83,7 +94,12 @@ export function TabBarButton({
           // La barre est une chrome de hauteur fixe : au-delà de ce facteur,
           // « Inventaire » se fait tronquer. On plafonne plutôt que de laisser
           // un réglage d'accessibilité casser la mise en page.
-          maxFontSizeMultiplier={1.1}
+          //
+          // À cinq onglets il ne reste plus de marge du tout : le libellé ne
+          // grandit plus. C'est un renoncement assumé, et le moindre — un
+          // libellé tronqué ne se lit pas mieux qu'un libellé petit, et
+          // l'icône, elle, continue de dire l'onglet.
+          maxFontSizeMultiplier={compact ? 1 : 1.1}
         >
           {label}
         </Text>
@@ -114,4 +130,5 @@ const styles = StyleSheet.create({
     // 4px entre icône et libellé, comme le « Margin » du Figma.
     gap: spacing.xs / 2,
   },
+  contentCompact: { paddingHorizontal: 2 },
 });

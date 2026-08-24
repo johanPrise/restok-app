@@ -162,6 +162,26 @@ export interface HistoryEntry {
   member: { id: string; name: string } | null;
 }
 
+
+/**
+ * Une entrée du journal du groupe.
+ *
+ * Distincte de `HistoryEntry`, qui décrit l'historique d'**un** item : ici on
+ * lit à travers toute l'étagère, donc chaque ligne doit nommer l'item — sans
+ * quoi « ×2 pris » ne dit rien.
+ */
+export interface GroupHistoryEntry {
+  id: string;
+  actionType: ActionType;
+  /** Unités déplacées. `null` en suivi binaire, qui ne compte rien. */
+  quantity: number | null;
+  createdAt: string;
+  itemId: string;
+  itemName: string;
+  /** `null` quand le compte de l'auteur a été supprimé. */
+  memberName: string | null;
+}
+
 export interface CreateItemInput {
   name: string;
   trackingType?: TrackingType;

@@ -28,6 +28,13 @@ export const queryKeys = {
    * n'existe plus (404).
    */
   itemHistory: (itemId: string) => ['item-history', itemId] as const,
+  /**
+   * Le journal du groupe. Les filtres entrent dans la clé : chaque vue a son
+   * cache, et revenir de « ce qu'a sorti Lou » à « tout le groupe » n'est pas
+   * un nouvel aller-retour.
+   */
+  groupHistory: (filters: { memberId?: string; since?: string } = {}) =>
+    ['group-history', filters.memberId ?? null, filters.since ?? null] as const,
 };
 
 function createQueryClient(): QueryClient {

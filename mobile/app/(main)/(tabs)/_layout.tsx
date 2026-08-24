@@ -6,19 +6,21 @@ import { Fab } from '@/components/Fab';
 import { TabBarButton } from '@/components/TabBarButton';
 import {
   BasketIcon,
+  JournalIcon,
   RecipeIcon,
   SettingsIcon,
   ShelfIcon,
 } from '@/components/icons';
+import { useIsAssociation } from '@/lib/useIsAssociation';
 import { useSession } from '@/store/session';
 import { border, spacing, tabBar, useTheme } from '@/theme';
 
 /**
- * Barre du bas à quatre onglets, d'après le Figma exporté du produit : ancrée
- * dans le flux normal, pas en survol — un aplat `paperRaised`, un fil `thread`
- * en haut, aucun rayon, aucune ombre. L'onglet actif ne se distingue que par
- * la couleur de son icône et de son libellé, rien d'autre : pas de pastille,
- * pas de fond, pas de halo.
+ * Barre du bas, d'après le Figma exporté du produit : ancrée dans le flux
+ * normal, pas en survol — un aplat `paperRaised`, un fil `thread` en haut,
+ * aucun rayon, aucune ombre. L'onglet actif ne se distingue que par la couleur
+ * de son icône et de son libellé, rien d'autre : pas de pastille, pas de fond,
+ * pas de halo.
  *
  * N'étant pas en survol, elle n'occupe pas la couche « chrome flottante » —
  * voir l'extension du §3 dans `theme/layout` — donc aucun écran n'a besoin de
@@ -28,9 +30,12 @@ import { border, spacing, tabBar, useTheme } from '@/theme';
  * navigateur classique : la barre est trop dessinée pour les options du
  * `bottom-tabs` de React Navigation.
  *
- * `<TabList>` doit rester un enfant direct de `<Tabs>` — c'est en le parcourant
- * qu'expo-router découvre les routes. Avec `asChild`, le parseur sait descendre
- * dans l'enfant unique, ce qui permet de lui donner la surface pleine.
+ * **Quatre onglets, ou cinq en association.** La maquette s'arrêtait à quatre ;
+ * le journal est le cinquième, et c'est ce que ce mode a de plus. D'où la
+ * structure en deux temps : un `TabList` caché qui déclare les cinq routes une
+ * fois pour toutes, et une barre visible, ordinaire, qui en montre quatre ou
+ * cinq. Un `TabTrigger` hors de `TabList` n'a pas besoin de `href` — il
+ * désigne une route déjà déclarée.
  */
 export default function TabsLayout() {
   const { colors } = useTheme();
@@ -40,6 +45,16 @@ export default function TabsLayout() {
   // Le backend refuse la création d'item à un simple membre (403) : lui
   // proposer le bouton serait promettre une action qui échouera.
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
+  // Le journal n'a un onglet qu'en association : c'est là que « qu'a sorti
+  // untel, depuis quand » est une question qu'on pose, et la seule chose que
+  // ce mode change aujourd'hui.
+  const isAssociation = useIsAssociation();
+  // Ailleurs qu'en association, l'onglet n'est pas proposé — mais la route
+  // existe, donc une adresse tapée à la main y mène. Sans cette seconde
+  // condition, la barre allumait « Inventaire » pendant qu'on lisait le
+  // journal : elle mentait sur l'endroit où l'on se trouve. Elle montre donc
+  // l'onglet dès qu'il est l'écran courant, quel que soit le mode.
+  const showJournal = isAssociation || pathname === '/journal';
 
   return (
     <Tabs style={[styles.root, { backgroundColor: colors.paper }]}>
@@ -73,36 +88,55 @@ export default function TabsLayout() {
         )}
       </View>
 
-      <TabList asChild>
-        {/* `style` doit être un objet **plat** : `asChild` passe par un Slot qui
-            fusionne les styles à l'étalement, et un tableau y devient un objet
-            à clés numériques que react-native-web ne sait pas appliquer. */}
-        <View
-          style={StyleSheet.flatten([
-            styles.bar,
-            {
-              backgroundColor: colors.paperRaised,
-              borderTopColor: colors.thread,
-              // La zone de gestes / l'encoche du bas fait partie de la barre,
-              // pas du contenu au-dessus — elle n'a donc pas à être réservée
-              // ailleurs.
-              paddingBottom: insets.bottom,
-            },
-          ])}
-        >
-          <TabTrigger name="shelf" href="/shelf" asChild>
-            <TabBarButton icon={ShelfIcon} label="Inventaire" />
+      {/* La barre visible. Les `TabTrigger` posés hors de `TabList` n'ont pas
+          besoin de `href` : ils désignent une route déjà déclarée plus bas. */}
+      <View
+        style={[
+          styles.bar,
+          {
+            backgroundColor: colors.paperRaised,
+            borderTopColor: colors.thread,
+            // La zone de gestes / l'encoche du bas fait partie de la barre,
+            // pas du contenu au-dessus — elle n'a donc pas à être réservée
+            // ailleurs.
+            paddingBottom: insets.bottom,
+          },
+        ]}
+      >
+        <TabTrigger name="shelf" asChild>
+          <TabBarButton icon={ShelfIcon} label="Inventaire" compact={showJournal} />
+        </TabTrigger>
+        <TabTrigger name="shopping" asChild>
+          <TabBarButton icon={BasketIcon} label="Courses" compact={showJournal} />
+        </TabTrigger>
+        <TabTrigger name="recipes" asChild>
+          <TabBarButton icon={RecipeIcon} label="Recettes" compact={showJournal} />
+        </TabTrigger>
+        {showJournal && (
+          <TabTrigger name="journal" asChild>
+            <TabBarButton icon={JournalIcon} label="Journal" compact={showJournal} />
           </TabTrigger>
-          <TabTrigger name="shopping" href="/shopping" asChild>
-            <TabBarButton icon={BasketIcon} label="Courses" />
-          </TabTrigger>
-          <TabTrigger name="recipes" href="/recipes" asChild>
-            <TabBarButton icon={RecipeIcon} label="Recettes" />
-          </TabTrigger>
-          <TabTrigger name="settings" href="/settings" asChild>
-            <TabBarButton icon={SettingsIcon} label="Paramètres" />
-          </TabTrigger>
-        </View>
+        )}
+        <TabTrigger name="settings" asChild>
+          <TabBarButton icon={SettingsIcon} label="Paramètres" compact={showJournal} />
+        </TabTrigger>
+      </View>
+
+      {/* Les routes, déclarées une fois pour toutes et jamais masquées.
+          C'est en parcourant `TabList` qu'expo-router les découvre : y faire
+          apparaître et disparaître le journal au gré du type de groupe
+          reviendrait à recomposer le navigateur pendant qu'on s'en sert. On
+          déclare donc les cinq, et c'est la **barre** qui en montre quatre ou
+          cinq. Conséquence assumée : en colocation, l'adresse du journal reste
+          joignable — le serveur l'ouvre déjà à tous les membres, et inventer
+          ici un refus que le domaine ne pose pas serait une règle de plus à
+          défendre pour rien. */}
+      <TabList style={styles.hidden}>
+        <TabTrigger name="shelf" href="/shelf" />
+        <TabTrigger name="shopping" href="/shopping" />
+        <TabTrigger name="recipes" href="/recipes" />
+        <TabTrigger name="journal" href="/journal" />
+        <TabTrigger name="settings" href="/settings" />
       </TabList>
     </Tabs>
   );
@@ -115,6 +149,8 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   slot: { flexGrow: 1, flexShrink: 1, flexBasis: 0 },
   fabSlot: { position: 'absolute', right: spacing.lg, bottom: spacing.lg },
+  // `TabList` doit être rendu pour que les routes existent, pas affiché.
+  hidden: { display: 'none' },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
