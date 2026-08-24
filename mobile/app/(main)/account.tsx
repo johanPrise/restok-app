@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { Text } from '@/components/Text';
+import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { useSession } from '@/store/session';
 import { spacing } from '@/theme';
@@ -129,7 +130,7 @@ export default function Account() {
 
       {update.isError && (
         <Text variant="caption" color="rustClay" style={styles.feedback}>
-          {update.error.message}
+          {apiErrorMessage(update.error)}
         </Text>
       )}
 

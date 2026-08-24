@@ -11,6 +11,7 @@ import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { apiErrorMessage } from '@/lib/api-error';
 import type { GroupType } from '@/types/api';
 import { border, radius, spacing, useTheme } from '@/theme';
 
@@ -84,7 +85,7 @@ export default function CreateGroup() {
 
         {create.isError && (
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {create.error.message}
+            {apiErrorMessage(create.error)}
           </Text>
         )}
 

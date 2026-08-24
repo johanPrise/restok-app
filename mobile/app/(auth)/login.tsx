@@ -9,6 +9,7 @@ import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { apiErrorMessage } from '@/lib/api-error';
 import { border, spacing, useTheme } from '@/theme';
 
 export default function Login() {
@@ -73,7 +74,7 @@ export default function Login() {
           // Le backend renvoie le même message pour un email inconnu et un
           // mauvais mot de passe — on ne le désambiguïse pas ici non plus.
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {login.error.message}
+            {apiErrorMessage(login.error)}
           </Text>
         )}
 

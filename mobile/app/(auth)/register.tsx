@@ -11,6 +11,7 @@ import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { apiErrorMessage } from '@/lib/api-error';
 import { border, spacing, useTheme } from '@/theme';
 
 /** Aligné sur RegisterDto côté backend, pour ne pas dépendre d'un aller-retour. */
@@ -98,7 +99,7 @@ export default function Register() {
 
         {register.isError && (
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {register.error.message}
+            {apiErrorMessage(register.error)}
           </Text>
         )}
 

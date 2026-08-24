@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useRenameGroup } from '@/api/groups';
+import { apiErrorMessage } from '@/lib/api-error';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { border, radius, spacing, textStyles, useTheme } from '@/theme';
 import { Text } from './Text';
@@ -71,7 +72,7 @@ export function EditableGroupName({
 
         {rename.isError && (
           <Text variant="caption" color="rustClay" style={styles.text}>
-            {rename.error.message}
+            {apiErrorMessage(rename.error)}
           </Text>
         )}
       </View>

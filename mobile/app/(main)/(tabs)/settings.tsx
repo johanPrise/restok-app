@@ -17,6 +17,7 @@ import { MemberRow } from '@/components/MemberRow';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { apiErrorMessage } from '@/lib/api-error';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
 import { MIN_TOUCH_TARGET, spacing } from '@/theme';
@@ -205,7 +206,7 @@ function Members({
 
       {(setRole.isError || remove.isError) && (
         <Text variant="caption" color="rustClay">
-          {(setRole.error ?? remove.error)?.message}
+          {apiErrorMessage(setRole.error ?? remove.error)}
         </Text>
       )}
     </View>
@@ -251,18 +252,22 @@ function DeleteGroup({
         <Text variant="bodyStrong">{group.name}</Text> pour confirmer.
       </Text>
 
+      {/* Pas de `placeholder` avec le nom : mettre la réponse dans la case
+          annule ce que retaper le nom cherchait à obtenir — un geste délibéré.
+          Et le champ semblait déjà rempli pendant que « Supprimer » restait
+          gris, sans que rien n'explique pourquoi. La phrase juste au-dessus
+          nomme déjà le groupe. */}
       <Field
         label={solo ? 'Nom de ton inventaire' : 'Nom du groupe'}
         value={typed}
         onChangeText={setTyped}
-        placeholder={group.name}
         autoCapitalize="none"
         autoCorrect={false}
       />
 
       {remove.isError && (
         <Text variant="caption" color="rustClay">
-          {remove.error.message}
+          {apiErrorMessage(remove.error)}
         </Text>
       )}
 
@@ -323,7 +328,7 @@ function LeaveGroup() {
 
       {leave.isError && (
         <Text variant="caption" color="rustClay">
-          {leave.error.message}
+          {apiErrorMessage(leave.error)}
         </Text>
       )}
 

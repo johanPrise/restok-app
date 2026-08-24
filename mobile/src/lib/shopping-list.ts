@@ -28,11 +28,18 @@ export function splitLines(lines: readonly ShoppingLine[]): {
   };
 }
 
-/** « 3 sur 8 cochés » — le récapitulatif, juste sous le titre. */
+/**
+ * « 3 sur 8 cochés » — le récapitulatif, juste sous le titre.
+ *
+ * `< 2`, pas `=== 1` : en français zéro reste au singulier. C'est déjà la
+ * règle que `plural()` applique aux unités et aux paquets, et deux accords
+ * contradictoires dans la même app se voient à l'écran — « 0 paquet » sous un
+ * « 0 sur 1 cochés ».
+ */
 export function checkedSummary(lines: readonly ShoppingLine[]): string {
   const checked = lines.filter((line) => line.checked).length;
 
-  return `${checked} sur ${lines.length} coché${checked === 1 ? '' : 's'}`;
+  return `${checked} sur ${lines.length} coché${checked < 2 ? '' : 's'}`;
 }
 
 export function checkedCount(lines: readonly ShoppingLine[]): number {

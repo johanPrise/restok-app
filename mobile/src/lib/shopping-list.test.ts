@@ -93,8 +93,9 @@ describe('checkedSummary', () => {
     ).toBe('2 sur 2 cochés');
   });
 
-  it('tient sur une liste vide', () => {
-    expect(checkedSummary([])).toBe('0 sur 0 cochés');
+  it('garde le singulier à zéro, comme le veut le français', () => {
+    expect(checkedSummary([])).toBe('0 sur 0 coché');
+    expect(checkedSummary([line({ id: 'a' })])).toBe('0 sur 1 coché');
   });
 });
 
