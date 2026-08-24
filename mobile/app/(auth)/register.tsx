@@ -54,7 +54,11 @@ export default function Register() {
       <TagCard>
         <Text variant="tagName">Créer un compte</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
-          Vous rejoindrez ou créerez un groupe juste après.
+          {/* Trois portes suivent, pas deux : annoncer un groupe à qui vient
+              ouvrir un inventaire pour lui seul, c'est lui dire que sa porte
+              n'existe pas. */}
+          Vous choisirez juste après : un groupe à créer, un à rejoindre, ou
+          votre inventaire à vous.
         </Text>
 
         <View style={styles.form}>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useRenameGroup } from '@/api/groups';
+import { useIsSolo } from '@/lib/useIsSolo';
 import { border, radius, spacing, textStyles, useTheme } from '@/theme';
 import { Text } from './Text';
 import { useToast } from './Toast';
@@ -18,6 +19,11 @@ const MAX_LENGTH = 100;
 /**
  * Le nom du groupe se change en tapant dessus (§7), pas au fond des réglages :
  * c'est là qu'on le lit, donc c'est là qu'on le corrige.
+ *
+ * Seul, ce n'est pas un groupe mais un inventaire, et les réglages le disent
+ * déjà. Ce que l'œil lit et ce que le lecteur d'écran annonce doivent nommer
+ * la même chose — c'est pourquoi `solo` se lit ici plutôt que de descendre en
+ * `prop` : l'appelant n'a rien à décider.
  */
 export function EditableGroupName({
   name,
@@ -26,7 +32,10 @@ export function EditableGroupName({
   const { colors } = useTheme();
   const rename = useRenameGroup();
   const toast = useToast();
+  const solo = useIsSolo();
   const [draft, setDraft] = useState<string | null>(null);
+
+  const thing = solo ? 'ton inventaire' : 'le groupe';
 
   const commit = () => {
     const next = (draft ?? '').trim();
@@ -35,7 +44,12 @@ export function EditableGroupName({
     // Un nom trop court ou inchangé n'a pas à faire un aller-retour réseau.
     if (next.length < MIN_LENGTH || next === name) return;
     rename.mutate(next, {
-      onSuccess: () => toast(`Groupe renommé « ${next} »`),
+      onSuccess: () =>
+        toast(
+          solo
+            ? `Inventaire renommé « ${next} »`
+            : `Groupe renommé « ${next} »`,
+        ),
     });
   };
 
@@ -45,7 +59,7 @@ export function EditableGroupName({
         <Pressable
           accessibilityRole={editable ? 'button' : 'header'}
           accessibilityLabel={
-            editable ? `${name}, appuie pour renommer le groupe` : name
+            editable ? `${name}, appuie pour renommer ${thing}` : name
           }
           disabled={!editable}
           onPress={() => setDraft(name)}
@@ -75,7 +89,7 @@ export function EditableGroupName({
       maxLength={MAX_LENGTH}
       returnKeyType="done"
       textAlign="center"
-      accessibilityLabel="Nom du groupe"
+      accessibilityLabel={solo ? 'Nom de ton inventaire' : 'Nom du groupe'}
       style={[
         styles.input,
         textStyles.title,

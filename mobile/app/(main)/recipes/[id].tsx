@@ -13,9 +13,10 @@ import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { latestFailure } from '@/lib/api-error';
 import { statusBadge, statusColor } from '@/lib/item-display';
-import { feasibility } from '@/lib/recipes';
+import { feasibility, recipeByline } from '@/lib/recipes';
 import { itemsOnList, suggestedQuantity } from '@/lib/shopping-list';
 import { useGoBack } from '@/lib/useGoBack';
+import { useIsSolo } from '@/lib/useIsSolo';
 import type { Item, Recipe } from '@/types/api';
 import { border, radius, spacing, textOn, useTheme } from '@/theme';
 
@@ -27,6 +28,7 @@ export default function RecipeDetail() {
   const items = useItems();
   const shopping = useShoppingList();
   const online = useIsOnline();
+  const solo = useIsSolo();
 
   const take = useTakeItem();
   const addLine = useAddShoppingLine();
@@ -50,6 +52,7 @@ export default function RecipeDetail() {
   }
 
   const state = feasibility(recipe, items.data ?? []);
+  const byline = recipeByline(recipe, solo);
   const onList = itemsOnList(shopping.data ?? []);
 
   // Ce qui manque **et** n'est pas déjà sur la liste : reverser une deuxième
@@ -91,14 +94,11 @@ export default function RecipeDetail() {
       >
         <Text variant="title">{recipe.name}</Text>
 
-        <Text variant="monoLabel" color="inkSoft">
-          {[
-            recipe.servings ? `Pour ${recipe.servings}` : null,
-            recipe.createdBy ? `Notée par ${recipe.createdBy}` : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </Text>
+        {byline !== null && (
+          <Text variant="monoLabel" color="inkSoft">
+            {byline}
+          </Text>
+        )}
 
         {recipe.source !== null && (
           <Button

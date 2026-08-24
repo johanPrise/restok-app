@@ -20,6 +20,7 @@ import {
   unitsInPacks,
   withUnit,
 } from '@/lib/units';
+import { useIsSolo } from '@/lib/useIsSolo';
 import { useItemActions, type ItemActions } from '@/lib/useItemActions';
 import { useSession } from '@/store/session';
 import { spacing } from '@/theme';
@@ -64,6 +65,7 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
   const goBack = useGoBack();
   const history = useItemHistory(item.id);
   const actions = useItemActions(item);
+  const solo = useIsSolo();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
 
   return (
@@ -73,7 +75,7 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
     >
       {/* Mêmes gestes que sur l'étagère, mais sans décrochage : ici le tag n'a
           aucune section où partir. */}
-      <SwipeableStockTag item={item} unhookOnEmpty={false} />
+      <SwipeableStockTag item={item} unhookOnEmpty={false} solo={solo} />
 
       <ItemActionsPanel item={item} actions={actions} />
 
@@ -90,6 +92,7 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
         <ReceiptHistory
           entries={history.data ?? []}
           loading={history.isPending}
+          solo={solo}
         />
       </View>
 

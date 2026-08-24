@@ -50,12 +50,29 @@ function useJoinedGroup() {
 }
 
 export function useCreateGroup() {
+  const queryClient = useQueryClient();
   const onJoined = useJoinedGroup();
 
   return useMutation({
     mutationFn: (input: { name: string; type?: GroupType }) =>
       authedRequest<Group>('/groups', { method: 'POST', body: input }),
-    onSuccess: (group) => onJoined(group, 'admin'),
+    onSuccess: (group) => {
+      // Le groupe est semé dans le cache avant l'invalidation : le serveur
+      // vient de le renvoyer, et à la création on est seul dedans — les deux
+      // sont des faits, pas des suppositions. Sans ça, l'écran suivant lit
+      // `undefined` le temps d'un aller-retour et en conclut « ce n'est pas un
+      // solo », ce qui fait clignoter l'étape des notifications sur le chemin
+      // exact d'un nouveau solo.
+      //
+      // La jointure ne peut pas en faire autant : elle entre dans un groupe
+      // dont elle ignore le nombre de membres, et inventer un compte pour
+      // gagner une frame n'en vaut pas le prix.
+      queryClient.setQueryData<GroupDetail>(queryKeys.group, {
+        ...group,
+        memberCount: 1,
+      });
+      onJoined(group, 'admin');
+    },
   });
 }
 

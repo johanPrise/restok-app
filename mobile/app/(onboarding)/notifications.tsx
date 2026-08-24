@@ -1,7 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRegisterPushToken } from '@/api/groups';
+import { useGroup, useRegisterPushToken } from '@/api/groups';
 import { Button } from '@/components/Button';
 import { BellBadgeIcon } from '@/components/icons';
 import { Screen } from '@/components/Screen';
@@ -29,6 +29,7 @@ const UNAVAILABLE_REASONS = {
 
 export default function NotificationsStep() {
   const router = useRouter();
+  const group = useGroup();
   const solo = useIsSolo();
   const { colors } = useTheme();
   const markPrompted = useSession((s) => s.markNotificationsPrompted);
@@ -73,10 +74,21 @@ export default function NotificationsStep() {
     }
   };
 
+  // Tant que le type du groupe n'est pas connu, cet écran ne décide rien :
+  // `useIsSolo` répond « non » pendant le chargement, et afficher « Prévenir le
+  // groupe » à quelqu'un qui vit seul, même une frame, c'est lui poser une
+  // question qu'on va retirer sous ses yeux.
+  if (group.isPending) return null;
+
   // Seul, le listener notifie le groupe **en excluant celui qui a agi** : la
-  // cible est toujours vide, aucune notification ne partira jamais. Le saut est
-  // déjà fait à la création du groupe, mais il est local à l'appareil — sur un
-  // second téléphone, la question reviendrait. Ici elle ne peut plus.
+  // cible est toujours vide, aucune notification ne partira jamais.
+  //
+  // Rien n'est marqué au passage. C'est ce qui sépare cette version de la
+  // précédente : le drapeau était posé à la création du groupe, donc une fois
+  // pour toutes, et le jour où quelqu'un rejoignait avec le code d'invitation
+  // la question ne revenait jamais. Ici la condition se relit à chaque fois,
+  // sur le type que le serveur fait autorité — dès que le groupe cesse d'être
+  // solo, l'étape reprend sa place.
   if (solo) return <Redirect href="/shelf" />;
 
   return (

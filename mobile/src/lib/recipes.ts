@@ -121,3 +121,22 @@ export function feasibilityLabel(state: Feasibility): string {
 
   return `Il manque ${state.items.length}`;
 }
+
+/**
+ * La ligne sous le titre d'une recette : pour combien, et de qui elle vient.
+ *
+ * Seul, « Notée par » désigne toujours la même personne — celle qui lit. On la
+ * retire, exactement comme l'auteur disparaît des tags et des lignes de
+ * courses.
+ *
+ * `null` plutôt qu'une chaîne vide quand il n'y a rien à dire : l'écran saute
+ * alors le paragraphe au lieu de réserver une ligne blanche sous le titre.
+ */
+export function recipeByline(recipe: Recipe, solo = false): string | null {
+  const parts = [
+    recipe.servings ? `Pour ${recipe.servings}` : null,
+    solo || !recipe.createdBy ? null : `Notée par ${recipe.createdBy}`,
+  ].filter((part): part is string => Boolean(part));
+
+  return parts.length > 0 ? parts.join(' · ') : null;
+}

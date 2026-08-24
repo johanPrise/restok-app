@@ -7,7 +7,6 @@ import { Screen } from '@/components/Screen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
-import { useSession } from '@/store/session';
 import { spacing, useTheme } from '@/theme';
 
 export default function Choose() {
@@ -15,9 +14,6 @@ export default function Choose() {
   const { colors } = useTheme();
   const toast = useToast();
   const create = useCreateGroup();
-  const markNotificationsPrompted = useSession(
-    (state) => state.markNotificationsPrompted,
-  );
 
   return (
     <Screen>
@@ -65,12 +61,11 @@ export default function Choose() {
               { name: 'Chez moi', type: 'solo' },
               {
                 onSuccess: () => {
-                  // On ne demandera pas la permission de notifier : le
-                  // listener notifie le groupe **en excluant celui qui a
-                  // agi**, donc seul, la cible est toujours vide. Poser la
-                  // question serait faire accorder un droit qui ne servira à
-                  // rien, une fois et pour toujours.
-                  void markNotificationsPrompted();
+                  // Rien n'est marqué ici. L'étape des notifications se saute
+                  // d'elle-même tant que le groupe est solo, et cette
+                  // condition-là se relit à chaque passage : le jour où
+                  // quelqu'un entre avec le code, la question se pose enfin.
+                  // Un drapeau posé maintenant l'aurait éteinte pour toujours.
                   toast('Ton inventaire est prêt');
                   router.replace('/');
                 },
