@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
 import { Text } from './Text';
+import { useT } from '@/i18n/useT';
 
 interface QuantityStepperProps {
   value: number;
@@ -26,6 +27,7 @@ export function QuantityStepper({
   label,
 }: Readonly<QuantityStepperProps>) {
   const { colors } = useTheme();
+  const t = useT();
 
   return (
     <View
@@ -34,7 +36,7 @@ export function QuantityStepper({
     >
       <Step
         symbol="−"
-        accessibilityLabel="Un de moins"
+        accessibilityLabel={t('commun.unDeMoins')}
         disabled={value <= min}
         onPress={() => onChange(value - 1)}
       />
@@ -48,7 +50,7 @@ export function QuantityStepper({
       </Text>
       <Step
         symbol="+"
-        accessibilityLabel="Un de plus"
+        accessibilityLabel={t('commun.unDePlus')}
         disabled={value >= max}
         onPress={() => onChange(value + 1)}
       />

@@ -121,18 +121,24 @@ describe('defaultRestockPacks', () => {
 
 describe('packSummary', () => {
   it("lève l'ambiguïté d'un compteur de lots", () => {
-    expect(packSummary(item({ unit: 'rouleau', packSize: 6 }), 2)).toBe(
+    expect(packSummary(item({ unit: 'rouleau', packSize: 6 }), 2, 'fr')).toBe(
       '2 paquets · 12 rouleaux',
     );
   });
 
+  it('traduit « paquet », qui est notre mot, et pas « rouleau », qui est celui du foyer', () => {
+    expect(packSummary(item({ unit: 'rouleau', packSize: 6 }), 2, 'en')).toBe(
+      '2 packs · 12 rouleaux',
+    );
+  });
+
   it('accorde « paquet » au singulier', () => {
-    expect(packSummary(item({ unit: 'rouleau', packSize: 6 }), 1)).toBe(
+    expect(packSummary(item({ unit: 'rouleau', packSize: 6 }), 1, 'fr')).toBe(
       '1 paquet · 6 rouleaux',
     );
   });
 
   it("ne dit rien quand l'item ne s'achète pas par lot", () => {
-    expect(packSummary(item({ packSize: null }), 2)).toBeNull();
+    expect(packSummary(item({ packSize: null }), 2, 'fr')).toBeNull();
   });
 });

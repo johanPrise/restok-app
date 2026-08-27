@@ -5,23 +5,23 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { Text } from '@/components/Text';
+import { useT } from '@/i18n/useT';
 import { border, radius, spacing, useTheme } from '@/theme';
 
 const STEPS = 3;
 
 export default function Intro() {
   const router = useRouter();
+  const t = useT();
   const { colors } = useTheme();
 
   return (
     <Screen>
       <View style={styles.header}>
-        <Text variant="title">
-          Le dernier rouleau ne sera plus jamais une surprise.
-        </Text>
+        <Text variant="title">{t('onboarding.promesse')}</Text>
         <View style={styles.rule}>
           <Text variant="monoLabel" color="inkSoft">
-            Ordre 001
+            {t('onboarding.ordre', { n: '001' })}
           </Text>
           <View style={[styles.line, { backgroundColor: colors.thread }]} />
         </View>
@@ -32,7 +32,7 @@ export default function Intro() {
           source={require('../../assets/illustrations/etagere.png')}
           style={styles.illustration}
           contentFit="contain"
-          accessibilityLabel="Une étagère d'inventaire vue de face, ses rayons étiquetés"
+          accessibilityLabel={t('onboarding.etagereAlt')}
         />
       </View>
 
@@ -52,8 +52,8 @@ export default function Intro() {
         ))}
       </View>
 
-      <Button label="Continuer →" onPress={() => router.push('/choose')} />
-      <SystemFooter left="Système d'inventaire partagé v2.4" />
+      <Button label={t('onboarding.continuer')} onPress={() => router.push('/choose')} />
+      <SystemFooter left={t('onboarding.pied')} />
     </Screen>
   );
 }

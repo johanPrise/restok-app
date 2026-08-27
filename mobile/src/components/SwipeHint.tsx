@@ -1,4 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { emphase } from '@/i18n/emphase';
+import { useT } from '@/i18n/useT';
 import { border, radius, spacing, useTheme } from '@/theme';
 import { Text } from './Text';
 
@@ -16,6 +18,7 @@ import { Text } from './Text';
  */
 export function SwipeHint({ onDismiss }: Readonly<{ onDismiss: () => void }>) {
   const { colors } = useTheme();
+  const t = useT();
 
   return (
     <View
@@ -26,31 +29,29 @@ export function SwipeHint({ onDismiss }: Readonly<{ onDismiss: () => void }>) {
       ]}
     >
       <View style={styles.row}>
-        <Text variant="monoLabel" color="pantryTeal">
-          Le geste
-        </Text>
+        <Text variant="monoLabel" color="pantryTeal">{t('geste.titre')}</Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Masquer l’explication du balayage"
+          accessibilityLabel={t('commun.masquerBalayage')}
           hitSlop={spacing.xs}
           onPress={onDismiss}
         >
           <Text variant="monoLabel" color="inkSoft">
-            Compris
+            {t('geste.compris')}
           </Text>
         </Pressable>
       </View>
 
       {/* Les deux sens sont nommés dans l'ordre où ils arrivent : on vide bien
-          plus souvent qu'on ne remplit. */}
+          plus souvent qu'on ne remplit. Les astérisques de la traduction
+          marquent ce qui passe en gras — voir `emphase`. */}
       <Text variant="body">
-        Tire un tag vers la <Text variant="bodyStrong">gauche</Text> quand tu
-        prends quelque chose, vers la <Text variant="bodyStrong">droite</Text>{' '}
-        quand tu en rachètes. Plus tu tires loin, plus la quantité monte.
+        {emphase(t('geste.explication'))}
       </Text>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   block: {

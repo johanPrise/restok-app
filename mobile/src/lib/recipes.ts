@@ -1,3 +1,5 @@
+import { translate } from '@/i18n';
+import { compare, type Locale } from '@/i18n/locales';
 import type { Item, ItemStatus, Recipe } from '@/types/api';
 
 /**
@@ -69,13 +71,14 @@ function rank(state: Feasibility): number {
 export function sortByFeasibility(
   recipes: readonly Recipe[],
   items: readonly Item[],
+  locale: Locale,
 ): { recipe: Recipe; state: Feasibility }[] {
   return recipes
     .map((recipe) => ({ recipe, state: feasibility(recipe, items) }))
     .sort(
       (a, b) =>
         rank(a.state) - rank(b.state) ||
-        a.recipe.name.localeCompare(b.recipe.name, 'fr'),
+        compare(locale, a.recipe.name, b.recipe.name),
     );
 }
 
@@ -95,9 +98,10 @@ const TONIGHT_LIMIT = 3;
 export function feasibleNow(
   recipes: readonly Recipe[],
   items: readonly Item[],
+  locale: Locale,
   limit: number = TONIGHT_LIMIT,
 ): Recipe[] {
-  return sortByFeasibility(recipes, items)
+  return sortByFeasibility(recipes, items, locale)
     .filter((entry) => entry.state.kind === 'ready')
     .slice(0, limit)
     .map((entry) => entry.recipe);
@@ -115,11 +119,12 @@ export function feasibleNow(
  * veut dire, et un écran qui admet son ignorance est plus fiable qu'un écran
  * qui la déguise en constat.
  */
-export function feasibilityLabel(state: Feasibility): string {
-  if (state.kind === 'ready') return 'Tout est là';
-  if (state.kind === 'unknown') return 'On ne sait pas';
+export function feasibilityLabel(state: Feasibility, locale: Locale): string {
+  if (state.kind === 'ready') return translate(locale, 'recettes.toutEstLa');
+  if (state.kind === 'unknown')
+    return translate(locale, 'recettes.onNeSaitPas');
 
-  return `Il manque ${state.items.length}`;
+  return translate(locale, 'recettes.ilManque', { count: state.items.length });
 }
 
 /**
@@ -132,10 +137,18 @@ export function feasibilityLabel(state: Feasibility): string {
  * `null` plutôt qu'une chaîne vide quand il n'y a rien à dire : l'écran saute
  * alors le paragraphe au lieu de réserver une ligne blanche sous le titre.
  */
-export function recipeByline(recipe: Recipe, solo = false): string | null {
+export function recipeByline(
+  recipe: Recipe,
+  locale: Locale,
+  solo = false,
+): string | null {
   const parts = [
-    recipe.servings ? `Pour ${recipe.servings}` : null,
-    solo || !recipe.createdBy ? null : `Notée par ${recipe.createdBy}`,
+    recipe.servings
+      ? translate(locale, 'recettes.pour', { count: recipe.servings })
+      : null,
+    solo || !recipe.createdBy
+      ? null
+      : translate(locale, 'recettes.noteePar', { nom: recipe.createdBy }),
   ].filter((part): part is string => Boolean(part));
 
   return parts.length > 0 ? parts.join(' · ') : null;

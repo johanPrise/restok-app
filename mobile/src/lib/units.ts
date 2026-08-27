@@ -1,3 +1,5 @@
+import { translate } from '@/i18n';
+import type { Locale } from '@/i18n/locales';
 import type { Item } from '@/types/api';
 
 /**
@@ -53,12 +55,18 @@ export function defaultRestockPacks(item: Item): number {
 }
 
 /** « 2 paquets · 12 rouleaux », pour lever l'ambiguïté d'un compteur de lots. */
-export function packSummary(item: Packaging, packs: number): string | null {
+export function packSummary(
+  item: Packaging,
+  packs: number,
+  locale: Locale,
+): string | null {
   if (!hasPacks(item)) return null;
 
   const units = unitsInPacks(item, packs);
 
-  return `${packs} ${plural('paquet', packs)} · ${withUnit(item, units)}`;
+  const lot = translate(locale, 'unites.paquets', { count: packs });
+
+  return `${packs} ${lot} · ${withUnit(item, units)}`;
 }
 
 /** Symboles de mesure : invariables, « 3 kg » et non « 3 kgs ». */
@@ -72,6 +80,13 @@ const INVARIANT = new Set(['g', 'kg', 'mg', 'l', 'cl', 'ml', 'dl', 'cm', 'm']);
  *
  * Le reste prend un `s`, et se trompera sur des exceptions qu'un champ libre de
  * vingt caractères ne verra presque jamais.
+ *
+ * **Et il ne suit pas la langue de l'app, délibérément.** Ce mot n'est pas le
+ * nôtre : c'est celui que le foyer a tapé — « rouleau », « bidon ». On ignore
+ * dans quelle langue il l'a écrit, et l'accorder selon l'interface donnerait
+ * « 0 rouleaux » à quelqu'un qui a mis son téléphone en anglais. Le seul autre
+ * mot de cette fonction, « paquet », est le nôtre : il est traduit, lui, juste
+ * au-dessus.
  */
 function plural(word: string, count: number): string {
   if (count < 2) return word;

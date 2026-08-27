@@ -23,7 +23,7 @@ describe('groupByUrgency', () => {
       item('Café'),
       item('Litière', 'low'),
       item('Papier toilette', 'to_restock'),
-    ]);
+    ], 'fr');
 
     expect(sections.map((s) => s.key)).toEqual([
       'to_restock',
@@ -37,7 +37,7 @@ describe('groupByUrgency', () => {
     const sections = groupByUrgency([
       item('Papier toilette', 'to_restock'),
       item('Ampoules', 'out_of_stock'),
-    ]);
+    ], 'fr');
 
     expect(sections).toHaveLength(1);
     expect(sections[0].items.map((i) => i.name)).toEqual([
@@ -51,21 +51,21 @@ describe('groupByUrgency', () => {
       item('Zeste'),
       item('Ail'),
       item('Miel'),
-    ]);
+    ], 'fr');
 
     expect(section.items.map((i) => i.name)).toEqual(['Ail', 'Miel', 'Zeste']);
   });
 
   it('fait disparaître une section vide', () => {
     // Pas de « À racheter (0) » qui occupe la place sans rien dire.
-    const sections = groupByUrgency([item('Café')]);
+    const sections = groupByUrgency([item('Café')], 'fr');
 
     expect(sections).toHaveLength(1);
     expect(sections[0].key).toBe('available');
   });
 
   it('ne renvoie rien sur une étagère vide', () => {
-    expect(groupByUrgency([])).toEqual([]);
+    expect(groupByUrgency([], 'fr')).toEqual([]);
   });
 
   it('donne à chaque section sa couleur de statut', () => {
@@ -73,7 +73,7 @@ describe('groupByUrgency', () => {
       item('A', 'to_restock'),
       item('B', 'low'),
       item('C'),
-    ]);
+    ], 'fr');
 
     expect(sections.map((s) => s.color)).toEqual([
       'rustClay',

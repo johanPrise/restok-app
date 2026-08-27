@@ -8,20 +8,17 @@ import { FormScreen } from '@/components/FormScreen';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { useSession } from '@/store/session';
 import { spacing } from '@/theme';
 import type { CreateItemInput, TrackingType } from '@/types/api';
 
-const MODES = [
-  { value: 'threshold' as const, label: 'Présence' },
-  { value: 'quantity' as const, label: 'Quantité' },
-];
-
-const HINTS: Record<TrackingType, string> = {
-  threshold: "L'item est là, ou il n'y est plus. Rien à compter.",
-  quantity: 'On décompte les unités, et la jauge montre ce qu’il reste.',
+/** Ce que chaque mode de suivi promet, sous le sélecteur. */
+const HINT_KEYS: Record<TrackingType, string> = {
+  threshold: 'etagere.presenceQuoi',
+  quantity: 'etagere.quantiteQuoi',
 };
 
 /**
@@ -31,6 +28,8 @@ const HINTS: Record<TrackingType, string> = {
  */
 export default function NewItem() {
   const goBack = useGoBack();
+  const locale = useLocale();
+  const t = useT();
   const toast = useToast();
   const create = useCreateItem();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
@@ -45,7 +44,7 @@ export default function NewItem() {
   const [submitted, setSubmitted] = useState(false);
 
   const counting = mode === 'quantity';
-  const errors = validate({
+  const errors = validate(t, {
     name,
     counting,
     quantity,
@@ -75,7 +74,7 @@ export default function NewItem() {
 
     create.mutate(input, {
       onSuccess: (item) => {
-        toast(`${item.name} ajouté à l’étagère`);
+        toast(t('etagere.itemAjoute', { nom: item.name }));
         goBack();
       },
     });
@@ -86,11 +85,10 @@ export default function NewItem() {
       <FormScreen>
         <BackLink onPress={goBack} />
         <Text variant="title" style={styles.heading}>
-          Réservé aux admins
+          {t('etagere.reserveAdmins')}
         </Text>
         <Text variant="body" color="inkSoft">
-          Seul un administrateur du groupe ajoute des items. Demande-lui de
-          créer celui qui manque.
+          {t('etagere.reserveAdminsQuoi')}
         </Text>
       </FormScreen>
     );
@@ -101,35 +99,38 @@ export default function NewItem() {
       <BackLink onPress={goBack} />
 
       <View style={styles.header}>
-        <Text variant="title">Nouvel item</Text>
+        <Text variant="title">{t('etagere.nouvelItem')}</Text>
         <Text variant="monoLabel" color="inkSoft">
-          Étagère / Ajout
+          {t('etagere.sousTitreAjout')}
         </Text>
       </View>
 
       <View style={styles.form}>
         <Field
-          label="Nom"
+          label={t('etagere.nom')}
           value={name}
           onChangeText={setName}
-          placeholder="Papier toilette"
+          placeholder={t('etagere.exempleNom')}
           error={shown.name}
           autoCapitalize="sentences"
           returnKeyType="next"
         />
 
         <Segmented
-          label="Mode de suivi"
-          hint={HINTS[mode]}
+          label={t('etagere.modeDeSuivi')}
+          hint={t(HINT_KEYS[mode])}
           value={mode}
-          options={MODES}
+          options={[
+            { value: 'threshold' as const, label: t('etagere.presence') },
+            { value: 'quantity' as const, label: t('etagere.quantite') },
+          ]}
           onChange={setMode}
         />
 
         {counting && (
           <>
             <Field
-              label="Quantité en stock"
+              label={t('etagere.quantiteEnStock')}
               value={quantity}
               onChangeText={setQuantity}
               placeholder="6"
@@ -138,7 +139,7 @@ export default function NewItem() {
               inputMode="numeric"
             />
             <Field
-              label="Alerte en dessous de"
+              label={t('etagere.alerteEnDessous')}
               value={threshold}
               onChangeText={setThreshold}
               placeholder="1"
@@ -147,28 +148,28 @@ export default function NewItem() {
               inputMode="numeric"
             />
             <Field
-              label="Plein à"
+              label={t('etagere.pleinA')}
               value={target}
               onChangeText={setTarget}
-              placeholder={quantity.trim() || 'identique au stock'}
+              placeholder={quantity.trim() || t('etagere.identiqueAuStock')}
               error={shown.target}
               keyboardType="number-pad"
               inputMode="numeric"
             />
             <Field
-              label="Une unité s'appelle"
+              label={t('etagere.uneUniteSAppelle')}
               value={unit}
               onChangeText={setUnit}
-              placeholder="rouleau, bidon, dosette…"
+              placeholder={t('etagere.exempleUnite')}
               error={shown.unit}
               autoCapitalize="none"
               maxLength={20}
             />
             <Field
-              label="Par paquet de"
+              label={t('etagere.parPaquetDe')}
               value={pack}
               onChangeText={setPack}
-              placeholder="laisse vide si ça s'achète à l'unité"
+              placeholder={t('etagere.videSiUnite')}
               error={shown.pack}
               keyboardType="number-pad"
               inputMode="numeric"
@@ -179,12 +180,12 @@ export default function NewItem() {
 
       {create.isError && (
         <Text variant="caption" color="rustClay" style={styles.error}>
-          {apiErrorMessage(create.error)}
+          {apiErrorMessage(create.error, locale)}
         </Text>
       )}
 
       <Button
-        label="Ajouter à l'étagère"
+        label={t('etagere.ajouterAEtagere')}
         onPress={submit}
         loading={create.isPending}
         style={styles.submit}
@@ -200,47 +201,53 @@ type Errors = Partial<
 /**
  * Reprend les contraintes des DTO du backend. Les valider ici évite un
  * aller-retour pour se faire répondre 400, mais le serveur reste seul juge.
+ *
+ * `t` est passé plutôt que lu : la fonction reste hors composant, donc
+ * appelable dans un test sans monter de rendu.
  */
-function validate({
-  name,
-  counting,
-  quantity,
-  threshold,
-  target,
-  unit,
-  pack,
-}: {
-  name: string;
-  counting: boolean;
-  quantity: string;
-  threshold: string;
-  target: string;
-  unit: string;
-  pack: string;
-}): Errors {
+function validate(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  {
+    name,
+    counting,
+    quantity,
+    threshold,
+    target,
+    unit,
+    pack,
+  }: {
+    name: string;
+    counting: boolean;
+    quantity: string;
+    threshold: string;
+    target: string;
+    unit: string;
+    pack: string;
+  },
+): Errors {
   const errors: Errors = {};
   const trimmed = name.trim();
 
-  if (trimmed.length < 2) errors.name = 'Au moins deux caractères.';
-  else if (trimmed.length > 100) errors.name = 'Cent caractères au maximum.';
+  if (trimmed.length < 2) errors.name = t('champs.deuxCaracteres');
+  else if (trimmed.length > 100) errors.name = t('champs.centCaracteresMax');
 
   if (!counting) return errors;
 
   if (!isWhole(quantity, 0)) {
-    errors.quantity = 'Un nombre entier, zéro compris.';
+    errors.quantity = t('champs.entierZeroCompris');
   }
   if (threshold.trim() && !isWhole(threshold, 1)) {
-    errors.threshold = 'Un nombre entier, au moins 1.';
+    errors.threshold = t('champs.entierMinimum', { count: 1 });
   }
   if (target.trim() && !isWhole(target, 1)) {
-    errors.target = 'Un nombre entier, au moins 1.';
+    errors.target = t('champs.entierMinimum', { count: 1 });
   }
   if (unit.trim().length > 20) {
-    errors.unit = 'Vingt caractères au maximum.';
+    errors.unit = t('champs.vingtCaracteresMax');
   }
   // Un « paquet de 1 » n'en est pas un : autant le laisser vide.
   if (pack.trim() && !isWhole(pack, 2)) {
-    errors.pack = 'Un nombre entier, au moins 2.';
+    errors.pack = t('champs.entierMinimum', { count: 2 });
   }
 
   return errors;

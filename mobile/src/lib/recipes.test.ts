@@ -124,6 +124,7 @@ describe('sortByFeasibility', () => {
         recipe('Risotto', [{ itemId: 'a', name: 'Riz' }]),
       ],
       shelf,
+      'fr',
     );
 
     expect(sorted.map((entry) => entry.recipe.name)).toEqual([
@@ -146,6 +147,7 @@ describe('sortByFeasibility', () => {
         recipe('Une', [{ itemId: 'a', name: 'Riz' }]),
       ],
       shelf,
+      'fr',
     );
 
     expect(sorted.map((entry) => entry.recipe.name)).toEqual(['Une', 'Deux']);
@@ -158,6 +160,7 @@ describe('sortByFeasibility', () => {
         recipe('Soupe', [{ itemId: 'b', name: 'Bouillon' }]),
       ],
       [item('b', 'Bouillon', 'to_restock')],
+      'fr',
     );
 
     expect(sorted.map((entry) => entry.recipe.name)).toEqual([
@@ -166,10 +169,11 @@ describe('sortByFeasibility', () => {
     ]);
   });
 
-  it('départage à égalité par ordre alphabétique français', () => {
+  it('départage à égalité par l’alphabet de la langue affichée', () => {
     const sorted = sortByFeasibility(
       [recipe('Œufs', []), recipe('Épinards', []), recipe('Ail', [])],
       [],
+      'fr',
     );
 
     expect(sorted.map((entry) => entry.recipe.name)).toEqual([
@@ -189,7 +193,14 @@ describe('feasibilityLabel', () => {
   ];
 
   it.each(cases)('rend %j lisible', (state, expected) => {
-    expect(feasibilityLabel(state)).toBe(expected);
+    expect(feasibilityLabel(state, 'fr')).toBe(expected);
+  });
+
+  it('parle anglais quand c’est la langue affichée', () => {
+    expect(feasibilityLabel({ kind: 'ready' }, 'en')).toBe('All there');
+    expect(feasibilityLabel({ kind: 'missing', items: ['Riz'] }, 'en')).toBe(
+      '1 missing',
+    );
   });
 });
 
@@ -206,6 +217,7 @@ describe('feasibleNow', () => {
         recipe('Risotto', [{ itemId: 'a', name: 'Riz' }]),
       ],
       shelf,
+      'fr',
     );
 
     expect(found.map((r) => r.name)).toEqual(['Risotto']);
@@ -213,7 +225,7 @@ describe('feasibleNow', () => {
 
   it('écarte les muettes : on n’annonce pas ce dont on ne sait rien', () => {
     expect(
-      feasibleNow([recipe('Vinaigrette', [{ name: 'Sel' }])], shelf),
+      feasibleNow([recipe('Vinaigrette', [{ name: 'Sel' }])], shelf, 'fr'),
     ).toEqual([]);
   });
 
@@ -222,7 +234,7 @@ describe('feasibleNow', () => {
       recipe(`Plat ${index}`, [{ itemId: 'a', name: 'Riz' }]),
     );
 
-    expect(feasibleNow(many, shelf)).toHaveLength(3);
+    expect(feasibleNow(many, shelf, 'fr')).toHaveLength(3);
   });
 
   it('rend une liste vide quand rien n’est faisable', () => {
@@ -230,6 +242,7 @@ describe('feasibleNow', () => {
       feasibleNow(
         [recipe('Soupe', [{ itemId: 'b', name: 'Bouillon' }])],
         shelf,
+        'fr',
       ),
     ).toEqual([]);
   });
@@ -243,16 +256,19 @@ describe('recipeByline', () => {
   });
 
   it('annonce les parts et l’auteur, séparés', () => {
-    expect(recipeByline(signed(4, 'Sam'))).toBe('Pour 4 · Notée par Sam');
+    expect(recipeByline(signed(4, 'Sam'), 'fr')).toBe('Pour 4 · Notée par Sam');
+    expect(recipeByline(signed(4, 'Sam'), 'en')).toBe(
+      'Serves 4 · Noted by Sam',
+    );
   });
 
   it('retire l’auteur en solo — c’est toujours celui qui lit', () => {
-    expect(recipeByline(signed(4, 'Sam'), true)).toBe('Pour 4');
+    expect(recipeByline(signed(4, 'Sam'), 'fr', true)).toBe('Pour 4');
   });
 
   it('ne rend rien plutôt qu’une ligne vide quand il n’y a rien à dire', () => {
-    expect(recipeByline(signed(null, null))).toBeNull();
+    expect(recipeByline(signed(null, null), 'fr')).toBeNull();
     // Seul et sans nombre de parts : l’auteur était la dernière chose à dire.
-    expect(recipeByline(signed(null, 'Sam'), true)).toBeNull();
+    expect(recipeByline(signed(null, 'Sam'), 'fr', true)).toBeNull();
   });
 });

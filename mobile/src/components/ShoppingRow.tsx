@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useLocale, useT } from '@/i18n/useT';
 import { countable, initial, lineQuantity, packsOf } from '@/lib/shopping-list';
 import { hasPacks, packSummary, unitsInPacks, withUnit } from '@/lib/units';
 import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
@@ -51,7 +52,9 @@ export function ShoppingRow({
   onQuantity,
 }: Readonly<ShoppingRowProps>) {
   const { colors } = useTheme();
-  const quantity = lineQuantity(line);
+  const t = useT();
+  const locale = useLocale();
+  const quantity = lineQuantity(line, locale);
   // Seul, la pastille dirait toujours la même initiale : elle n'apprend rien
   // et occupe la place à côté de la case.
   const who = solo || !line.checked ? null : line.checkedBy;
@@ -78,12 +81,12 @@ export function ShoppingRow({
         .filter(Boolean)
         .join(', ')}
       accessibilityHint={
-        line.checked ? 'Décocher' : 'Cocher — appui long pour retirer'
+        t(line.checked ? 'courses.decocher' : 'courses.cocher')
       }
       accessibilityActions={[
-        { name: 'longpress', label: 'Retirer' },
+        { name: 'longpress', label: t('commun.retirer') },
         ...(editable
-          ? [{ name: 'magicTap', label: 'Corriger la quantité' }]
+          ? [{ name: 'magicTap', label: t('courses.corrigerQuantite') }]
           : []),
       ]}
       onAccessibilityAction={({ nativeEvent }) =>
@@ -128,8 +131,8 @@ export function ShoppingRow({
               accessibilityRole="button"
               accessibilityLabel={
                 quantity
-                  ? `Corriger la quantité : ${quantity}`
-                  : `Préciser la quantité de ${line.name}`
+                  ? t('courses.corrigerQuantiteA', { quantite: quantity })
+                  : t('courses.preciserQuantiteDe', { nom: line.name })
               }
               onPress={onEdit}
               hitSlop={spacing.xs}
@@ -143,7 +146,7 @@ export function ShoppingRow({
                 color={quantity ? 'inkSoft' : 'pantryTeal'}
                 style={line.checked && styles.struck}
               >
-                {quantity ?? 'Quantité ?'}
+                {quantity ?? t('courses.quantiteInvite')}
               </Text>
             </Pressable>
           )}
@@ -197,6 +200,8 @@ function QuantityEditor({
   onCancel: () => void;
   onCommit: (units: number) => void;
 }>) {
+  const t = useT();
+  const locale = useLocale();
   const [packs, setPacks] = useState(() => packsOf(line));
   const units = unitsInPacks(line, packs);
 
@@ -207,7 +212,9 @@ function QuantityEditor({
           {line.name}
         </Text>
         <QuantityStepper
-          label={hasPacks(line) ? 'Paquets à prendre' : 'Unités à prendre'}
+          label={t(
+            hasPacks(line) ? 'courses.paquetsAPrendre' : 'courses.unitesAPrendre',
+          )}
           value={packs}
           onChange={setPacks}
           max={MAX_PACKS}
@@ -217,18 +224,18 @@ function QuantityEditor({
       {/* Un compteur de lots est ambigu tant qu'on ne dit pas ce qu'il y a
           dedans. */}
       <Text variant="caption" color="inkSoft">
-        {packSummary(line, packs) ?? withUnit(line, units)}
+        {packSummary(line, packs, locale) ?? withUnit(line, units)}
       </Text>
 
       <View style={styles.editorActions}>
         <Button
           variant="secondary"
-          label="Annuler"
+          label={t('commun.annuler')}
           onPress={onCancel}
           style={styles.editorAction}
         />
         <Button
-          label="Valider"
+          label={t('commun.valider')}
           onPress={() => onCommit(units)}
           style={styles.editorAction}
         />

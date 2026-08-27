@@ -35,7 +35,8 @@
           "icon": "./assets/android-icon-monochrome.png",
           "color": "#2B6B5E"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "scheme": "restock",
     "experiments": {

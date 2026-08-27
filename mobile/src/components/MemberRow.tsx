@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useT } from '@/i18n/useT';
 import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
 import type { MemberSummary } from '@/types/api';
 import { Text } from './Text';
@@ -26,6 +27,7 @@ export function MemberRow({
   onRemove,
 }: Readonly<MemberRowProps>) {
   const { colors, isDark } = useTheme();
+  const t = useT();
   const isAdmin = member.role === 'admin';
 
   return (
@@ -46,7 +48,7 @@ export function MemberRow({
         <View style={styles.names}>
           <Text variant="bodyStrong" numberOfLines={1}>
             {member.name}
-            {isSelf ? ' (toi)' : ''}
+            {isSelf ? t('commun.toi') : ''}
           </Text>
           <Text variant="mono" color="inkSoft" numberOfLines={1}>
             {member.email}
@@ -60,7 +62,7 @@ export function MemberRow({
           ]}
         >
           <Text variant="monoLabel" color={isAdmin ? 'pantryTeal' : 'inkSoft'}>
-            {isAdmin ? 'Admin' : 'Membre'}
+            {t(isAdmin ? 'commun.admin' : 'commun.membre')}
           </Text>
         </View>
       </View>
@@ -68,11 +70,15 @@ export function MemberRow({
       {managing && !isSelf && (
         <View style={styles.actions}>
           <Action
-            label={isAdmin ? 'Rétrograder' : 'Nommer admin'}
+            label={t(isAdmin ? 'commun.retrograder' : 'commun.nommerAdmin')}
             color="pantryTeal"
             onPress={onToggleRole}
           />
-          <Action label="Retirer" color="rustClay" onPress={onRemove} />
+          <Action
+            label={t('commun.retirer')}
+            color="rustClay"
+            onPress={onRemove}
+          />
         </View>
       )}
     </View>

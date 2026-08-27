@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { useT } from '@/i18n/useT';
 import { fillRatio } from '@/lib/stock';
 import {
   defaultRestockUnits,
@@ -80,6 +81,7 @@ export function SwipeableStockTag({
   unhookOnEmpty = true,
 }: Readonly<SwipeableStockTagProps>) {
   const { colors } = useTheme();
+  const t = useT();
   const reduced = useReducedMotion();
   const markSwipeLearned = useSession((state) => state.markSwipeLearned);
   const actions = useItemActions(item);
@@ -281,10 +283,8 @@ export function SwipeableStockTag({
    * seulement entamé.
    */
   const counts = item.trackingType === 'quantity';
-  const takeLabel = counts ? "J'en ai pris un" : "J'ai pris le dernier";
-  const takeHint = counts
-    ? 'Balaye vers la droite pour une prise, vers la gauche pour un rachat. Plus la course est longue, plus la quantité est grande.'
-    : "Balaye vers la droite quand il n'y en a plus, vers la gauche après un rachat.";
+  const takeLabel = t(counts ? 'item.enAiPrisUn' : 'item.prisLeDernier');
+  const takeHint = t(counts ? 'item.indiceQuantite' : 'item.indicePresence');
 
   // L'action d'accessibilité double le geste : un cran, donc un paquet.
   const restockUnits = Math.min(
@@ -327,7 +327,7 @@ export function SwipeableStockTag({
               ...(takeable ? [{ name: 'take', label: takeLabel }] : []),
               {
                 name: 'restock',
-                label: `J'en ai racheté ${restockUnits}`,
+                label: t('item.enAiRachete', { count: restockUnits }),
               },
             ]}
             onAccessibilityAction={({ nativeEvent }) => {

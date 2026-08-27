@@ -28,9 +28,11 @@ import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
+import { useT } from '@/i18n/useT';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
 import { completeBlockedReason, offlineNotice } from '@/lib/offline';
 import { useIsSolo } from '@/lib/useIsSolo';
+import { useLocale } from '@/i18n/useT';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import {
   checkedCount,
@@ -62,6 +64,8 @@ export default function Shopping() {
   const online = useIsOnline();
   const toast = useToast();
   const solo = useIsSolo();
+  const t = useT();
+  const locale = useLocale();
   // Répartis par garantie : ce qui repartira seul, et ce qui ne survivrait pas
   // à une fermeture de l'app.
   const pending = usePendingGestures();
@@ -95,10 +99,10 @@ export default function Shopping() {
     setQuantity,
     refill,
     complete,
-  ]);
+  ], locale);
 
-  const notice = offlineNotice(online, pending.durable, pending.volatile);
-  const blocked = completeBlockedReason(online);
+  const notice = offlineNotice(online, pending.durable, pending.volatile, locale);
+  const blocked = completeBlockedReason(online, locale);
 
   const label = draft.trim();
   const canAdd = label.length >= MIN_LABEL;
@@ -109,7 +113,7 @@ export default function Shopping() {
     setDraft('');
     add.mutate(
       { label },
-      { onSuccess: () => toast(`${label} ajouté aux courses`) },
+      { onSuccess: () => toast(t('courses.ajouteAuxCourses', { nom: label })) },
     );
   };
 
@@ -121,7 +125,10 @@ export default function Shopping() {
     setDraft('');
     add.mutate(
       { itemId: item.id, quantity: suggestedQuantity(item) },
-      { onSuccess: () => toast(`${item.name} ajouté aux courses`) },
+      {
+        onSuccess: () =>
+          toast(t('courses.ajouteAuxCourses', { nom: item.name })),
+      },
     );
   };
 
@@ -130,19 +137,23 @@ export default function Shopping() {
     if (units !== line.quantity)
       setQuantity.mutate(
         { id: line.id, quantity: units },
-        { onSuccess: () => toast(`${line.name} : quantité corrigée`) },
+        {
+          onSuccess: () =>
+            toast(t('courses.quantiteCorrigee', { nom: line.name })),
+        },
       );
   };
 
   const confirmRemove = (line: ShoppingLine) =>
-    Alert.alert(line.name, 'Retirer de la liste ?', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(line.name, t('courses.retirerTitre'), [
+      { text: t('courses.annuler'), style: 'cancel' },
       {
-        text: 'Retirer',
+        text: t('courses.retirer'),
         style: 'destructive',
         onPress: () =>
           remove.mutate(line.id, {
-            onSuccess: () => toast(`${line.name} retiré de la liste`),
+            onSuccess: () =>
+              toast(t('courses.retireDeLaListe', { nom: line.name })),
           }),
       },
     ]);
@@ -181,9 +192,9 @@ export default function Shopping() {
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
-        <Text variant="display">Courses</Text>
+        <Text variant="display">{t('onglets.courses')}</Text>
         <Text variant="monoLabel" color="inkSoft">
-          {shopping.isError ? 'Liste non chargée' : checkedSummary(lines)}
+          {shopping.isError ? t('courses.nonChargee') : checkedSummary(lines, locale)}
         </Text>
       </View>
 
@@ -206,7 +217,7 @@ export default function Shopping() {
             chose : la première propose de la remplir, le second de réessayer. */}
         {shopping.isError && (
           <ErrorState
-            message={apiErrorMessage(shopping.error)}
+            message={apiErrorMessage(shopping.error, locale)}
             onRetry={() => void shopping.refetch()}
           />
         )}
@@ -220,7 +231,7 @@ export default function Shopping() {
               refill.mutate(undefined, {
                 onSuccess: () =>
                   toast(
-                    `${missing.length} item${missing.length > 1 ? 's' : ''} versé${missing.length > 1 ? 's' : ''} dans la liste`,
+                    t('courses.verses', { count: missing.length }),
                   ),
               })
             }
@@ -233,22 +244,22 @@ export default function Shopping() {
         {lines.length > 0 && missing.length > 0 && (
           <Button
             variant="secondary"
-            label={`Récupérer ${missing.length} item${missing.length > 1 ? 's' : ''} à racheter`}
+            label={t('courses.recuperer', { count: missing.length })}
             loading={refill.isPending}
             disabled={!online}
             onPress={() =>
               refill.mutate(undefined, {
                 onSuccess: () =>
                   toast(
-                    `${missing.length} item${missing.length > 1 ? 's' : ''} versé${missing.length > 1 ? 's' : ''} dans la liste`,
+                    t('courses.verses', { count: missing.length }),
                   ),
               })
             }
           />
         )}
 
-        {section('shelf', 'Depuis l’étagère', fromShelf)}
-        {section('free', 'Ajouts libres', free)}
+        {section('shelf', t('courses.depuisEtagere'), fromShelf)}
+        {section('free', t('courses.ajoutsLibres'), free)}
       </ScrollView>
 
       {/* Les deux actions restent sous le pouce quelle que soit la longueur de
@@ -286,7 +297,7 @@ export default function Shopping() {
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={submit}
-            placeholder="Ajouter un article"
+            placeholder={t('courses.ajouterArticle')}
             placeholderTextColor={colors.inkSoft}
             returnKeyType="done"
             maxLength={100}
@@ -301,7 +312,7 @@ export default function Shopping() {
           />
           <Button
             variant="secondary"
-            label="Ajouter"
+            label={t('courses.ajouter')}
             disabled={!canAdd}
             loading={add.isPending}
             onPress={submit}
@@ -317,7 +328,7 @@ export default function Shopping() {
         )}
 
         <Button
-          label="J’ai fait les courses"
+          label={t('courses.faitLesCourses')}
           disabled={checked === 0 || blocked !== null}
           loading={complete.isPending}
           // La liste se vide sous les yeux, mais ce qui compte s'est passé
@@ -326,7 +337,7 @@ export default function Shopping() {
             complete.mutate(undefined, {
               onSuccess: () =>
                 toast(
-                  `${checked} rachat${checked > 1 ? 's' : ''} enregistré${checked > 1 ? 's' : ''} sur l’étagère`,
+                  t('courses.rachatsEnregistres', { count: checked }),
                 ),
             })
           }
@@ -345,12 +356,15 @@ function Suggestion({
   onPress,
 }: Readonly<{ item: Item; onPress: () => void }>) {
   const { colors } = useTheme();
+  const t = useT();
   const units = suggestedQuantity(item);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Ajouter ${item.name} depuis l'étagère`}
+      accessibilityLabel={t('courses.ajouterDepuisEtagere', {
+        nom: item.name,
+      })}
       onPress={onPress}
       style={[
         styles.suggestion,
@@ -381,22 +395,23 @@ function EmptyState({
   online: boolean;
   onRefill: () => void;
 }>) {
+  const t = useT();
   return (
     <TagCard style={styles.empty}>
       <Text variant="tagName" color="inkSoft" style={styles.centered}>
-        Rien à acheter
+        {t('courses.rienAAcheter')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.centered}>
         {missing > 0
-          ? 'L’étagère réclame déjà des choses : verse-les ici.'
-          : 'Ajoute un article, ou reviens quand un stock baisse.'}
+          ? t('courses.etagereReclame')
+          : t('courses.ajouteOuReviens')}
       </Text>
       {/* Sans rien à verser, le bouton ne ferait rien : on ne le montre pas
           plutôt que de le montrer inerte. */}
       {missing > 0 && (
         <Button
           variant="secondary"
-          label="Récupérer ce qui est à racheter"
+          label={t('courses.recupererTout')}
           loading={loading}
           // Le versement se calcule côté serveur, sur l'état du stock à
           // l'instant de l'appel : il n'y a rien à mettre en file.
@@ -413,15 +428,16 @@ function ErrorState({
   message,
   onRetry,
 }: Readonly<{ message: string; onRetry: () => void }>) {
+  const t = useT();
   return (
     <View style={styles.error}>
       <Text variant="tagName" color="rustClay" style={styles.centered}>
-        Liste indisponible
+        {t('courses.indisponible')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.centered}>
         {message}
       </Text>
-      <Button label="Réessayer" onPress={onRetry} style={styles.emptyAction} />
+      <Button label={t('courses.reessayer')} onPress={onRetry} style={styles.emptyAction} />
     </View>
   );
 }

@@ -11,17 +11,21 @@ import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import type { GroupType } from '@/types/api';
 import { border, radius, spacing, useTheme } from '@/theme';
 
-const TYPES: { value: GroupType; label: string }[] = [
-  { value: 'roommates', label: 'Colocation' },
-  { value: 'association', label: 'Association' },
+/** Les deux formes de groupe à plusieurs. Le solo se choisit à l'écran d'avant. */
+const TYPES: { value: GroupType; key: string }[] = [
+  { value: 'roommates', key: 'onboarding.colocation' },
+  { value: 'association', key: 'onboarding.association' },
 ];
 
 export default function CreateGroup() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useT();
   const toast = useToast();
   const goBack = useGoBack('/choose');
   const { colors } = useTheme();
@@ -36,7 +40,7 @@ export default function CreateGroup() {
       <BackLink onPress={goBack} />
 
       <TagCard>
-        <Text variant="tagName">Créer un groupe</Text>
+        <Text variant="tagName">{t('onboarding.creerGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           Vous en devenez l&apos;administrateur. Un code d&apos;invitation sera
           généré pour les autres.
@@ -44,17 +48,17 @@ export default function CreateGroup() {
 
         <View style={styles.form}>
           <Field
-            label="Nom du groupe"
+            label={t('onboarding.nomDuGroupe')}
             value={name}
             onChangeText={setName}
-            placeholder="Coloc Rue Ordener"
+            placeholder={t('onboarding.exempleNom')}
             autoFocus
             maxLength={100}
           />
 
           <View style={styles.group}>
             <Text variant="monoLabel" color="inkSoft">
-              Type
+              {t('onboarding.type')}
             </Text>
             <View style={styles.segmented}>
               {TYPES.map((option) => {
@@ -75,7 +79,7 @@ export default function CreateGroup() {
                       },
                     ]}
                   >
-                    {option.label}
+                    {t(option.key)}
                   </Text>
                 );
               })}
@@ -85,18 +89,18 @@ export default function CreateGroup() {
 
         {create.isError && (
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {apiErrorMessage(create.error)}
+            {apiErrorMessage(create.error, locale)}
           </Text>
         )}
 
         <Button
-          label="Créer le groupe"
+          label={t('onboarding.creerLeGroupe')}
           onPress={() =>
             create.mutate(
               { name: name.trim(), type },
               {
                 onSuccess: (group) => {
-                  toast(`Groupe « ${group.name} » créé`);
+                  toast(t('onboarding.groupeCree', { nom: group.name }));
                   router.replace('/');
                 },
               },
@@ -108,7 +112,7 @@ export default function CreateGroup() {
         />
 
         <View style={[styles.rule, { backgroundColor: colors.thread }]} />
-        <SystemFooter left="Statut: configuration" />
+        <SystemFooter left={t('onboarding.statutConfig')} />
       </TagCard>
     </FormScreen>
   );

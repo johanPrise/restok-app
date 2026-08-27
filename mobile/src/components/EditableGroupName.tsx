@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useRenameGroup } from '@/api/groups';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useIsSolo } from '@/lib/useIsSolo';
+import { useLocale, useT } from '@/i18n/useT';
 import { border, radius, spacing, textStyles, useTheme } from '@/theme';
 import { Text } from './Text';
 import { useToast } from './Toast';
@@ -31,12 +32,12 @@ export function EditableGroupName({
   editable,
 }: Readonly<EditableGroupNameProps>) {
   const { colors } = useTheme();
+  const t = useT();
+  const locale = useLocale();
   const rename = useRenameGroup();
   const toast = useToast();
   const solo = useIsSolo();
   const [draft, setDraft] = useState<string | null>(null);
-
-  const thing = solo ? 'ton inventaire' : 'le groupe';
 
   const commit = () => {
     const next = (draft ?? '').trim();
@@ -47,9 +48,9 @@ export function EditableGroupName({
     rename.mutate(next, {
       onSuccess: () =>
         toast(
-          solo
-            ? `Inventaire renommé « ${next} »`
-            : `Groupe renommé « ${next} »`,
+          t(solo ? 'parametres.inventaireRenomme' : 'parametres.groupeRenomme', {
+            nom: next,
+          }),
         ),
     });
   };
@@ -60,7 +61,14 @@ export function EditableGroupName({
         <Pressable
           accessibilityRole={editable ? 'button' : 'header'}
           accessibilityLabel={
-            editable ? `${name}, appuie pour renommer ${thing}` : name
+            editable
+              ? t(
+                  solo
+                    ? 'parametres.renommerInventaire'
+                    : 'parametres.renommerGroupe',
+                  { nom: name },
+                )
+              : name
           }
           disabled={!editable}
           onPress={() => setDraft(name)}
@@ -72,7 +80,7 @@ export function EditableGroupName({
 
         {rename.isError && (
           <Text variant="caption" color="rustClay" style={styles.text}>
-            {apiErrorMessage(rename.error)}
+            {apiErrorMessage(rename.error, locale)}
           </Text>
         )}
       </View>
@@ -90,7 +98,9 @@ export function EditableGroupName({
       maxLength={MAX_LENGTH}
       returnKeyType="done"
       textAlign="center"
-      accessibilityLabel={solo ? 'Nom de ton inventaire' : 'Nom du groupe'}
+      accessibilityLabel={t(
+        solo ? 'parametres.nomDeTonInventaire' : 'parametres.nomDuGroupe',
+      )}
       style={[
         styles.input,
         textStyles.title,

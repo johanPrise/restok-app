@@ -1,5 +1,6 @@
 import { formatDistanceToNowStrict, format, isAfter, subDays } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { translate } from '@/i18n';
+import { dateLocale, type Locale } from '@/i18n/locales';
 import type { Palette } from '@/theme';
 import { RELATIVE_DATE_MAX_DAYS } from '@/theme';
 import type { Item, ItemStatus, LastAction } from '@/types/api';
@@ -21,12 +22,14 @@ export function statusColor(status: ItemStatus): keyof Palette {
 }
 
 /** Libellé du badge, ou `null` quand l'item ne demande rien à personne. */
-export function statusBadge(item: Item): string | null {
+export function statusBadge(item: Item, locale: Locale): string | null {
   if (item.status === 'to_restock' || item.status === 'out_of_stock') {
-    return 'À racheter';
+    return translate(locale, 'stock.aRacheter');
   }
   if (item.status === 'low') {
-    return isCritical(item) ? 'Critique' : 'Stock bas';
+    return isCritical(item)
+      ? translate(locale, 'stock.critique')
+      : translate(locale, 'stock.stockBas');
   }
 
   return null;
@@ -36,15 +39,15 @@ export function statusBadge(item: Item): string | null {
  * §7 : les dates relatives basculent en date absolue au-delà d'une semaine.
  * « il y a 2 jours » informe ; « il y a 3 mois » ne dit plus rien d'utile.
  */
-export function relativeDate(iso: string): string {
+export function relativeDate(iso: string, locale: Locale): string {
   const date = new Date(iso);
   const threshold = subDays(new Date(), RELATIVE_DATE_MAX_DAYS);
 
   if (isAfter(date, threshold)) {
-    return formatDistanceToNowStrict(date, { addSuffix: true, locale: fr });
+    return formatDistanceToNowStrict(date, { addSuffix: true, locale: dateLocale(locale) });
   }
 
-  return format(date, 'd MMM', { locale: fr });
+  return format(date, 'd MMM', { locale: dateLocale(locale) });
 }
 
 /**
@@ -54,12 +57,16 @@ export function relativeDate(iso: string): string {
  * Seul, le nom est toujours le même : il ne reste que la date, qui elle
  * continue d'apprendre quelque chose.
  */
-export function lastActionLabel(action: LastAction, solo = false): string {
-  if (solo) return relativeDate(action.at);
+export function lastActionLabel(
+  action: LastAction,
+  locale: Locale,
+  solo = false,
+): string {
+  if (solo) return relativeDate(action.at, locale);
 
-  const who = action.memberName ?? "Quelqu'un";
+  const who = action.memberName ?? translate(locale, 'item.quelquun');
 
-  return `${who} · ${relativeDate(action.at)}`;
+  return `${who} · ${relativeDate(action.at, locale)}`;
 }
 
 /**
@@ -69,10 +76,14 @@ export function lastActionLabel(action: LastAction, solo = false): string {
  * vient en premier parce qu'il sert à celui qui part faire les courses — il
  * décrit quoi acheter, là où la dernière action décrit ce qui s'est passé.
  */
-export function tagMeta(item: Item, solo = false): string | null {
+export function tagMeta(
+  item: Item,
+  locale: Locale,
+  solo = false,
+): string | null {
   const parts = [
     item.format,
-    item.lastAction ? lastActionLabel(item.lastAction, solo) : null,
+    item.lastAction ? lastActionLabel(item.lastAction, locale, solo) : null,
   ].filter((part): part is string => Boolean(part));
 
   return parts.length > 0 ? parts.join(' · ') : null;

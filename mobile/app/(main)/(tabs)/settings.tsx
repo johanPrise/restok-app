@@ -13,10 +13,13 @@ import {
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { InviteCodeCard } from '@/components/InviteCodeCard';
+import { LanguagePicker } from '@/components/LanguagePicker';
 import { MemberRow } from '@/components/MemberRow';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { emphase } from '@/i18n/emphase';
+import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
@@ -34,6 +37,8 @@ import type { GroupDetail, MemberSummary } from '@/types/api';
  */
 export default function Settings() {
   const member = useSession((s) => s.member);
+  const locale = useLocale();
+  const t = useT();
   const group = useGroup();
   const members = useMembers();
   const signOut = useSignOut();
@@ -45,7 +50,7 @@ export default function Settings() {
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
-        <Text variant="title">Paramètres</Text>
+        <Text variant="title">{t('onglets.parametres')}</Text>
         <Text variant="monoLabel" color="inkSoft" numberOfLines={1}>
           {group.data?.name ?? ' '}
         </Text>
@@ -91,7 +96,7 @@ export default function Settings() {
 
           <View style={styles.account}>
             <Text variant="monoLabel" color="inkSoft">
-              Compte
+              {t('parametres.compte')}
             </Text>
             <Text variant="bodyStrong">{member?.name ?? '—'}</Text>
             <Text variant="mono" color="inkSoft">
@@ -99,17 +104,21 @@ export default function Settings() {
             </Text>
           </View>
 
+          {/* La langue est un réglage de l'app, pas du groupe : elle se range
+              donc avec le compte, et non au-dessus avec les membres. */}
+          <LanguagePicker />
+
           <Button
-            label="Modifier mon compte"
+            label={t('parametres.modifierCompte')}
             variant="secondary"
             onPress={() => router.push('/account')}
           />
           <Button
-            label="Se déconnecter"
+            label={t('parametres.seDeconnecter')}
             variant="secondary"
             onPress={() => {
               void signOut();
-              toast('Tu es déconnecté');
+              toast(t('parametres.deconnecte'));
             }}
           />
         </View>
@@ -127,6 +136,7 @@ export default function Settings() {
  * et le groupe cesse d'être solo dès que quelqu'un s'en sert.
  */
 function OpenToOthers({ code }: Readonly<{ code: string }>) {
+  const t = useT();
   const [shown, setShown] = useState(false);
   const group = useGroup();
 
@@ -134,7 +144,7 @@ function OpenToOthers({ code }: Readonly<{ code: string }>) {
     return (
       <Button
         variant="secondary"
-        label="Ouvrir aux autres"
+        label={t('parametres.ouvrirAuxAutres')}
         onPress={() => setShown(true)}
       />
     );
@@ -154,6 +164,8 @@ function Members({
   canManage: boolean;
   loading: boolean;
 }>) {
+  const locale = useLocale();
+  const t = useT();
   const [managing, setManaging] = useState(false);
   const setRole = useSetMemberRole();
   const remove = useRemoveMember();
@@ -163,12 +175,12 @@ function Members({
     <View style={styles.section}>
       <View style={styles.sectionHead}>
         <Text variant="monoLabel" color="inkSoft">
-          Membres{' '}
+          {t('parametres.membres')}{' '}
           {loading ? '' : `[${String(members.length).padStart(2, '0')}]`}
         </Text>
         {canManage && members.length > 1 && (
           <Button
-            label={managing ? 'Terminer' : 'Gérer'}
+            label={t(managing ? 'parametres.terminer' : 'parametres.gerer')}
             variant="secondary"
             onPress={() => setManaging((on) => !on)}
             style={styles.manage}
@@ -189,16 +201,20 @@ function Members({
               {
                 onSuccess: () =>
                   toast(
-                    role === 'admin'
-                      ? `${entry.name} est admin`
-                      : `${entry.name} n’est plus admin`,
+                    t(
+                      role === 'admin'
+                        ? 'parametres.estAdmin'
+                        : 'parametres.nEstPlusAdmin',
+                      { nom: entry.name },
+                    ),
                   ),
               },
             );
           }}
           onRemove={() =>
             remove.mutate(entry.id, {
-              onSuccess: () => toast(`${entry.name} retiré du groupe`),
+              onSuccess: () =>
+                toast(t('parametres.retireDuGroupe', { nom: entry.name })),
             })
           }
         />
@@ -206,7 +222,7 @@ function Members({
 
       {(setRole.isError || remove.isError) && (
         <Text variant="caption" color="rustClay">
-          {apiErrorMessage(setRole.error ?? remove.error)}
+          {apiErrorMessage(setRole.error ?? remove.error, locale)}
         </Text>
       )}
     </View>
@@ -221,6 +237,8 @@ function DeleteGroup({
   group,
   solo,
 }: Readonly<{ group: GroupDetail; solo: boolean }>) {
+  const locale = useLocale();
+  const t = useT();
   const [arming, setArming] = useState(false);
   const [typed, setTyped] = useState('');
   const remove = useDeleteGroup();
@@ -235,7 +253,11 @@ function DeleteGroup({
         // Seul, on n'a pas de « groupe » : on a son étagère. Employer le mot
         // du partage devant quelqu'un qui ne partage rien, c'est lui parler
         // d'une chose qu'il n'a pas.
-        label={solo ? 'Supprimer mon inventaire' : 'Supprimer le groupe'}
+        label={t(
+          solo
+            ? 'parametres.supprimerInventaire'
+            : 'parametres.supprimerGroupe',
+        )}
         variant="secondary"
         onPress={() => setArming(true)}
         style={styles.section}
@@ -245,11 +267,18 @@ function DeleteGroup({
 
   return (
     <View style={styles.section}>
+      {/* Le nom à retaper passe en gras au milieu de la phrase : l'astérisque
+          de la traduction le place, plutôt qu'un collage qui figerait l'ordre
+          des mots — voir `emphase`. */}
       <Text variant="caption" color="inkSoft">
-        {solo
-          ? 'Ton étagère, tes courses et tes recettes partent avec. Retape '
-          : `L’étagère et les ${group.memberCount} membres partent avec. Retape `}
-        <Text variant="bodyStrong">{group.name}</Text> pour confirmer.
+        {emphase(
+          solo
+            ? t('parametres.suppressionSolo', { nom: group.name })
+            : t('parametres.suppressionGroupe', {
+                count: group.memberCount,
+                nom: group.name,
+              }),
+        )}
       </Text>
 
       {/* Pas de `placeholder` avec le nom : mettre la réponse dans la case
@@ -258,7 +287,9 @@ function DeleteGroup({
           gris, sans que rien n'explique pourquoi. La phrase juste au-dessus
           nomme déjà le groupe. */}
       <Field
-        label={solo ? 'Nom de ton inventaire' : 'Nom du groupe'}
+        label={t(
+          solo ? 'parametres.nomDeTonInventaire' : 'parametres.nomDuGroupe',
+        )}
         value={typed}
         onChangeText={setTyped}
         autoCapitalize="none"
@@ -267,13 +298,13 @@ function DeleteGroup({
 
       {remove.isError && (
         <Text variant="caption" color="rustClay">
-          {apiErrorMessage(remove.error)}
+          {apiErrorMessage(remove.error, locale)}
         </Text>
       )}
 
       <View style={styles.actions}>
         <Button
-          label="Annuler"
+          label={t('commun.annuler')}
           variant="secondary"
           onPress={() => {
             setArming(false);
@@ -282,13 +313,14 @@ function DeleteGroup({
           style={styles.action}
         />
         <Button
-          label="Supprimer"
+          label={t('commun.supprimer')}
           variant="danger"
           disabled={!matches}
           loading={remove.isPending}
           onPress={() =>
             remove.mutate(undefined, {
-              onSuccess: () => toast(`Groupe « ${group.name} » supprimé`),
+              onSuccess: () =>
+                toast(t('parametres.groupeSupprime', { nom: group.name })),
             })
           }
           style={styles.action}
@@ -305,6 +337,8 @@ function DeleteGroup({
  * affiche son message tel quel plutôt que d'en réécrire un approximatif.
  */
 function LeaveGroup() {
+  const locale = useLocale();
+  const t = useT();
   const [confirming, setConfirming] = useState(false);
   const leave = useLeaveGroup();
   const toast = useToast();
@@ -312,7 +346,7 @@ function LeaveGroup() {
   if (!confirming) {
     return (
       <Button
-        label="Quitter le groupe"
+        label={t('parametres.quitterLeGroupe')}
         variant="secondary"
         onPress={() => setConfirming(true)}
       />
@@ -322,30 +356,29 @@ function LeaveGroup() {
   return (
     <View style={styles.confirm}>
       <Text variant="caption" color="inkSoft">
-        Tu perds l&apos;accès à l&apos;étagère. Ton compte reste, et ton passage
-        reste inscrit dans l&apos;historique des items.
+        {t('parametres.quitterQuoi')}
       </Text>
 
       {leave.isError && (
         <Text variant="caption" color="rustClay">
-          {apiErrorMessage(leave.error)}
+          {apiErrorMessage(leave.error, locale)}
         </Text>
       )}
 
       <View style={styles.actions}>
         <Button
-          label="Annuler"
+          label={t('commun.annuler')}
           variant="secondary"
           onPress={() => setConfirming(false)}
           style={styles.action}
         />
         <Button
-          label="Quitter"
+          label={t('parametres.quitter')}
           variant="danger"
           loading={leave.isPending}
           onPress={() =>
             leave.mutate(undefined, {
-              onSuccess: () => toast('Tu as quitté le groupe'),
+              onSuccess: () => toast(t('parametres.quitte')),
             })
           }
           style={styles.action}

@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { Text } from '@/components/Text';
+import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { useSession } from '@/store/session';
@@ -25,6 +26,8 @@ const MAX_NAME_LENGTH = 100;
  */
 export default function Account() {
   const goBack = useGoBack('/settings');
+  const locale = useLocale();
+  const t = useT();
   const member = useSession((s) => s.member);
   const update = useUpdateProfile();
 
@@ -40,7 +43,7 @@ export default function Account() {
   // L'email est l'identifiant de connexion : le changer demande de confirmer
   // son mot de passe. Le nom, lui, ne donne accès à rien.
   const emailChanged = trimmedEmail !== member?.email;
-  const errors = validate(trimmedName, trimmedEmail, emailChanged, password);
+  const errors = validate(t, trimmedName, trimmedEmail, emailChanged, password);
   const shown = submitted ? errors : {};
 
   const changed =
@@ -74,33 +77,33 @@ export default function Account() {
       <BackLink onPress={goBack} />
 
       <View style={styles.header}>
-        <Text variant="title">Mon compte</Text>
+        <Text variant="title">{t('compte.titre')}</Text>
         <Text variant="monoLabel" color="inkSoft">
-          Profil / Identité
+          {t('compte.sousTitre')}
         </Text>
       </View>
 
       <View style={styles.form}>
         <Field
-          label="Nom"
+          label={t('compte.nom')}
           value={name}
           onChangeText={(next) => {
             setName(next);
             setSaved(false);
           }}
-          placeholder="Comment on t'appelle"
+          placeholder={t('compte.exempleNom')}
           error={shown.name}
           autoCapitalize="words"
           autoComplete="name"
         />
         <Field
-          label="Email"
+          label={t('compte.email')}
           value={email}
           onChangeText={(next) => {
             setEmail(next);
             setSaved(false);
           }}
-          placeholder="vous@exemple.fr"
+          placeholder={t('compte.exempleEmail')}
           error={shown.email}
           autoCapitalize="none"
           autoCorrect={false}
@@ -112,10 +115,10 @@ export default function Account() {
             demande rien. */}
         {emailChanged && (
           <Field
-            label="Ton mot de passe"
+            label={t('compte.tonMotDePasse')}
             value={password}
             onChangeText={setPassword}
-            placeholder="Pour confirmer le changement d'email"
+            placeholder={t('compte.pourConfirmer')}
             error={shown.password}
             secureTextEntry
             autoComplete="current-password"
@@ -123,25 +126,24 @@ export default function Account() {
         )}
 
         <Text variant="caption" color="inkSoft">
-          Ton nom s&apos;affiche sous chaque prise et chaque rachat. Ton email
-          sert à te connecter — le changer demande ton mot de passe.
+          {t('compte.explication')}
         </Text>
       </View>
 
       {update.isError && (
         <Text variant="caption" color="rustClay" style={styles.feedback}>
-          {apiErrorMessage(update.error)}
+          {apiErrorMessage(update.error, locale)}
         </Text>
       )}
 
       {saved && !update.isError && (
         <Text variant="caption" color="sage" style={styles.feedback}>
-          Enregistré.
+          {t('commun.enregistre')}
         </Text>
       )}
 
       <Button
-        label="Enregistrer"
+        label={t('commun.enregistrer')}
         onPress={submit}
         disabled={!changed}
         loading={update.isPending}
@@ -159,6 +161,7 @@ interface Errors {
 
 /** Reprend les contraintes du DTO ; le serveur reste seul juge. */
 function validate(
+  t: (key: string) => string,
   name: string,
   email: string,
   emailChanged: boolean,
@@ -166,14 +169,15 @@ function validate(
 ): Errors {
   const errors: Errors = {};
 
-  if (name.length < MIN_NAME_LENGTH) errors.name = 'Au moins deux caractères.';
-  else if (name.length > MAX_NAME_LENGTH) {
-    errors.name = 'Cent caractères au maximum.';
+  if (name.length < MIN_NAME_LENGTH) {
+    errors.name = t('champs.deuxCaracteres');
+  } else if (name.length > MAX_NAME_LENGTH) {
+    errors.name = t('champs.centCaracteresMax');
   }
 
-  if (!email.includes('@')) errors.email = 'Adresse email invalide.';
+  if (!email.includes('@')) errors.email = t('champs.emailInvalide');
   if (emailChanged && password.length === 0) {
-    errors.password = 'Confirme ton mot de passe.';
+    errors.password = t('champs.confirmeMotDePasse');
   }
 
   return errors;

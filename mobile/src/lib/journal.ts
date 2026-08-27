@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { translate } from '@/i18n';
+import { dateLocale, type Locale } from '@/i18n/locales';
 import type { GroupHistoryEntry } from '@/types/api';
 
 /** Une journée du journal, et ce qui s'y est passé. */
@@ -24,6 +25,7 @@ export interface JournalDay {
  */
 export function groupByDay(
   entries: readonly GroupHistoryEntry[],
+  locale: Locale,
 ): JournalDay[] {
   const days: JournalDay[] = [];
 
@@ -37,17 +39,17 @@ export function groupByDay(
       continue;
     }
 
-    days.push({ key, label: journalDay(date), entries: [entry] });
+    days.push({ key, label: journalDay(date, locale), entries: [entry] });
   }
 
   return days;
 }
 
-/** « 24 AOÛT ». */
-function journalDay(date: Date): string {
-  return format(date, 'd MMMM', { locale: fr })
+/** « 24 AOÛT », « 24 AUGUST ». */
+function journalDay(date: Date, locale: Locale): string {
+  return format(date, 'd MMMM', { locale: dateLocale(locale) })
     .replace('.', '')
-    .toUpperCase();
+    .toLocaleUpperCase(locale);
 }
 
 /**
@@ -73,11 +75,16 @@ const DAYS: Record<Exclude<Period, 'all'>, number> = {
   quarter: 90,
 };
 
-export const PERIOD_LABELS: Record<Period, string> = {
-  month: '30 jours',
-  quarter: '3 mois',
-  all: 'Tout',
+const PERIOD_KEYS: Record<Period, string> = {
+  month: 'journal.periodeMois',
+  quarter: 'journal.periodeTrimestre',
+  all: 'journal.periodeTout',
 };
+
+/** Le libellé d'une fenêtre, dans la langue de l'écran. */
+export function periodLabel(period: Period, locale: Locale): string {
+  return translate(locale, PERIOD_KEYS[period]);
+}
 
 /**
  * La borne basse à envoyer au serveur, ou `undefined` pour ne pas en poser.
@@ -97,13 +104,22 @@ export function since(period: Period, now: Date = new Date()): string | undefine
 /**
  * « 3 prises, 1 rachat » — ce que la période contient, en une ligne.
  *
- * Le singulier à zéro comme à un, règle du français que `plural()` applique
- * déjà aux unités.
+ * Deux pluriels indépendants dans une même phrase, donc deux clés accordées
+ * séparément puis assemblées : un moteur de traduction n'accorde qu'un nombre
+ * par phrase, et « 1 prise, 3 rachats » en demande deux.
+ *
+ * L'accord lui-même n'est plus écrit ici — il l'était sous la forme
+ * `count < 2`, qui est la règle française.
  */
-export function journalSummary(entries: readonly GroupHistoryEntry[]): string {
+export function journalSummary(
+  entries: readonly GroupHistoryEntry[],
+  locale: Locale,
+): string {
   const taken = entries.filter((e) => e.actionType === 'taken').length;
   const restocked = entries.length - taken;
-  const s = (count: number) => (count < 2 ? '' : 's');
 
-  return `${taken} prise${s(taken)}, ${restocked} rachat${s(restocked)}`;
+  return translate(locale, 'journal.resume', {
+    prises: translate(locale, 'journal.prises', { count: taken }),
+    rachats: translate(locale, 'journal.rachats', { count: restocked }),
+  });
 }

@@ -12,6 +12,7 @@ import {
 } from '@/theme';
 import { Button } from './Button';
 import { Text } from './Text';
+import { useT } from '@/i18n/useT';
 
 interface InviteCodeCardProps {
   code: string;
@@ -38,6 +39,7 @@ export function InviteCodeCard({
   groupName,
 }: Readonly<InviteCodeCardProps>) {
   const { colors } = useTheme();
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -88,18 +90,18 @@ export function InviteCodeCard({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Copier le code"
+          accessibilityLabel={t('commun.copierLeCode')}
           onPress={() => void copy()}
           hitSlop={spacing.xs}
           style={styles.copy}
         >
           <Text variant="monoLabel" color={copied ? 'sage' : 'pantryTeal'}>
-            {copied ? 'Copié' : 'Copier'}
+            {copied ? t('commun.copie') : t('commun.copier')}
           </Text>
         </Pressable>
       </View>
 
-      <Button label="Partager" onPress={() => void share()} />
+      <Button label={t('commun.partager')} onPress={() => void share()} />
     </View>
   );
 }

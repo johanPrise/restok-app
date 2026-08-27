@@ -1,5 +1,6 @@
 import { useRestockItem, useTakeItem } from '@/api/items';
 import { useToast } from '@/components/Toast';
+import { useT } from '@/i18n/useT';
 import type { Item } from '@/types/api';
 import { canSwipe, movement } from './tag-swipe';
 import { withUnit } from './units';
@@ -34,6 +35,7 @@ export function useItemActions(item: Item): ItemActions {
   const take = useTakeItem();
   const restock = useRestockItem();
   const toast = useToast();
+  const t = useT();
 
   /**
    * L'accusé de réception vit ici, dans le code partagé, plutôt que sur chaque
@@ -41,14 +43,17 @@ export function useItemActions(item: Item): ItemActions {
    * action, ils doivent donc dire la même chose. Et une prise écrit au journal
    * — c'est exactement ce qu'on ne veut pas laisser passer en silence.
    */
-  const said = (verb: string, units: number) => {
+  const said = (key: string, units: number) => {
     // `movement` rend `undefined` en suivi binaire, qui ne compte rien : on
     // nomme alors l'item plutôt qu'une quantité qui n'existe pas.
     const moved = movement(item, units);
 
-    return moved === undefined
-      ? `${item.name} ${verb}`
-      : `${withUnit(item, moved)} ${verb}`;
+    // Le sujet voyage dans la phrase plutôt que d'être recollé devant : « 3
+    // rolls taken » et « 3 rouleaux pris » se ressemblent, mais rien ne dit
+    // que la troisième langue mettra son verbe au même bout.
+    return t(key, {
+      quoi: moved === undefined ? item.name : withUnit(item, moved),
+    });
   };
 
   return {
@@ -65,7 +70,7 @@ export function useItemActions(item: Item): ItemActions {
         { itemId: item.id, quantity: movement(item, units), settleDelayMs },
         {
           onError,
-          onSuccess: () => toast(said('pris', units)),
+          onSuccess: () => toast(said('item.prisToast', units)),
         },
       );
     },
@@ -76,7 +81,7 @@ export function useItemActions(item: Item): ItemActions {
         { itemId: item.id, quantity: movement(item, units), settleDelayMs },
         {
           onError,
-          onSuccess: () => toast(said('racheté', units)),
+          onSuccess: () => toast(said('item.racheteToast', units)),
         },
       );
     },
