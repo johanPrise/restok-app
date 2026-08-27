@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, QueryFailedError, Repository } from 'typeorm';
 import { Item, ItemStatus, TrackingType } from '../items/entities/item.entity';
@@ -11,6 +6,7 @@ import { ItemActionsFacade } from '../items/item-actions.facade';
 import { AddShoppingLineDto } from './dto/add-shopping-line.dto';
 import { UpdateShoppingLineDto } from './dto/update-shopping-line.dto';
 import { ShoppingLine } from './entities/shopping-line.entity';
+import { BUSINESS_CODES, badRequest, conflict } from '../common/business-error';
 
 /** Code PostgreSQL d'une violation de contrainte d'unicité. */
 const UNIQUE_VIOLATION = '23505';
@@ -128,7 +124,8 @@ export class ShoppingService {
       // Ce cas ne vient jamais de l'app, qui n'offre pas de l'atteindre — mais
       // le message part quand même à l'écran si elle change. On décrit donc ce
       // qu'il faut faire, pas le contrat de la route.
-      throw new BadRequestException(
+      throw badRequest(
+        BUSINESS_CODES.SHOPPING_LINE_NEEDS_ITEM_OR_LABEL,
         'Choisis un item de l’étagère, ou écris ce que tu veux acheter.',
       );
     }
@@ -160,7 +157,10 @@ export class ShoppingService {
         error instanceof QueryFailedError &&
         (error.driverError as { code?: string })?.code === UNIQUE_VIOLATION
       ) {
-        throw new ConflictException('Cet item est déjà sur la liste');
+        throw conflict(
+          BUSINESS_CODES.SHOPPING_ITEM_ALREADY_LISTED,
+          'Cet item est déjà sur la liste',
+        );
       }
       throw error;
     }

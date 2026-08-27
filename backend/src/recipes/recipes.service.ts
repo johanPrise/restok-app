@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { Item } from '../items/entities/item.entity';
@@ -16,6 +10,7 @@ import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
 import { Recipe } from './entities/recipe.entity';
+import { BUSINESS_CODES, badRequest, conflict } from '../common/business-error';
 
 /** Code PostgreSQL d'une violation de contrainte d'unicité. */
 const UNIQUE_VIOLATION = '23505';
@@ -261,7 +256,10 @@ export class RecipesService {
         error instanceof QueryFailedError &&
         (error.driverError as { code?: string })?.code === UNIQUE_VIOLATION
       ) {
-        throw new ConflictException('Cet item est déjà dans la recette');
+        throw conflict(
+          BUSINESS_CODES.INGREDIENT_ALREADY_IN_RECIPE,
+          'Cet item est déjà dans la recette',
+        );
       }
       throw error;
     }
@@ -295,7 +293,8 @@ export class RecipesService {
     const hasLabel = dto.label !== undefined && dto.label.trim().length > 0;
 
     if (hasItem === hasLabel) {
-      throw new BadRequestException(
+      throw badRequest(
+        BUSINESS_CODES.INGREDIENT_NEEDS_ITEM_OR_LABEL,
         'Choisis un item de l’étagère, ou écris le nom de l’ingrédient.',
       );
     }
@@ -327,7 +326,10 @@ export class RecipesService {
       .filter((id): id is string => id !== undefined);
 
     if (new Set(ids).size !== ids.length) {
-      throw new ConflictException('Cet item est déjà dans la recette');
+      throw conflict(
+        BUSINESS_CODES.INGREDIENT_ALREADY_IN_RECIPE,
+        'Cet item est déjà dans la recette',
+      );
     }
   }
 

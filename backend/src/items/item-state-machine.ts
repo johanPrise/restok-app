@@ -1,5 +1,5 @@
-import { ConflictException } from '@nestjs/common';
 import { ItemStatus } from './entities/item.entity';
+import { BUSINESS_CODES, conflict } from '../common/business-error';
 
 /**
  * Transitions autorisées (§2 de la spec).
@@ -50,8 +50,10 @@ export function assertTransition(from: ItemStatus, to: ItemStatus): void {
     // available → to_restock » n'apprend rien à qui range ses courses, et
     // expose les noms de nos états. Le détail part dans `cause`, que les logs
     // gardent et que la réponse HTTP n'emporte pas.
-    throw new ConflictException(
+    throw conflict(
+      BUSINESS_CODES.ITEM_CHANGED_MEANWHILE,
       'Cet item a changé entre-temps. Rafraîchis pour voir où il en est.',
+      undefined,
       { cause: `Transition interdite : ${from} → ${to}` },
     );
   }

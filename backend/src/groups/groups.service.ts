@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
@@ -13,6 +12,7 @@ import { JoinGroupDto } from './dto/join-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Group, GroupType } from './entities/group.entity';
 import { generateInviteCode, normalizeInviteCode } from './invite-code';
+import { BUSINESS_CODES, conflict } from '../common/business-error';
 
 const MAX_INVITE_CODE_ATTEMPTS = 5;
 
@@ -134,7 +134,8 @@ export class GroupsService {
       throw new NotFoundException('Membre introuvable');
     }
     if (member.groupId) {
-      throw new ConflictException(
+      throw conflict(
+        BUSINESS_CODES.ALREADY_IN_A_GROUP,
         "Tu appartiens déjà à un groupe — quitte-le avant d'en rejoindre un autre",
       );
     }
