@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useT } from '@/i18n/useT';
 import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
 import type { Recipe } from '@/types/api';
 import { RecipeIcon } from './icons';
@@ -22,13 +23,14 @@ export function FeasibleTonight({
   onPress,
 }: Readonly<FeasibleTonightProps>) {
   const { colors } = useTheme();
+  const t = useT();
 
   if (recipes.length === 0) return null;
 
   return (
     <View style={styles.block}>
       <Text variant="monoLabel" color="inkSoft">
-        Faisable ce soir
+        {t('recettes.faisableCeSoir')}
       </Text>
 
       {/* Horizontal : trois noms de plats ne tiennent pas côte à côte sur
@@ -42,7 +44,9 @@ export function FeasibleTonight({
           <Pressable
             key={recipe.id}
             accessibilityRole="button"
-            accessibilityLabel={`Ouvrir la recette ${recipe.name}`}
+            accessibilityLabel={t('recettes.ouvrirLaRecette', {
+              nom: recipe.name,
+            })}
             onPress={() => onPress(recipe)}
             style={[
               styles.chip,

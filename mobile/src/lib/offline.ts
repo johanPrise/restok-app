@@ -1,3 +1,6 @@
+import { translate } from '@/i18n';
+import type { Locale } from '@/i18n/locales';
+
 /**
  * Ce que la barre hors-ligne annonce.
  *
@@ -17,22 +20,19 @@ export function offlineNotice(
   online: boolean,
   durable: number,
   volatile: number,
+  locale: Locale,
 ): string | null {
   // En ligne, même avec des gestes en vol : on ne dit rien. Ils partent.
   if (online) return null;
 
   const pending = durable + volatile;
-  if (pending === 0) return 'Hors-ligne';
-
-  const plural = pending > 1 ? 's' : '';
+  if (pending === 0) return translate(locale, 'commun.horsLigne');
 
   // Dès qu'un seul geste est volatile, c'est la garantie la plus faible qui
   // gouverne le message entier : on ne trie pas les rassurances par lot.
-  if (volatile > 0) {
-    return `Hors-ligne — ${pending} geste${plural} pas encore envoyé${plural}, garde l’app ouverte`;
-  }
+  const key = volatile > 0 ? 'commun.horsLigneVolatile' : 'commun.horsLigneEnAttente';
 
-  return `Hors-ligne — ${pending} geste${plural} en attente`;
+  return translate(locale, key, { count: pending });
 }
 
 /**
@@ -42,6 +42,11 @@ export function offlineNotice(
  * rachats, donc qui écrit dans le stock et dans le journal. Un bouton grisé
  * qui dit pourquoi vaut mieux qu'un inventaire doublé.
  */
-export function completeBlockedReason(online: boolean): string | null {
-  return online ? null : 'Valider les courses demande une connexion';
+export function completeBlockedReason(
+  online: boolean,
+  locale: Locale,
+): string | null {
+  return online
+    ? null
+    : translate(locale, 'commun.validerDemandeConnexion');
 }

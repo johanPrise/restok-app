@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fab } from '@/components/Fab';
 import { TabBarButton } from '@/components/TabBarButton';
+import { useT } from '@/i18n/useT';
 import {
   BasketIcon,
   JournalIcon,
@@ -49,6 +50,7 @@ export default function TabsLayout() {
   // untel, depuis quand » est une question qu'on pose, et la seule chose que
   // ce mode change aujourd'hui.
   const isAssociation = useIsAssociation();
+  const t = useT();
   // Ailleurs qu'en association, l'onglet n'est pas proposé — mais la route
   // existe, donc une adresse tapée à la main y mène. Sans cette seconde
   // condition, la barre allumait « Inventaire » pendant qu'on lisait le
@@ -104,21 +106,21 @@ export default function TabsLayout() {
         ]}
       >
         <TabTrigger name="shelf" asChild>
-          <TabBarButton icon={ShelfIcon} label="Inventaire" compact={showJournal} />
+          <TabBarButton icon={ShelfIcon} label={t('onglets.inventaire')} compact={showJournal} />
         </TabTrigger>
         <TabTrigger name="shopping" asChild>
-          <TabBarButton icon={BasketIcon} label="Courses" compact={showJournal} />
+          <TabBarButton icon={BasketIcon} label={t('onglets.courses')} compact={showJournal} />
         </TabTrigger>
         <TabTrigger name="recipes" asChild>
-          <TabBarButton icon={RecipeIcon} label="Recettes" compact={showJournal} />
+          <TabBarButton icon={RecipeIcon} label={t('onglets.recettes')} compact={showJournal} />
         </TabTrigger>
         {showJournal && (
           <TabTrigger name="journal" asChild>
-            <TabBarButton icon={JournalIcon} label="Journal" compact={showJournal} />
+            <TabBarButton icon={JournalIcon} label={t('onglets.journal')} compact={showJournal} />
           </TabTrigger>
         )}
         <TabTrigger name="settings" asChild>
-          <TabBarButton icon={SettingsIcon} label="Paramètres" compact={showJournal} />
+          <TabBarButton icon={SettingsIcon} label={t('onglets.parametres')} compact={showJournal} />
         </TabTrigger>
       </View>
 

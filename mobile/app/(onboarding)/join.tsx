@@ -10,12 +10,16 @@ import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BackLink } from '@/components/BackLink';
+import { useLocale } from '@/i18n/useT';
+import { useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { border, spacing, useTheme } from '@/theme';
 
 export default function Join() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useT();
   const toast = useToast();
   const goBack = useGoBack('/choose');
   const { colors } = useTheme();
@@ -40,7 +44,7 @@ export default function Join() {
       <BackLink onPress={goBack} />
 
       <TagCard>
-        <Text variant="tagName">Rejoindre un groupe</Text>
+        <Text variant="tagName">{t('onboarding.rejoindreGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           Saisissez le code d&apos;invitation à {INVITE_CODE_LENGTH} caractères
           pour accéder à l&apos;inventaire partagé.
@@ -53,19 +57,19 @@ export default function Join() {
 
         {join.isError && (
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {apiErrorMessage(join.error)}
+            {apiErrorMessage(join.error, locale)}
           </Text>
         )}
 
         <View style={styles.actions}>
           <Button
-            label="Rejoindre"
+            label={t('onboarding.rejoindre')}
             onPress={submit}
             disabled={!isComplete}
             loading={join.isPending}
           />
           <Button
-            label="Créer un nouveau groupe"
+            label={t('onboarding.creerNouveau')}
             variant="secondary"
             onPress={() => router.replace('/create-group')}
           />
@@ -73,7 +77,9 @@ export default function Join() {
 
         <View style={[styles.rule, { backgroundColor: colors.thread }]} />
         <SystemFooter
-          left={`Statut: ${isComplete ? 'prêt' : 'attente_entrée'}`}
+          left={t(
+            isComplete ? 'onboarding.statutPret' : 'onboarding.statutAttente',
+          )}
           right={`${code.length}/${INVITE_CODE_LENGTH}`}
         />
       </TagCard>

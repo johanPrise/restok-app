@@ -12,6 +12,7 @@ import { persistOptions } from '@/api/persist';
 import { queryClient } from '@/api/query-client';
 import { ToastProvider } from '@/components/Toast';
 import { useNotificationSync } from '@/lib/useNotificationSync';
+import { useLanguage } from '@/store/language';
 import { useSession } from '@/store/session';
 import { appFonts } from '@/theme/fonts';
 
@@ -28,12 +29,20 @@ export default function RootLayout() {
 
   const hydrate = useSession((s) => s.hydrate);
   const isHydrated = useSession((s) => s.isHydrated);
+  // La langue se relit en même temps que la session, et le splash attend les
+  // deux : sans ça, le premier écran s'affiche dans la langue de l'appareil
+  // puis bascule sur celle qu'on avait choisie. Un texte qui change sous les
+  // yeux se lit comme un bug.
+  const hydrateLanguage = useLanguage((s) => s.hydrate);
+  const languageReady = useLanguage((s) => s.isHydrated);
 
   useEffect(() => {
     void hydrate();
-  }, [hydrate]);
+    void hydrateLanguage();
+  }, [hydrate, hydrateLanguage]);
 
-  const ready = (fontsLoaded || fontError !== null) && isHydrated;
+  const ready =
+    (fontsLoaded || fontError !== null) && isHydrated && languageReady;
 
   useEffect(() => {
     // On masque même si les polices ont échoué : mieux vaut une police système

@@ -7,10 +7,12 @@ import { Screen } from '@/components/Screen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { useT } from '@/i18n/useT';
 import { spacing, useTheme } from '@/theme';
 
 export default function Choose() {
   const router = useRouter();
+  const t = useT();
   const { colors } = useTheme();
   const toast = useToast();
   const create = useCreateGroup();
@@ -21,7 +23,7 @@ export default function Choose() {
         <Text variant="monoLabel" color="inkSoft">
           Onboarding / Étape 02
         </Text>
-        <Text variant="title">Votre espace</Text>
+        <Text variant="title">{t('onboarding.votreEspace')}</Text>
       </View>
 
       {/* Défilant : à deux cartes tout tenait, la troisième débordait et
@@ -33,17 +35,17 @@ export default function Choose() {
         showsVerticalScrollIndicator={false}
       >
         <ChoiceCard
-          badge="Nouveau"
-          title="Créer un groupe"
-          description="Commencer un nouvel inventaire partagé"
+          badge={t('onboarding.nouveau')}
+          title={t('onboarding.creerGroupe')}
+          description={t('onboarding.creerGroupeQuoi')}
           action="start_new"
           icon={<CreateGroupIcon color={colors.choiceBorder} />}
           onPress={() => router.push('/create-group')}
         />
         <ChoiceCard
-          badge="Invitation"
-          title="Rejoindre un groupe"
-          description="Utiliser un code d'invitation"
+          badge={t('onboarding.invitation')}
+          title={t('onboarding.rejoindreGroupe')}
+          description={t('onboarding.rejoindreQuoi')}
           action="connect_existing"
           icon={<JoinGroupIcon color={colors.choiceBorder} />}
           onPress={() => router.push('/join')}
@@ -51,9 +53,9 @@ export default function Choose() {
         {/* Aucun formulaire : quelqu'un qui vit seul n'a pas de groupe à
             nommer, ni de type à choisir. On crée son espace et on entre. */}
         <ChoiceCard
-          badge="Seul"
-          title="Juste moi"
-          description="Un inventaire pour toi, sans personne à inviter"
+          badge={t('onboarding.seul')}
+          title={t('onboarding.justeMoi')}
+          description={t('onboarding.justeMoiQuoi')}
           action="start_solo"
           icon={<ShelfIcon color={colors.choiceBorder} size={30} />}
           onPress={() =>
@@ -66,7 +68,7 @@ export default function Choose() {
                   // condition-là se relit à chaque passage : le jour où
                   // quelqu'un entre avec le code, la question se pose enfin.
                   // Un drapeau posé maintenant l'aurait éteinte pour toujours.
-                  toast('Ton inventaire est prêt');
+                  toast(t('onboarding.inventairePret'));
                   router.replace('/');
                 },
               },

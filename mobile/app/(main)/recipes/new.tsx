@@ -9,6 +9,7 @@ import { FormScreen } from '@/components/FormScreen';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
+import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import type { IngredientInput, Item } from '@/types/api';
@@ -41,6 +42,8 @@ interface Draft {
  */
 export default function NewRecipe() {
   const goBack = useGoBack('/recipes');
+  const locale = useLocale();
+  const t = useT();
   const toast = useToast();
   const { colors } = useTheme();
   const items = useItems();
@@ -91,7 +94,7 @@ export default function NewRecipe() {
       },
       {
         onSuccess: (recipe) => {
-          toast(`Recette « ${recipe.name} » ajoutée`);
+          toast(t('recettes.recetteAjoutee', { nom: recipe.name }));
           goBack();
         },
       },
@@ -103,32 +106,34 @@ export default function NewRecipe() {
       <BackLink onPress={goBack} />
 
       <View style={styles.header}>
-        <Text variant="title">Nouvelle recette</Text>
+        <Text variant="title">{t('recettes.nouvelleRecette')}</Text>
         <Text variant="monoLabel" color="inkSoft">
-          Recettes / Ajout
+          {t('recettes.sousTitreAjout')}
         </Text>
       </View>
 
       <View style={styles.form}>
         <Field
-          label="Nom du plat"
+          label={t('recettes.nomDuPlat')}
           value={name}
           onChangeText={setName}
-          placeholder="Risotto aux champignons"
+          placeholder={t('recettes.exemplePlat')}
           autoCapitalize="sentences"
           returnKeyType="next"
         />
 
         <View style={styles.group}>
           <Text variant="monoLabel" color="inkSoft">
-            Ingrédients
+            {t('recettes.ingredients')}
           </Text>
 
           {ingredients.map((ingredient, index) => (
             <Pressable
               key={`${ingredient.name}-${index}`}
               accessibilityRole="button"
-              accessibilityLabel={`Retirer ${ingredient.name}`}
+              accessibilityLabel={t('recettes.retirerIngredient', {
+                nom: ingredient.name,
+              })}
               onPress={() =>
                 setIngredients((current) =>
                   current.filter((_, position) => position !== index),
@@ -151,7 +156,7 @@ export default function NewRecipe() {
                 {ingredient.name}
               </Text>
               <Text variant="monoLabel" color="inkSoft">
-                Retirer
+                {t('commun.retirer')}
               </Text>
             </Pressable>
           ))}
@@ -160,7 +165,9 @@ export default function NewRecipe() {
             <Pressable
               key={item.id}
               accessibilityRole="button"
-              accessibilityLabel={`Ajouter ${item.name} depuis l'étagère`}
+              accessibilityLabel={t('recettes.ajouterDepuisEtagere', {
+                nom: item.name,
+              })}
               onPress={() => add({ itemId: item.id, name: item.name })}
               style={[
                 styles.row,
@@ -173,7 +180,7 @@ export default function NewRecipe() {
                 {item.name}
               </Text>
               <Text variant="monoLabel" color="pantryTeal">
-                Depuis l’étagère
+                {t('recettes.depuisEtagere')}
               </Text>
             </Pressable>
           ))}
@@ -185,11 +192,11 @@ export default function NewRecipe() {
             <TextInput
               value={draft}
               onChangeText={setDraft}
-              placeholder="Riz, sel, tomates…"
+              placeholder={t('recettes.exempleIngredients')}
               placeholderTextColor={colors.inkSoft}
               onSubmitEditing={() => canAddDraft && add({ name: draft.trim() })}
               returnKeyType="done"
-              accessibilityLabel="Nom d’un ingrédient"
+              accessibilityLabel={t('recettes.nomIngredient')}
               style={[
                 styles.addInput,
                 {
@@ -201,7 +208,7 @@ export default function NewRecipe() {
             />
             <Button
               variant="secondary"
-              label="Ajouter"
+              label={t('commun.ajouter')}
               disabled={!canAddDraft}
               onPress={() => add({ name: draft.trim() })}
             />
@@ -209,33 +216,29 @@ export default function NewRecipe() {
         </View>
 
         <Field
-          label="Indications"
+          label={t('recettes.indications')}
           value={steps}
           onChangeText={setSteps}
-          placeholder={
-            'Laver la salade et l’essorer.\n' +
-            'Égoutter le thon, l’émietter.\n' +
-            'Mélanger, assaisonner au dernier moment.'
-          }
+          placeholder={t('recettes.exempleIndications')}
           multiline
           style={styles.steps}
         />
 
         <Text variant="caption" color="inkSoft" style={styles.hint}>
-          Une étape par ligne. C’est ce qu’on relit en cuisinant.
+          {t('recettes.uneEtapeParLigne')}
         </Text>
 
         <Field
-          label="Où la trouver"
+          label={t('recettes.ouLaTrouver')}
           value={source}
           onChangeText={setSource}
-          placeholder="https://… ou « le livre rouge, p. 42 »"
+          placeholder={t('recettes.exempleSource')}
           autoCapitalize="none"
           autoCorrect={false}
         />
 
         <Field
-          label="Pour combien de personnes"
+          label={t('recettes.pourCombien')}
           value={servings}
           onChangeText={setServings}
           placeholder="4"
@@ -246,12 +249,12 @@ export default function NewRecipe() {
 
       {create.isError && (
         <Text variant="caption" color="rustClay" style={styles.error}>
-          {apiErrorMessage(create.error)}
+          {apiErrorMessage(create.error, locale)}
         </Text>
       )}
 
       <Button
-        label="Enregistrer"
+        label={t('commun.enregistrer')}
         disabled={!canSave}
         loading={create.isPending}
         onPress={submit}

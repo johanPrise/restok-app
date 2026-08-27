@@ -1,3 +1,5 @@
+import { translate } from '@/i18n';
+import type { Locale } from '@/i18n/locales';
 import type { Item, ShoppingLine } from '@/types/api';
 import {
   defaultRestockPacks,
@@ -31,15 +33,21 @@ export function splitLines(lines: readonly ShoppingLine[]): {
 /**
  * « 3 sur 8 cochés » — le récapitulatif, juste sous le titre.
  *
- * `< 2`, pas `=== 1` : en français zéro reste au singulier. C'est déjà la
- * règle que `plural()` applique aux unités et aux paquets, et deux accords
- * contradictoires dans la même app se voient à l'écran — « 0 paquet » sous un
- * « 0 sur 1 cochés ».
+ * L'accord n'est plus écrit ici. Il l'était sous la forme `checked < 2`, qui
+ * est la règle **française** : zéro y reste au singulier, là où l'anglais dit
+ * « 0 items checked ». C'est `Intl.PluralRules` qui tranche maintenant, pour
+ * la langue affichée.
  */
-export function checkedSummary(lines: readonly ShoppingLine[]): string {
+export function checkedSummary(
+  lines: readonly ShoppingLine[],
+  locale: Locale,
+): string {
   const checked = lines.filter((line) => line.checked).length;
 
-  return `${checked} sur ${lines.length} coché${checked < 2 ? '' : 's'}`;
+  return translate(locale, 'courses.recap', {
+    count: checked,
+    total: lines.length,
+  });
 }
 
 export function checkedCount(lines: readonly ShoppingLine[]): number {
@@ -56,11 +64,14 @@ export function checkedCount(lines: readonly ShoppingLine[]): number {
  * `null` quand la ligne ne dit pas de quantité : un item en suivi binaire, ou
  * « du pain ». Mieux vaut ne rien écrire qu'écrire « 1 ».
  */
-export function lineQuantity(line: ShoppingLine): string | null {
+export function lineQuantity(
+  line: ShoppingLine,
+  locale: Locale,
+): string | null {
   if (line.quantity === null) return null;
 
   if (hasPacks(line) && line.quantity % (line.packSize ?? 1) === 0) {
-    return packSummary(line, line.quantity / (line.packSize ?? 1));
+    return packSummary(line, line.quantity / (line.packSize ?? 1), locale);
   }
 
   return withUnit(line, line.quantity);

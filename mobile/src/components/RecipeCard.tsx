@@ -5,6 +5,7 @@ import { radius, spacing, textOn, useTheme } from '@/theme';
 import type { Recipe } from '@/types/api';
 import { TagCard } from './TagCard';
 import { Text } from './Text';
+import { useLocale } from '@/i18n/useT';
 
 /**
  * La couleur de la pastille.
@@ -44,7 +45,8 @@ export function RecipeCard({
 }: Readonly<RecipeCardProps>) {
   const { colors } = useTheme();
   const accent = pillColor(state);
-  const label = feasibilityLabel(state);
+  const locale = useLocale();
+  const label = feasibilityLabel(state, locale);
 
   return (
     <Pressable

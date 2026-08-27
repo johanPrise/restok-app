@@ -11,6 +11,8 @@ import { SystemFooter } from '@/components/SystemFooter';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { useLocale } from '@/i18n/useT';
+import { useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { border, spacing, useTheme } from '@/theme';
 
@@ -20,7 +22,9 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export default function Register() {
   const router = useRouter();
+  const locale = useLocale();
   const toast = useToast();
+  const t = useT();
   const goBack = useGoBack('/login');
   const { colors } = useTheme();
   const [name, setName] = useState('');
@@ -35,7 +39,7 @@ export default function Register() {
       // depuis ici.
       {
         onSuccess: (auth) => {
-          toast(`Compte créé — bienvenue, ${auth.member.name}`);
+          toast(t('acces.compteCree', { nom: auth.member.name }));
           router.replace('/');
         },
       },
@@ -53,36 +57,35 @@ export default function Register() {
       <BackLink onPress={goBack} />
 
       <TagCard>
-        <Text variant="tagName">Créer un compte</Text>
+        <Text variant="tagName">{t('acces.creerUnCompte')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {/* Trois portes suivent, pas deux : annoncer un groupe à qui vient
               ouvrir un inventaire pour lui seul, c'est lui dire que sa porte
               n'existe pas. */}
-          Vous choisirez juste après : un groupe à créer, un à rejoindre, ou
-          votre inventaire à vous.
+          {t('acces.troisPortes')}
         </Text>
 
         <View style={styles.form}>
           <Field
-            label="Nom"
+            label={t('acces.nom')}
             value={name}
             onChangeText={setName}
-            placeholder="Sam"
+            placeholder={t('acces.exempleNom')}
             autoComplete="name"
             maxLength={100}
           />
           <Field
-            label="Email"
+            label={t('acces.email')}
             value={email}
             onChangeText={setEmail}
-            placeholder="vous@exemple.fr"
+            placeholder={t('acces.exempleEmail')}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
             inputMode="email"
           />
           <Field
-            label="Mot de passe"
+            label={t('acces.motDePasse')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -91,7 +94,7 @@ export default function Register() {
             // serveur la refuser.
             error={
               passwordTooShort
-                ? `${MIN_PASSWORD_LENGTH} caractères minimum`
+                ? t('acces.caracteresMinimum', { count: MIN_PASSWORD_LENGTH })
                 : undefined
             }
           />
@@ -99,12 +102,12 @@ export default function Register() {
 
         {register.isError && (
           <Text variant="caption" color="rustClay" style={styles.error}>
-            {apiErrorMessage(register.error)}
+            {apiErrorMessage(register.error, locale)}
           </Text>
         )}
 
         <Button
-          label="Créer le compte"
+          label={t('acces.creerLeCompte')}
           onPress={submit}
           disabled={!isValid}
           loading={register.isPending}
@@ -112,7 +115,7 @@ export default function Register() {
         />
 
         <View style={[styles.rule, { backgroundColor: colors.thread }]} />
-        <SystemFooter left="Statut: création_compte" />
+        <SystemFooter left={t('acces.statutCreation')} />
       </TagCard>
     </FormScreen>
   );

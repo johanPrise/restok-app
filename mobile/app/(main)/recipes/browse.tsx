@@ -16,6 +16,7 @@ import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import type { RecipeSuggestion } from '@/types/api';
@@ -42,6 +43,8 @@ import {
  */
 export default function BrowseRecipes() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useT();
   const goBack = useGoBack('/recipes');
   const toast = useToast();
   const { colors } = useTheme();
@@ -54,7 +57,7 @@ export default function BrowseRecipes() {
   const keep = (suggestion: RecipeSuggestion) =>
     save.mutate(suggestion.ref, {
       onSuccess: (recipe) => {
-        toast(`« ${recipe.name} » gardée dans tes recettes`);
+        toast(t('recettes.gardee', { nom: recipe.name }));
         router.replace(`/recipes/${recipe.id}`);
       },
     });
@@ -64,9 +67,9 @@ export default function BrowseRecipes() {
       <BackLink onPress={goBack} />
 
       <View style={styles.header}>
-        <Text variant="title">Chercher</Text>
+        <Text variant="title">{t('recettes.chercher')}</Text>
         <Text variant="monoLabel" color="inkSoft">
-          Recettes / Catalogue
+          {t('recettes.sousTitreCatalogue')}
         </Text>
       </View>
 
@@ -75,12 +78,12 @@ export default function BrowseRecipes() {
           value={draft}
           onChangeText={setDraft}
           onSubmitEditing={() => setQuery(draft)}
-          placeholder="Qu’est-ce que tu veux manger ?"
+          placeholder={t('recettes.quoiManger')}
           placeholderTextColor={colors.inkSoft}
           returnKeyType="search"
           autoCapitalize="none"
           autoCorrect={false}
-          accessibilityLabel="Chercher une recette"
+          accessibilityLabel={t('recettes.chercherUneRecette')}
           style={[
             styles.search,
             {
@@ -92,7 +95,7 @@ export default function BrowseRecipes() {
         />
         <Button
           variant="secondary"
-          label="Chercher"
+          label={t('recettes.chercher')}
           disabled={draft.trim().length < 2}
           onPress={() => setQuery(draft)}
         />
@@ -112,8 +115,7 @@ export default function BrowseRecipes() {
       >
         {query.trim().length < 2 && (
           <Text variant="body" color="inkSoft" style={styles.hint}>
-            Tape un plat, un ingrédient, une envie. Les propositions arrivent
-            classées par ce qu’il te reste à acheter.
+            {t('recettes.astuceRecherche')}
           </Text>
         )}
 
@@ -123,20 +125,19 @@ export default function BrowseRecipes() {
 
         {results.isError && (
           <Text variant="body" color="rustClay" style={styles.hint}>
-            {apiErrorMessage(results.error)}
+            {apiErrorMessage(results.error, locale)}
           </Text>
         )}
 
         {results.isSuccess && results.data.length === 0 && (
           <Text variant="body" color="inkSoft" style={styles.hint}>
-            Rien trouvé pour « {query} ». Essaie un mot plus simple — « poulet »
-            plutôt que « poulet du dimanche ».
+            {t('recettes.rienTrouve', { quete: query })}
           </Text>
         )}
 
         {save.isError && (
           <Text variant="caption" color="rustClay">
-            {apiErrorMessage(save.error)}
+            {apiErrorMessage(save.error, locale)}
           </Text>
         )}
 
@@ -163,13 +164,17 @@ function Suggestion({
   onKeep: () => void;
 }>) {
   const { colors } = useTheme();
+  const t = useT();
   const total = suggestion.have.length + suggestion.missing.length;
   const missing = suggestion.missing.length;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${suggestion.name}, il te manque ${missing} ingrédient${missing > 1 ? 's' : ''}`}
+      accessibilityLabel={t('recettes.manquantsA11y', {
+        nom: suggestion.name,
+        count: missing,
+      })}
       onPress={onKeep}
       disabled={busy}
     >
@@ -185,8 +190,11 @@ function Suggestion({
             vérifie sur la liste. */}
         <Text variant="monoLabel" color={missing === 0 ? 'sage' : 'inkSoft'}>
           {missing === 0
-            ? `Tout est là — ${total} ingrédients`
-            : `${total} ingrédients · il te manque ${missing}`}
+            ? t('recettes.toutEstLaAvec', { count: total })
+            : t('recettes.compteEtManquants', {
+                count: total,
+                manquants: missing,
+              })}
         </Text>
 
         {missing > 0 && (

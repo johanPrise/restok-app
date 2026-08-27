@@ -23,12 +23,14 @@ import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { SwipeHint } from '@/components/SwipeHint';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
 import { offlineNotice } from '@/lib/offline';
 import { feasibleNow } from '@/lib/recipes';
 import { itemsOnList } from '@/lib/shopping-list';
 import { useIsSolo } from '@/lib/useIsSolo';
+import { useLocale } from '@/i18n/useT';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import { useSession } from '@/store/session';
 import {
@@ -52,6 +54,8 @@ export default function Shelf() {
   const pending = usePendingGestures();
   const isAdmin = useSession((s) => s.member?.role) === 'admin';
   const solo = useIsSolo();
+  const t = useT();
+  const locale = useLocale();
   const swipeLearned = useSession((s) => s.swipeLearned);
   const markSwipeLearned = useSession((s) => s.markSwipeLearned);
   const [query, setQuery] = useState('');
@@ -65,13 +69,13 @@ export default function Shelf() {
   );
 
   const tonight = useMemo(
-    () => feasibleNow(recipes.data ?? [], items.data ?? []),
-    [recipes.data, items.data],
+    () => feasibleNow(recipes.data ?? [], items.data ?? [], locale),
+    [recipes.data, items.data, locale],
   );
 
   const sections = useMemo(
-    () => groupByUrgency(searchItems(items.data ?? [], query)),
-    [items.data, query],
+    () => groupByUrgency(searchItems(items.data ?? [], query), locale),
+    [items.data, query, locale],
   );
 
   const toRestock = (items.data ?? []).filter(
@@ -79,15 +83,15 @@ export default function Shelf() {
   ).length;
 
   const headerSummary = items.isError
-    ? 'Étagère non chargée'
-    : summary(toRestock, items.data?.length ?? 0);
+    ? t('etagere.nonChargee')
+    : summary(toRestock, items.data?.length ?? 0, t);
   const headerSummaryColor =
     items.isError || toRestock > 0 ? 'rustClay' : 'inkSoft';
 
   // Prendre et racheter ne sont pas persistés : hors-ligne, le balayage se
   // mettait en pause sans que rien ne bouge à l'écran, et le geste disparaissait
   // à la fermeture de l'app. Il faut au moins le dire.
-  const notice = offlineNotice(online, pending.durable, pending.volatile);
+  const notice = offlineNotice(online, pending.durable, pending.volatile, locale);
 
   const toggle = (key: string) =>
     setCollapsed((state) => ({ ...state, [key]: !state[key] }));
@@ -114,7 +118,7 @@ export default function Shelf() {
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder="Rechercher un item"
+        placeholder={t('etagere.chercher')}
         placeholderTextColor={colors.inkSoft}
         autoCorrect={false}
         style={[
@@ -171,7 +175,7 @@ export default function Shelf() {
             n'a rien à corriger ; le second demande de relancer le backend. */}
         {items.isError && (
           <ErrorState
-            message={apiErrorMessage(items.error)}
+            message={apiErrorMessage(items.error, locale)}
             onRetry={() => void items.refetch()}
           />
         )}
@@ -210,29 +214,38 @@ export default function Shelf() {
   );
 }
 
-/** Un résumé en une ligne, jamais un graphique (§5). */
-function summary(toRestock: number, total: number): string {
-  if (total === 0) return 'Inventaire vide';
-  if (toRestock === 0) return 'Tout est en stock';
+/**
+ * Un résumé en une ligne, jamais un graphique (§5).
+ *
+ * `t` en paramètre : ce n'est pas un composant, il ne peut pas appeler de hook.
+ */
+function summary(
+  toRestock: number,
+  total: number,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  if (total === 0) return t('etagere.vide');
+  if (toRestock === 0) return t('etagere.toutEnStock');
 
-  return `${toRestock} item${toRestock > 1 ? 's' : ''} à racheter`;
+  return t('etagere.aRacheter', { count: toRestock });
 }
 
 function ErrorState({
   message,
   onRetry,
 }: Readonly<{ message: string; onRetry: () => void }>) {
+  const t = useT();
   return (
     <View style={styles.empty}>
       {/* Le titre nomme ce que la personne voit — une étagère vide d'un coup —
           et non la panne technique qui l'a causée. */}
       <Text variant="tagName" color="rustClay" style={styles.emptyTitle}>
-        Étagère indisponible
+        {t('etagere.indisponible')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.emptyBody}>
         {message}
       </Text>
-      <Button label="Réessayer" onPress={onRetry} style={styles.emptyAdd} />
+      <Button label={t('etagere.reessayer')} onPress={onRetry} style={styles.emptyAdd} />
     </View>
   );
 }
@@ -242,6 +255,7 @@ function EmptyState({
   solo,
   onAdd,
 }: Readonly<{ searching: boolean; solo: boolean; onAdd?: () => void }>) {
+  const t = useT();
   return (
     <View style={styles.empty}>
       {/* Seule l'étagère vraiment vide montre l'étagère vide : une recherche
@@ -251,26 +265,26 @@ function EmptyState({
           source={require('../../../assets/illustrations/etagere_2.png')}
           style={styles.emptyIllustration}
           contentFit="contain"
-          accessibilityLabel="Une étagère de rangement vide, sans aucun item"
+          accessibilityLabel={t('etagere.videAlt')}
         />
       )}
       <Text variant="tagName" color="inkSoft" style={styles.emptyTitle}>
-        {searching ? 'Aucun résultat' : 'Étagère vide'}
+        {searching ? t('etagere.aucunResultat') : t('etagere.etagereVide')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.emptyBody}>
         {/* « ton groupe » ne veut rien dire pour quelqu'un qui vit seul : c'est
             exactement le genre de reste que le mode doit attraper. */}
         {searching
-          ? 'Aucun item ne porte ce nom.'
+          ? t('etagere.aucunNom')
           : solo
-            ? 'Ajoute le premier item que tu veux suivre.'
-            : 'Ajoute le premier item que ton groupe suit.'}
+            ? t('etagere.premierSolo')
+            : t('etagere.premierGroupe')}
       </Text>
       {/* §5 : l'étagère vide propose l'action directement, sans faire chercher
           le bouton flottant. */}
       {!searching && onAdd && (
         <Button
-          label="Ajouter un item"
+          label={t('etagere.ajouterItem')}
           onPress={onAdd}
           style={styles.emptyAdd}
         />

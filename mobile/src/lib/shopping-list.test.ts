@@ -74,28 +74,36 @@ describe('splitLines', () => {
 });
 
 describe('checkedSummary', () => {
+  const troisDontUn = [
+    line({ id: 'a', checked: true }),
+    line({ id: 'b' }),
+    line({ id: 'c' }),
+  ];
+
   it('compte ce qui est déjà dans le chariot', () => {
-    expect(
-      checkedSummary([
-        line({ id: 'a', checked: true }),
-        line({ id: 'b' }),
-        line({ id: 'c' }),
-      ]),
-    ).toBe('1 sur 3 coché');
+    expect(checkedSummary(troisDontUn, 'fr')).toBe('1 sur 3 coché');
+    expect(checkedSummary(troisDontUn, 'en')).toBe('1 of 3 checked');
   });
 
   it('accorde au pluriel au-delà de un', () => {
-    expect(
-      checkedSummary([
-        line({ id: 'a', checked: true }),
-        line({ id: 'b', checked: true }),
-      ]),
-    ).toBe('2 sur 2 cochés');
+    const deux = [
+      line({ id: 'a', checked: true }),
+      line({ id: 'b', checked: true }),
+    ];
+
+    expect(checkedSummary(deux, 'fr')).toBe('2 sur 2 cochés');
   });
 
-  it('garde le singulier à zéro, comme le veut le français', () => {
-    expect(checkedSummary([])).toBe('0 sur 0 coché');
-    expect(checkedSummary([line({ id: 'a' })])).toBe('0 sur 1 coché');
+  /**
+   * Zéro est au singulier en français, au pluriel en anglais. Ici les deux
+   * phrases se ressemblent — « checked » ne s'accorde pas — mais la **forme
+   * choisie** diffère, et c'est elle qui compte : c'est la même mécanique qui,
+   * dans le journal, produit « 0 prise » contre « 0 restocks ».
+   */
+  it('demande sa forme à la langue, au lieu de la coder', () => {
+    expect(checkedSummary([], 'fr')).toBe('0 sur 0 coché');
+    expect(checkedSummary([line({ id: 'a' })], 'fr')).toBe('0 sur 1 coché');
+    expect(checkedSummary([line({ id: 'a' })], 'en')).toBe('0 of 1 checked');
   });
 });
 
@@ -109,12 +117,12 @@ describe('checkedCount', () => {
 
 describe('lineQuantity', () => {
   it('accorde le nom de l’unité', () => {
-    expect(lineQuantity(line({ quantity: 3, unit: 'bidon' }))).toBe('3 bidons');
+    expect(lineQuantity(line({ quantity: 3, unit: 'bidon' }), 'fr')).toBe('3 bidons');
   });
 
   it('dit les paquets *et* les unités — « 2 » de quoi, sinon ?', () => {
     expect(
-      lineQuantity(line({ quantity: 12, unit: 'rouleau', packSize: 6 })),
+      lineQuantity(line({ quantity: 12, unit: 'rouleau', packSize: 6 }), 'fr'),
     ).toBe('2 paquets · 12 rouleaux');
   });
 
@@ -122,20 +130,20 @@ describe('lineQuantity', () => {
     // Sept rouleaux, ce n'est ni un paquet ni deux : afficher « 1,17 paquet »
     // ne veut rien dire au rayon.
     expect(
-      lineQuantity(line({ quantity: 7, unit: 'rouleau', packSize: 6 })),
+      lineQuantity(line({ quantity: 7, unit: 'rouleau', packSize: 6 }), 'fr'),
     ).toBe('7 rouleaux');
   });
 
   it('n’écrit rien quand la ligne ne dit pas de quantité', () => {
-    expect(lineQuantity(line({ quantity: null }))).toBeNull();
+    expect(lineQuantity(line({ quantity: null }), 'fr')).toBeNull();
   });
 
   it('donne le nombre nu sur une ligne libre, sans mot générique', () => {
-    expect(lineQuantity(line({ quantity: 2 }))).toBe('2');
+    expect(lineQuantity(line({ quantity: 2 }), 'fr')).toBe('2');
   });
 
   it('écrit « 1 rouleau » au singulier', () => {
-    expect(lineQuantity(line({ quantity: 1, unit: 'rouleau' }))).toBe(
+    expect(lineQuantity(line({ quantity: 1, unit: 'rouleau' }), 'fr')).toBe(
       '1 rouleau',
     );
   });

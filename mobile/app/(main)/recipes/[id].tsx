@@ -17,6 +17,7 @@ import { feasibility, recipeByline } from '@/lib/recipes';
 import { itemsOnList, suggestedQuantity } from '@/lib/shopping-list';
 import { useGoBack } from '@/lib/useGoBack';
 import { useIsSolo } from '@/lib/useIsSolo';
+import { useLocale, useT } from '@/i18n/useT';
 import type { Item, Recipe } from '@/types/api';
 import { border, radius, spacing, textOn, useTheme } from '@/theme';
 
@@ -29,6 +30,8 @@ export default function RecipeDetail() {
   const shopping = useShoppingList();
   const online = useIsOnline();
   const solo = useIsSolo();
+  const locale = useLocale();
+  const t = useT();
 
   const take = useTakeItem();
   const addLine = useAddShoppingLine();
@@ -45,14 +48,14 @@ export default function RecipeDetail() {
       <Screen>
         <BackLink onPress={goBack} />
         <Text variant="tagName" color="inkSoft" style={styles.centered}>
-          {recipes.isPending ? 'Chargement…' : 'Recette introuvable'}
+          {t(recipes.isPending ? 'commun.chargement' : 'recettes.introuvable')}
         </Text>
       </Screen>
     );
   }
 
   const state = feasibility(recipe, items.data ?? []);
-  const byline = recipeByline(recipe, solo);
+  const byline = recipeByline(recipe, locale, solo);
   const onList = itemsOnList(shopping.data ?? []);
 
   // Ce qui manque **et** n'est pas déjà sur la liste : reverser une deuxième
@@ -66,18 +69,18 @@ export default function RecipeDetail() {
     )
     .filter((item): item is Item => item !== undefined && !onList.has(item.id));
 
-  const failure = latestFailure([take, addLine, remove]);
+  const failure = latestFailure([take, addLine, remove], locale);
 
   const confirmDelete = () =>
-    Alert.alert(recipe.name, 'Supprimer cette recette ?', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(recipe.name, t('recettes.supprimerConfirm'), [
+      { text: t('commun.annuler'), style: 'cancel' },
       {
-        text: 'Supprimer',
+        text: t('commun.supprimer'),
         style: 'destructive',
         onPress: () =>
           remove.mutate(recipe.id, {
             onSuccess: () => {
-              toast(`« ${recipe.name} » supprimée`);
+              toast(t('recettes.supprimee', { nom: recipe.name }));
               goBack();
             },
           }),
@@ -103,13 +106,13 @@ export default function RecipeDetail() {
         {recipe.source !== null && (
           <Button
             variant="secondary"
-            label="Voir la recette"
+            label={t('recettes.voirLaRecette')}
             onPress={() => void Linking.openURL(recipe.source!).catch(() => {})}
           />
         )}
 
         <Text variant="monoLabel" color="inkSoft">
-          Ingrédients
+          {t('recettes.ingredients')}
         </Text>
 
         {recipe.ingredients.map((ingredient) => (
@@ -129,14 +132,17 @@ export default function RecipeDetail() {
                   quantity: item.quantity ?? undefined,
                 },
                 // L'étagère et le journal changent ailleurs qu'ici.
-                { onSuccess: () => toast(`${item.name} signalé épuisé`) },
+                {
+                  onSuccess: () =>
+                    toast(t('recettes.signaleEpuise', { nom: item.name })),
+                },
               )
             }
           />
         ))}
 
         <Text variant="monoLabel" color="inkSoft" style={styles.section}>
-          Indications
+          {t('recettes.indications')}
         </Text>
 
         {/* La partie qu'on relit en cuisinant. Une fiche qui ne dit que les
@@ -147,9 +153,11 @@ export default function RecipeDetail() {
           <Steps text={recipe.description} />
         ) : (
           <Text variant="body" color="inkSoft">
-            {recipe.source !== null
-              ? 'Rien de noté ici — la recette est au bout du lien.'
-              : 'Rien de noté. Sans indications, cette fiche ne dit que ce qu’il faut sortir du placard.'}
+            {t(
+              recipe.source !== null
+                ? 'recettes.rienDeNoteLien'
+                : 'recettes.rienDeNote',
+            )}
           </Text>
         )}
 
@@ -163,13 +171,13 @@ export default function RecipeDetail() {
             ingrédients manquants, aucun bouton, aucune explication. */}
         {state.kind === 'missing' && toBuy.length === 0 && (
           <Text variant="caption" color="inkSoft">
-            Tout ce qui manque est déjà sur la liste de courses.
+            {t('recettes.toutDejaSurListe')}
           </Text>
         )}
 
         {toBuy.length > 0 && (
           <Button
-            label={`Ajouter ${toBuy.length} manquant${toBuy.length > 1 ? 's' : ''} aux courses`}
+            label={t('recettes.ajouterManquants', { count: toBuy.length })}
             loading={addLine.isPending}
             disabled={!online}
             onPress={() => {
@@ -182,7 +190,7 @@ export default function RecipeDetail() {
                 }),
               );
               toast(
-                `${toBuy.length} manquant${toBuy.length > 1 ? 's' : ''} ajouté${toBuy.length > 1 ? 's' : ''} aux courses`,
+                t('recettes.manquantsAjoutes', { count: toBuy.length }),
               );
             }}
           />
@@ -190,7 +198,7 @@ export default function RecipeDetail() {
 
         <Button
           variant="secondary"
-          label="Supprimer la recette"
+          label={t('recettes.supprimerLaRecette')}
           onPress={confirmDelete}
         />
       </ScrollView>
@@ -255,7 +263,12 @@ function IngredientRow({
   onEmpty: (item: Item) => void;
 }>) {
   const { colors } = useTheme();
-  const badge = item ? statusBadge(item) : null;
+  // Le hook est appelé sans condition : `item ? … useLocale() … : null` le
+  // sautait quand l'item manquait, ce que React interdit et que le typage ne
+  // voit pas.
+  const locale = useLocale();
+  const t = useT();
+  const badge = item ? statusBadge(item, locale) : null;
   const accent = item ? statusColor(item.status) : 'inkSoft';
   const empty =
     item?.status === 'out_of_stock' || item?.status === 'to_restock';
@@ -271,14 +284,14 @@ function IngredientRow({
         {/* Un ingrédient libre le dit : il ne compte pas dans la faisabilité,
             et personne ne doit s'attendre à ce que l'app en sache l'état. */}
         <Text variant="caption" color="inkSoft">
-          {item ? (badge ?? 'En stock') : 'Non suivi'}
+          {item ? (badge ?? t('recettes.enStock')) : t('recettes.nonSuivi')}
         </Text>
       </View>
 
       {item && !empty && (
         <Button
           variant="secondary"
-          label="Il n’y en a plus"
+          label={t('recettes.ilNyEnAPlus')}
           loading={busy}
           onPress={() => onEmpty(item)}
         />

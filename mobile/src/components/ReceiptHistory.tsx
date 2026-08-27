@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { StyleSheet, View } from 'react-native';
+import { dateLocale, type Locale } from '@/i18n/locales';
+import { useLocale, useT } from '@/i18n/useT';
 import { spacing } from '@/theme';
 import type { ActionType, HistoryEntry } from '@/types/api';
 import { Text } from './Text';
@@ -28,10 +29,13 @@ export function ReceiptHistory({
   loading = false,
   solo = false,
 }: Readonly<ReceiptHistoryProps>) {
+  const t = useT();
+  const locale = useLocale();
+
   if (loading) {
     return (
       <Text variant="mono" color="inkSoft">
-        Chargement de l&apos;historique…
+        {t('commun.chargementHistorique')}
       </Text>
     );
   }
@@ -40,8 +44,8 @@ export function ReceiptHistory({
     return (
       <Text variant="body" color="inkSoft">
         {solo
-          ? "Aucune action pour l'instant — la première fois que tu prends quelque chose s'inscrit ici."
-          : "Aucune action pour l'instant — le premier qui prend quelque chose ouvre le bal."}
+          ? t('commun.relevéVideSolo')
+          : t('commun.relevéVideGroupe')}
       </Text>
     );
   }
@@ -53,7 +57,7 @@ export function ReceiptHistory({
       <TearLine />
 
       {entries.map((entry) => {
-        const day = receiptDate(entry.createdAt);
+        const day = receiptDate(entry.createdAt, locale);
         const repeated = day === previousDay;
         previousDay = day;
 
@@ -68,7 +72,7 @@ export function ReceiptHistory({
             </Text>
             {!solo && (
               <Text variant="mono" style={styles.who} numberOfLines={1}>
-                {(entry.member?.name ?? "Quelqu'un").toUpperCase()}
+                {(entry.member?.name ?? t('item.quelquun')).toUpperCase()}
               </Text>
             )}
             {/* Vide en suivi binaire : la colonne reste, pour que les lignes
@@ -77,7 +81,7 @@ export function ReceiptHistory({
               {entry.quantity === null ? '' : `×${entry.quantity}`}
             </Text>
             <Text variant="mono" color="inkSoft" style={styles.action}>
-              {actionLabel(entry.actionType)}
+              {actionLabel(entry.actionType, t)}
             </Text>
           </View>
         );
@@ -101,15 +105,23 @@ function TearLine() {
   );
 }
 
-/** « 24 JUIL », comme sur un ticket. */
-function receiptDate(iso: string): string {
-  return format(new Date(iso), 'd MMM', { locale: fr })
+/**
+ * « 24 JUIL », comme sur un ticket — et « 24 JUL » en anglais.
+ *
+ * Le point abrégeant le mois saute : le relevé est en capitales, et « JUIL. »
+ * y traîne une ponctuation qu'aucun ticket n'imprime.
+ */
+function receiptDate(iso: string, locale: Locale): string {
+  return format(new Date(iso), 'd MMM', { locale: dateLocale(locale) })
     .replace('.', '')
     .toUpperCase();
 }
 
-function actionLabel(action: ActionType): string {
-  return action === 'taken' ? 'pris' : 'racheté';
+function actionLabel(
+  action: ActionType,
+  t: (key: string) => string,
+): string {
+  return t(action === 'taken' ? 'commun.pris' : 'commun.rachete');
 }
 
 const DATE_WIDTH = 62;

@@ -7,12 +7,14 @@ import { Segmented } from '@/components/Segmented';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
+import { useT } from '@/i18n/useT';
+import { useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import {
   groupByDay,
   isTruncated,
   journalSummary,
-  PERIOD_LABELS,
+  periodLabel,
   since,
   type Period,
 } from '@/lib/journal';
@@ -43,6 +45,8 @@ export default function Journal() {
   const { colors } = useTheme();
   const group = useGroup();
   const members = useMembers();
+  const locale = useLocale();
+  const t = useT();
   const [period, setPeriod] = useState<Period>('month');
   const [who, setWho] = useState<string>(EVERYONE);
 
@@ -59,7 +63,7 @@ export default function Journal() {
 
   const history = useGroupHistory(filters);
   const entries = history.data ?? [];
-  const days = useMemo(() => groupByDay(entries), [entries]);
+  const days = useMemo(() => groupByDay(entries, locale), [entries, locale]);
   const coupé = isTruncated(entries, HISTORY_LIMIT);
 
   // Tant que le type du groupe est inconnu, on ne renvoie personne :
@@ -69,11 +73,11 @@ export default function Journal() {
   return (
     <Screen edges={['top']}>
       <View style={styles.header}>
-        <Text variant="display">Journal</Text>
+        <Text variant="display">{t('onglets.journal')}</Text>
         <Text variant="monoLabel" color="inkSoft" numberOfLines={1}>
           {history.isError
-            ? 'Journal non chargé'
-            : `${group.data?.name ?? ''} · ${journalSummary(entries)}`}
+            ? t('journal.nonCharge')
+            : `${group.data?.name ?? ''} · ${journalSummary(entries, locale)}`}
         </Text>
       </View>
 
@@ -89,11 +93,11 @@ export default function Journal() {
         }
       >
         <Segmented
-          label="Période"
+          label={t('journal.periode')}
           value={period}
           options={(['month', 'quarter', 'all'] as const).map((value) => ({
             value,
-            label: PERIOD_LABELS[value],
+            label: periodLabel(value, locale),
           }))}
           onChange={setPeriod}
         />
@@ -110,7 +114,7 @@ export default function Journal() {
 
         {history.isError && (
           <Text variant="caption" color="rustClay">
-            {apiErrorMessage(history.error)}
+            {apiErrorMessage(history.error, locale)}
           </Text>
         )}
 
@@ -120,12 +124,10 @@ export default function Journal() {
         {!history.isPending && entries.length === 0 && (
           <TagCard style={styles.empty}>
             <Text variant="tagName" color="inkSoft">
-              Rien sur cette période
+              {t('journal.rienSurPeriode')}
             </Text>
             <Text variant="body" color="inkSoft">
-              {who === EVERYONE
-                ? 'Personne n’a rien pris ni racheté. Élargis la période pour remonter plus loin.'
-                : 'Cette personne n’a rien pris ni racheté ici. Élargis la période pour remonter plus loin.'}
+              {t(who === EVERYONE ? 'journal.videTous' : 'journal.videPersonne')}
             </Text>
           </TagCard>
         )}
@@ -149,8 +151,7 @@ export default function Journal() {
             dire est le minimum qu'un registre doive à qui vient le lire. */}
         {coupé && (
           <Text variant="caption" color="inkSoft" style={styles.truncation}>
-            Les {HISTORY_LIMIT} dernières actions seulement. Restreins la
-            période ou choisis une personne pour voir plus loin.
+            {t('journal.tronque', { count: HISTORY_LIMIT })}
           </Text>
         )}
       </ScrollView>
@@ -165,13 +166,15 @@ export default function Journal() {
  * la lui ajouter tronquerait le nom de l'item, qui est ce qu'on vient lire.
  */
 function Row({ entry }: Readonly<{ entry: GroupHistoryEntry }>) {
+  const t = useT();
+
   return (
     <View
       style={styles.row}
       accessibilityRole="text"
       accessibilityLabel={[
-        entry.memberName ?? 'Quelqu’un',
-        entry.actionType === 'taken' ? 'a pris' : 'a racheté',
+        entry.memberName ?? t('item.quelquun'),
+        t(entry.actionType === 'taken' ? 'journal.aPris' : 'journal.aRachete'),
         entry.quantity === null ? '' : entry.quantity,
         entry.itemName,
       ]
@@ -179,7 +182,7 @@ function Row({ entry }: Readonly<{ entry: GroupHistoryEntry }>) {
         .join(' ')}
     >
       <Text variant="mono" style={styles.who} numberOfLines={1}>
-        {(entry.memberName ?? 'Quelqu’un').toUpperCase()}
+        {(entry.memberName ?? t('item.quelquun')).toUpperCase()}
       </Text>
       <Text variant="mono" color="inkSoft" style={styles.item} numberOfLines={1}>
         {entry.itemName}
@@ -188,7 +191,7 @@ function Row({ entry }: Readonly<{ entry: GroupHistoryEntry }>) {
         {entry.quantity === null ? '' : `×${entry.quantity}`}
       </Text>
       <Text variant="mono" color="inkSoft" style={styles.action}>
-        {entry.actionType === 'taken' ? 'pris' : 'racheté'}
+        {t(entry.actionType === 'taken' ? 'commun.pris' : 'commun.rachete')}
       </Text>
     </View>
   );
@@ -211,12 +214,13 @@ function WhoFilter({
   onChange: (value: string) => void;
 }>) {
   const { colors } = useTheme();
-  const choices = [{ id: EVERYONE, name: 'Tout le monde' }, ...members];
+  const t = useT();
+  const choices = [{ id: EVERYONE, name: t('journal.toutLeMonde') }, ...members];
 
   return (
     <View style={styles.group}>
       <Text variant="monoLabel" color="inkSoft">
-        Qui
+        {t('journal.qui')}
       </Text>
       <ScrollView
         horizontal

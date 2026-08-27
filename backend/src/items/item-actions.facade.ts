@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource } from 'typeorm';
 import { ActionHistoryService } from '../action-history/action-history.service';
@@ -16,6 +11,7 @@ import {
 import { assertTransition, autoTransition } from './item-state-machine';
 import { TrackingAction } from './strategies/tracking-strategy.interface';
 import { TrackingStrategyFactory } from './strategies/tracking-strategy.factory';
+import { BUSINESS_CODES, badRequest, conflict } from '../common/business-error';
 
 /** États dans lesquels il n'y a plus rien à prendre. */
 const EMPTY_STATUSES: readonly ItemStatus[] = [
@@ -138,8 +134,10 @@ export class ItemActionsFacade {
       action.type === ActionType.TAKEN &&
       EMPTY_STATUSES.includes(item.status)
     ) {
-      throw new ConflictException(
+      throw conflict(
+        BUSINESS_CODES.ITEM_ALREADY_EMPTY,
         `« ${item.name} » est déjà épuisé — il n'y a plus rien à prendre`,
+        { nom: item.name },
       );
     }
 
@@ -148,8 +146,10 @@ export class ItemActionsFacade {
       item.trackingType === TrackingType.QUANTITY &&
       action.quantity === undefined
     ) {
-      throw new BadRequestException(
+      throw badRequest(
+        BUSINESS_CODES.RESTOCK_QUANTITY_REQUIRED,
         `« ${item.name} » est suivi en quantité : précise la quantité rachetée`,
+        { nom: item.name },
       );
     }
   }

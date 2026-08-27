@@ -12,6 +12,7 @@ import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
+import { useLocale, useT } from '@/i18n/useT';
 import { useGoBack } from '@/lib/useGoBack';
 import {
   defaultRestockPacks,
@@ -38,6 +39,7 @@ import type { Item } from '@/types/api';
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const goBack = useGoBack();
+  const t = useT();
   const items = useItems();
 
   const item = items.data?.find((candidate) => candidate.id === id);
@@ -51,7 +53,7 @@ export default function ItemDetail() {
       {!items.isPending && item === undefined && (
         <View style={styles.missing}>
           <Text variant="body" color="inkSoft">
-            Item introuvable — il a peut-être été supprimé.
+            {t('item.introuvable')}
           </Text>
         </View>
       )}
@@ -63,6 +65,7 @@ export default function ItemDetail() {
 
 function Loaded({ item }: Readonly<{ item: Item }>) {
   const goBack = useGoBack();
+  const t = useT();
   const history = useItemHistory(item.id);
   const actions = useItemActions(item);
   const solo = useIsSolo();
@@ -81,13 +84,13 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
 
       {actions.failed && (
         <Text variant="caption" color="rustClay">
-          L&apos;action n&apos;est pas passée. Vérifie ta connexion et réessaie.
+          {t('item.actionRatee')}
         </Text>
       )}
 
       <View style={styles.section}>
         <Text variant="monoLabel" color="inkSoft">
-          Historique
+          {t('item.historique')}
         </Text>
         <ReceiptHistory
           entries={history.data ?? []}
@@ -124,6 +127,8 @@ function ItemActionsPanel({
   item,
   actions,
 }: Readonly<{ item: Item; actions: ItemActions }>) {
+  const locale = useLocale();
+  const t = useT();
   const counts = item.trackingType === 'quantity';
   const [taking, setTaking] = useState(1);
   /**
@@ -143,14 +148,14 @@ function ItemActionsPanel({
           {/* « J'en ai pris » serait un mensonge ici : en suivi de présence,
               une prise signale la rupture, pas une unité de moins. */}
           <Button
-            label="J'ai pris le dernier"
+            label={t('item.prisLeDernier')}
             onPress={() => actions.take()}
             disabled={!actions.canTake}
             loading={actions.busy}
             style={styles.action}
           />
           <Button
-            label="J'ai racheté"
+            label={t('item.aiRachete')}
             variant="secondary"
             onPress={() => actions.restock()}
             loading={actions.busy}
@@ -168,13 +173,13 @@ function ItemActionsPanel({
     <View style={styles.panel}>
       <View style={styles.actions}>
         <QuantityStepper
-          label="Unités prises"
+          label={t('item.unitesPrises')}
           value={Math.min(taking, Math.max(stock, 1))}
           onChange={setTaking}
           max={Math.max(stock, 1)}
         />
         <Button
-          label="J'en ai pris"
+          label={t('item.enAiPris')}
           onPress={() => actions.take({ units: Math.min(taking, stock) })}
           disabled={!actions.canTake}
           loading={actions.busy}
@@ -184,13 +189,15 @@ function ItemActionsPanel({
 
       <View style={styles.actions}>
         <QuantityStepper
-          label={hasPacks(item) ? 'Paquets rachetés' : 'Unités rachetées'}
+          label={t(
+            hasPacks(item) ? 'item.paquetsRachetes' : 'item.unitesRachetees',
+          )}
           value={buyingPacks}
           onChange={setChosen}
           max={MAX_RESTOCK_UNITS}
         />
         <Button
-          label="J'ai racheté"
+          label={t('item.aiRachete')}
           variant="secondary"
           onPress={() =>
             actions.restock({ units: unitsInPacks(item, buyingPacks) })
@@ -206,16 +213,16 @@ function ItemActionsPanel({
 
       {/* Un compteur de lots est ambigu tant qu'on ne dit pas ce qu'il y a
           dedans. */}
-      {packSummary(item, buyingPacks) !== null && (
+      {packSummary(item, buyingPacks, locale) !== null && (
         <Text variant="caption" color="pantryTeal">
-          {packSummary(item, buyingPacks)}
+          {packSummary(item, buyingPacks, locale)}
         </Text>
       )}
 
       <Text variant="caption" color="inkSoft">
-        {withUnit(item, stock)} en stock
+        {t('item.enStock', { quoi: withUnit(item, stock) })}
         {item.targetQuantity
-          ? ` · ${item.targetQuantity} quand c'est plein`
+          ? ` · ${t('item.quandCestPlein', { count: item.targetQuantity })}`
           : ''}
       </Text>
     </View>
@@ -233,13 +240,14 @@ function DeleteItem({
   onDeleted,
 }: Readonly<{ itemId: string; name: string; onDeleted: () => void }>) {
   const toast = useToast();
+  const t = useT();
   const [confirming, setConfirming] = useState(false);
   const remove = useDeleteItem();
 
   if (!confirming) {
     return (
       <Button
-        label="Supprimer l'item"
+        label={t('item.supprimerItem')}
         variant="secondary"
         onPress={() => setConfirming(true)}
         style={styles.danger}
@@ -250,24 +258,23 @@ function DeleteItem({
   return (
     <View style={styles.danger}>
       <Text variant="caption" color="inkSoft">
-        L&apos;item disparaît de l&apos;étagère. Son historique, lui, reste au
-        tableau.
+        {t('item.suppressionQuoi')}
       </Text>
       <View style={styles.actions}>
         <Button
-          label="Annuler"
+          label={t('commun.annuler')}
           variant="secondary"
           onPress={() => setConfirming(false)}
           style={styles.action}
         />
         <Button
-          label="Supprimer"
+          label={t('commun.supprimer')}
           variant="danger"
           loading={remove.isPending}
           onPress={() =>
             remove.mutate(itemId, {
               onSuccess: () => {
-                toast(`${name} supprimé de l’étagère`);
+                toast(t('item.supprimeDeEtagere', { nom: name }));
                 onDeleted();
               },
             })

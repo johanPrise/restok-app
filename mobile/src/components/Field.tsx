@@ -16,6 +16,7 @@ import {
   useTheme,
 } from '@/theme';
 import { Text } from './Text';
+import { useT } from '@/i18n/useT';
 
 interface FieldProps extends TextInputProps {
   label: string;
@@ -30,6 +31,7 @@ export function Field({
   ...props
 }: Readonly<FieldProps>) {
   const { colors } = useTheme();
+  const t = useT();
   const [revealed, setRevealed] = useState(false);
 
   // On ne saisit pas un mot de passe à l'aveugle sur un clavier tactile :
@@ -64,13 +66,13 @@ export function Field({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
-              revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
+              revealed ? t('commun.masquerMotDePasse') : t('commun.afficherMotDePasse')
             }
             onPress={() => setRevealed((shown) => !shown)}
             style={styles.action}
           >
             <Text variant="monoLabel" color="pantryTeal">
-              {revealed ? 'Masquer' : 'Afficher'}
+              {revealed ? t('commun.masquer') : t('commun.afficher')}
             </Text>
           </Pressable>
         )}

@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
@@ -10,6 +6,11 @@ import { Member, MemberRole } from '../members/entities/member.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenService } from './token.service';
+import {
+  BUSINESS_CODES,
+  conflict,
+  unauthorized,
+} from '../common/business-error';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -37,7 +38,10 @@ export class AuthService {
       where: { email: dto.email },
     });
     if (existing) {
-      throw new ConflictException('Un compte existe déjà avec cet email');
+      throw conflict(
+        BUSINESS_CODES.EMAIL_TAKEN,
+        'Un compte existe déjà avec cet email',
+      );
     }
 
     const password = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
@@ -71,7 +75,10 @@ export class AuthService {
     if (!member || !(await bcrypt.compare(dto.password, member.password))) {
       // Message volontairement identique dans les deux cas : ne pas révéler
       // si l'email existe.
-      throw new UnauthorizedException('Email ou mot de passe incorrect');
+      throw unauthorized(
+        BUSINESS_CODES.BAD_CREDENTIALS,
+        'Email ou mot de passe incorrect',
+      );
     }
 
     return this.buildAuthResponse(member);

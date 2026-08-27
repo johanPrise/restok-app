@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +10,7 @@ import { Item, ItemStatus, TrackingType } from './entities/item.entity';
 import { ITEM_DELETED, ItemDeletedEvent } from './events/item-deleted.event';
 import { autoTransition } from './item-state-machine';
 import { statusForQuantity } from './strategies/quantity-tracking.strategy';
+import { BUSINESS_CODES, badRequest } from '../common/business-error';
 
 /**
  * `out_of_stock` ne doit jamais être persisté : la spec le fait suivre
@@ -65,7 +62,8 @@ export class ItemsService {
     const trackingType = dto.trackingType ?? TrackingType.THRESHOLD;
 
     if (trackingType === TrackingType.QUANTITY && dto.quantity === undefined) {
-      throw new BadRequestException(
+      throw badRequest(
+        BUSINESS_CODES.INITIAL_QUANTITY_REQUIRED,
         'Précise la quantité initiale pour un item suivi en quantité',
       );
     }
@@ -122,7 +120,8 @@ export class ItemsService {
     if (trackingType === TrackingType.QUANTITY) {
       const quantity = dto.quantity ?? item.quantity;
       if (quantity === null) {
-        throw new BadRequestException(
+        throw badRequest(
+          BUSINESS_CODES.QUANTITY_REQUIRED_TO_SWITCH,
           'Précise la quantité en stock pour passer en suivi par quantité',
         );
       }

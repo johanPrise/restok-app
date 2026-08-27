@@ -14,6 +14,8 @@ import {
 import type { Item } from '@/types/api';
 import { Text } from './Text';
 import { useToast } from './Toast';
+import { useLocale } from '@/i18n/useT';
+import { useT } from '@/i18n/useT';
 
 interface ProductFormatProps {
   item: Item;
@@ -33,6 +35,8 @@ const MAX_LENGTH = 20;
  */
 export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
   const { colors } = useTheme();
+  const locale = useLocale();
+  const t = useT();
   const setFormat = useSetItemFormat();
   const toast = useToast();
   const [draft, setDraft] = useState<string | null>(null);
@@ -44,7 +48,7 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
     if (next === (item.format ?? '')) return;
     setFormat.mutate(
       { itemId: item.id, format: next },
-      { onSuccess: () => toast('Format enregistré') },
+      { onSuccess: () => toast(t('commun.formatEnregistre')) },
     );
   };
 
@@ -59,9 +63,9 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
         selectTextOnFocus
         maxLength={MAX_LENGTH}
         returnKeyType="done"
-        placeholder="1,5 L · 500 g · ×6"
+        placeholder={t('commun.exempleFormat')}
         placeholderTextColor={colors.inkSoft}
-        accessibilityLabel="Format du produit"
+        accessibilityLabel={t('commun.formatDuProduit')}
         style={[
           styles.input,
           { color: colors.ink, borderColor: colors.pantryTeal },
@@ -77,7 +81,7 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
         accessibilityLabel={
           item.format
             ? `Format : ${item.format}, appuie pour corriger`
-            : 'Préciser le format du produit'
+            : t('commun.preciserFormat')
         }
         onPress={() => setDraft(item.format ?? '')}
         hitSlop={spacing.xs}
@@ -86,13 +90,13 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
         <Text variant="caption" color={item.format ? 'inkSoft' : 'pantryTeal'}>
           {item.format
             ? `Format : ${item.format} — corriger`
-            : 'Préciser le format du produit'}
+            : t('commun.preciserFormat')}
         </Text>
       </Pressable>
 
       {setFormat.isError && (
         <Text variant="caption" color="rustClay">
-          {apiErrorMessage(setFormat.error)}
+          {apiErrorMessage(setFormat.error, locale)}
         </Text>
       )}
     </View>

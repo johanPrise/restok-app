@@ -7,6 +7,7 @@ import { BellBadgeIcon } from '@/components/icons';
 import { Screen } from '@/components/Screen';
 import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
+import { useT } from '@/i18n/useT';
 import { registerForPush } from '@/lib/push';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
@@ -14,21 +15,23 @@ import { border, spacing, useTheme } from '@/theme';
 
 const STEPS = 3;
 
-/** Message affiché quand la permission passe mais qu'aucun token n'est obtenable. */
-const UNAVAILABLE_REASONS = {
-  'expo-go':
-    "Expo Go ne reçoit pas les notifications — il faudra l'app compilée.",
-  simulator: 'Un simulateur ne reçoit pas de notifications.',
-  // Une app mal configurée à la compilation : la personne devant l'écran n'y
-  // peut rien, et « projectId » ne lui dirait rien. On dit ce qu'elle observe
-  // — ça ne marchera pas ici — et on ne l'envoie pas chercher un réglage qui
-  // n'existe pas de son côté.
-  'no-project-id':
-    'Les notifications ne sont pas disponibles dans cette version de l’app.',
+/**
+ * Ce qu'on dit quand la permission passe mais qu'aucun token n'est obtenable.
+ *
+ * Pour `no-project-id`, l'app est mal configurée à la compilation : la
+ * personne devant l'écran n'y peut rien, et « projectId » ne lui dirait rien.
+ * On dit ce qu'elle observe — ça ne marchera pas ici — et on ne l'envoie pas
+ * chercher un réglage qui n'existe pas de son côté.
+ */
+const UNAVAILABLE_KEYS = {
+  'expo-go': 'onboarding.expoGo',
+  simulator: 'onboarding.simulateur',
+  'no-project-id': 'onboarding.pasDisponible',
 } as const;
 
 export default function NotificationsStep() {
   const router = useRouter();
+  const t = useT();
   const group = useGroup();
   const solo = useIsSolo();
   const { colors } = useTheme();
@@ -60,15 +63,13 @@ export default function NotificationsStep() {
       }
 
       if (result.outcome === 'unavailable') {
-        setNotice(UNAVAILABLE_REASONS[result.reason]);
+        setNotice(t(UNAVAILABLE_KEYS[result.reason]));
         return;
       }
 
-      setNotice(
-        'Notifications refusées. Tu peux les activer plus tard dans les réglages du téléphone.',
-      );
+      setNotice(t('onboarding.refusees'));
     } catch {
-      setNotice("L'activation a échoué. Tu pourras réessayer plus tard.");
+      setNotice(t('onboarding.echecActivation'));
     } finally {
       setBusy(false);
     }
@@ -103,15 +104,15 @@ export default function NotificationsStep() {
           </View>
           <View style={[styles.rule, { backgroundColor: colors.thread }]} />
           <Text variant="monoLabel" color="inkSoft" style={styles.cardLabel}>
-            Alert_system_active
+            {t('onboarding.alerteActive')}
           </Text>
         </TagCard>
 
         <Text variant="title" style={styles.heading}>
-          Prévenir le groupe
+          {t('onboarding.prevenir')}
         </Text>
         <Text variant="monoBody" color="inkSoft" style={styles.pitch}>
-          Pour prévenir tout le monde quand un stock est vide.
+          {t('onboarding.prevenirQuoi')}
         </Text>
 
         {notice !== null && (
@@ -121,7 +122,7 @@ export default function NotificationsStep() {
         )}
 
         <Button
-          label="Activer les notifications →"
+          label={t('onboarding.activer')}
           onPress={() => void enable()}
           loading={busy}
           style={styles.action}

@@ -22,6 +22,7 @@ import {
 import type { Item } from '@/types/api';
 import { BasketIcon } from './icons';
 import { Text } from './Text';
+import { useLocale, useT } from '@/i18n/useT';
 
 interface StockTagProps extends Pick<
   PressableProps,
@@ -65,9 +66,11 @@ export function StockTag({
 }: Readonly<StockTagProps>) {
   const { colors } = useTheme();
 
+  const t = useT();
+  const locale = useLocale();
   const accent = colors[statusColor(item.status)];
-  const badge = statusBadge(item);
-  const meta = tagMeta(item, solo);
+  const badge = statusBadge(item, locale);
+  const meta = tagMeta(item, locale, solo);
   const ratio = fillRatio(item);
   const isEmpty = ratio === 0;
 
@@ -98,7 +101,7 @@ export function StockTag({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${item.name}${badge ? `, ${badge}` : ''}${
-        onList ? ', déjà sur la liste de courses' : ''
+        onList ? t('item.dejaSurLaListe') : ''
       }`}
       onPress={onPress}
       {...accessibility}

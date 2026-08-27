@@ -1,13 +1,9 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Member, MemberRole } from './entities/member.entity';
+import { BUSINESS_CODES, badRequest, conflict } from '../common/business-error';
 
 export interface MemberSummary {
   id: string;
@@ -51,7 +47,8 @@ export class MembersService {
     groupId: string,
   ): Promise<void> {
     if (targetId === actorId) {
-      throw new BadRequestException(
+      throw badRequest(
+        BUSINESS_CODES.ADMIN_CANNOT_REMOVE_SELF,
         'Un admin ne peut pas se retirer lui-même du groupe',
       );
     }
@@ -92,7 +89,8 @@ export class MembersService {
       ]);
 
       if (admins === 1 && total > 1) {
-        throw new ConflictException(
+        throw conflict(
+          BUSINESS_CODES.LAST_ADMIN_MUST_HAND_OVER,
           "Tu es le seul admin : nomme quelqu'un d'autre avant de partir, ou supprime le groupe",
         );
       }
@@ -118,7 +116,10 @@ export class MembersService {
     role: MemberRole,
   ): Promise<MemberSummary> {
     if (targetId === actorId) {
-      throw new BadRequestException('Un admin ne change pas son propre rôle');
+      throw badRequest(
+        BUSINESS_CODES.ADMIN_CANNOT_CHANGE_OWN_ROLE,
+        'Un admin ne change pas son propre rôle',
+      );
     }
 
     const target = await this.memberRepo.findOne({
@@ -177,7 +178,10 @@ export class MembersService {
         where: { email: changes.email },
       });
       if (taken) {
-        throw new ConflictException('Un compte existe déjà avec cet email');
+        throw conflict(
+          BUSINESS_CODES.EMAIL_TAKEN,
+          'Un compte existe déjà avec cet email',
+        );
       }
       member.email = changes.email;
     }
@@ -207,14 +211,15 @@ export class MembersService {
     candidate: string | undefined,
   ): Promise<void> {
     if (!candidate) {
-      throw new BadRequestException(
+      throw badRequest(
+        BUSINESS_CODES.PASSWORD_REQUIRED_FOR_EMAIL_CHANGE,
         'Confirme ton mot de passe pour changer ton email',
       );
     }
 
     const matches = await bcrypt.compare(candidate, member.password);
     if (!matches) {
-      throw new BadRequestException('Mot de passe incorrect');
+      throw badRequest(BUSINESS_CODES.WRONG_PASSWORD, 'Mot de passe incorrect');
     }
   }
 

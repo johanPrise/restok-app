@@ -1,3 +1,5 @@
+import { translate } from '@/i18n';
+import { compare, type Locale } from '@/i18n/locales';
 import type { Palette } from '@/theme';
 import type { Item, ItemStatus } from '@/types/api';
 
@@ -15,39 +17,43 @@ export interface ItemSection {
  */
 const SECTIONS: {
   key: string;
-  title: string;
+  /** La clé, pas le mot : le titre se traduit au moment de l'affichage. */
+  titleKey: string;
   color: keyof Palette;
   matches: (status: ItemStatus) => boolean;
 }[] = [
   {
     key: 'to_restock',
-    title: 'À racheter',
+    titleKey: 'stock.aRacheter',
     color: 'rustClay',
     matches: (s) => s === 'to_restock' || s === 'out_of_stock',
   },
   {
     key: 'low',
-    title: 'Stock bas',
+    titleKey: 'stock.stockBas',
     color: 'mustard',
     matches: (s) => s === 'low',
   },
   {
     key: 'available',
-    title: 'Disponible',
+    titleKey: 'stock.disponible',
     color: 'sage',
     matches: (s) => s === 'available',
   },
 ];
 
-export function groupByUrgency(items: Item[]): ItemSection[] {
-  return SECTIONS.map(({ key, title, color, matches }) => ({
+export function groupByUrgency(
+  items: Item[],
+  locale: Locale,
+): ItemSection[] {
+  return SECTIONS.map(({ key, titleKey, color, matches }) => ({
     key,
-    title,
+    title: translate(locale, titleKey),
     color,
     // À urgence égale, l'alphabétique redevient le repère le plus prévisible.
     items: items
       .filter((item) => matches(item.status))
-      .sort((a, b) => a.name.localeCompare(b.name, 'fr')),
+      .sort((a, b) => compare(locale, a.name, b.name)),
   })).filter((section) => section.items.length > 0);
 }
 
