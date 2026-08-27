@@ -5,8 +5,8 @@ vivent seuls. Chaque chose que le foyer suit devient une étiquette qu'on tire
 vers la gauche quand on en prend, vers la droite quand on en rachète. La liste
 de courses se remplit toute seule à partir de ce qui manque.
 
-L'app est en français, et le restera tant que l'internationalisation n'aura pas
-été faite (voir [Ce qui manque](#ce-qui-manque)).
+L'app parle **français et anglais**, et suit la langue du téléphone tant que
+personne n'en a choisi une dans les réglages.
 
 ## Ce que ça fait
 
@@ -23,6 +23,9 @@ L'app est en français, et le restera tant que l'internationalisation n'aura pas
 - **Trois modes** — solo, colocation, association. Le solo retire ce qui n'a
   pas de sens à une seule personne : les auteurs, les invitations, la gestion
   des membres.
+- **Deux langues** — français et anglais, y compris les accords. Les pluriels
+  et le tri sont délégués à `Intl`, qui sait que « 0 article » est au
+  singulier en français et au pluriel en anglais.
 
 ## L'architecture
 
@@ -92,9 +95,9 @@ viser un autre serveur, poser `EXPO_PUBLIC_API_URL`.
 ## Les tests
 
 ```bash
-cd backend && pnpm test        # 221 unitaires
+cd backend && pnpm test        # 228 unitaires
 cd backend && pnpm test:e2e    # 228 e2e, contre un vrai PostgreSQL
-cd mobile  && pnpm test        # 166
+cd mobile  && pnpm test        # 204
 ```
 
 Les e2e parlent à une vraie base plutôt qu'à un double : ils vérifient des
@@ -171,15 +174,38 @@ restock-technical-spec.md   la spécification d'origine
 render.yaml                 le déploiement du backend
 ```
 
+## Les langues
+
+Tout le texte vit dans [`mobile/src/i18n`](mobile/src/i18n) : `fr.ts` fait foi,
+`en.ts` doit lui répondre clé pour clé — un test le vérifie, parce qu'une clé
+anglaise manquante ne casse rien et fait juste basculer un écran en français au
+milieu d'une phrase.
+
+Ce qui touche à la grammaire est délégué à `Intl` plutôt qu'écrit à la main :
+`PluralRules` pour les accords, `Collator` pour le tri de l'étagère. La règle
+`count < 2` qui traînait en trois endroits était fausse dès qu'on quittait le
+français.
+
+Le nom d'unité qu'un foyer tape lui-même — « rouleau », « bidon » — **ne suit
+pas** la langue de l'app : on ignore dans quelle langue il a été écrit.
+
+### Les erreurs du serveur
+
+Le backend ne choisit pas la langue : elle se règle dans l'app, et ne suit donc
+ni l'appareil ni `Accept-Language`. Ses refus de règle métier portent un **code
+stable** ([`business-error.ts`](backend/src/common/business-error.ts)) que le
+mobile traduit, en plus d'une phrase française qui reste le repli pour un
+client plus ancien que le déploiement.
+
+Ajouter un refus, c'est donc ajouter un code des deux côtés — un code sans
+phrase dégrade proprement vers celle du serveur, mais reste français.
+
 ## Ce qui manque
 
-- **Le journal n'a pas d'écran.** `GET /history` est servi et personne ne
-  l'appelle.
-- **Le mode association ne fait rien.** Écran pour écran, il est identique à la
-  colocation ; le type n'est comparé nulle part.
-- **Aucune internationalisation.** Le français est en dur, et jusque dans la
-  logique — `localeCompare(…, 'fr')`, les règles de pluriel de `units.ts`.
 - **Un seul tutoriel**, sur le balayage.
+- **Le mode association n'a que le journal** de plus que la colocation.
 - **Les notifications push n'ont jamais été vérifiées de bout en bout.** Le
   circuit est complet des deux côtés, mais l'essayer exige un build EAS : Expo
   Go ne reçoit pas de notifications.
+- **Aucun build mobile publié.** Les profils EAS sont écrits, aucun APK ni IPA
+  n'est sorti.
