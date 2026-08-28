@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { decodeCursor, encodeCursor } from './cursor';
 import { ActionHistory, ActionType } from './entities/action-history.entity';
 
 export interface ActionHistoryEntry {
@@ -18,6 +19,18 @@ export interface LastAction {
   at: Date;
   /** `null` quand le compte de l'auteur a été supprimé. */
   memberName: string | null;
+}
+
+/**
+ * Une page du journal, et de quoi demander la suivante.
+ *
+ * `nextCursor` vaut `null` quand on tient la fin — pas quand la page est
+ * pleine. C'est la différence entre « il n'y a plus rien » et « on n'a pas
+ * regardé », et un registre ne doit jamais laisser confondre les deux.
+ */
+export interface GroupHistoryPage {
+  entries: GroupHistoryEntry[];
+  nextCursor: string | null;
 }
 
 /** Une ligne du journal du groupe, telle que le client la reçoit. */
@@ -125,8 +138,13 @@ export class ActionHistoryService {
    */
   async findByGroup(
     groupId: string,
-    filters: { memberId?: string; since?: Date; limit: number },
-  ): Promise<GroupHistoryEntry[]> {
+    filters: {
+      memberId?: string;
+      since?: Date;
+      limit: number;
+      cursor?: string;
+    },
+  ): Promise<GroupHistoryPage> {
     const query = this.historyRepo
       .createQueryBuilder('h')
       // `withDeleted` : TypeORM résout « item » comme **entité**, et lui
@@ -146,8 +164,14 @@ export class ActionHistoryService {
         'm.name AS member_name',
       ])
       .where('i.group_id = :groupId', { groupId })
+      // Le couple, et pas la seule date : clôturer des courses écrit plusieurs
+      // rachats dans la même milliseconde, et un tri non déterministe ferait
+      // sauter ou répéter des lignes d'une page à l'autre.
       .orderBy('h.created_at', 'DESC')
-      .limit(filters.limit);
+      .addOrderBy('h.id', 'DESC')
+      // Une de plus que demandé : c'est elle qui répond « y a-t-il une suite »,
+      // sans le `COUNT(*)` qu'il faudrait sinon compter sur tout le registre.
+      .limit(filters.limit + 1);
 
     if (filters.memberId) {
       query.andWhere('h.member_id = :memberId', { memberId: filters.memberId });
@@ -155,19 +179,38 @@ export class ActionHistoryService {
     if (filters.since) {
       query.andWhere('h.created_at >= :since', { since: filters.since });
     }
+    if (filters.cursor) {
+      const { createdAt, id } = decodeCursor(filters.cursor);
+      // Comparaison de n-uplets : PostgreSQL la lit dans l'ordre, ce qui dit
+      // exactement « strictement plus ancien que cette ligne-là », y compris
+      // parmi celles qui partagent sa date.
+      query.andWhere('(h.created_at, h.id) < (:cursorAt, :cursorId)', {
+        cursorAt: createdAt,
+        cursorId: id,
+      });
+    }
 
     const rows = await query.getRawMany<GroupHistoryRow>();
+    const hasMore = rows.length > filters.limit;
+    const page = hasMore ? rows.slice(0, filters.limit) : rows;
+    const last = page.at(-1);
 
-    return rows.map((row) => ({
-      id: row.id,
-      actionType: row.action_type,
-      quantity: row.quantity,
-      createdAt: row.created_at,
-      itemId: row.item_id,
-      itemName: row.item_name,
-      // `null` quand le compte a été supprimé : l'acte survit à son auteur.
-      memberName: row.member_name,
-    }));
+    return {
+      entries: page.map((row) => ({
+        id: row.id,
+        actionType: row.action_type,
+        quantity: row.quantity,
+        createdAt: row.created_at,
+        itemId: row.item_id,
+        itemName: row.item_name,
+        // `null` quand le compte a été supprimé : l'acte survit à son auteur.
+        memberName: row.member_name,
+      })),
+      nextCursor:
+        hasMore && last
+          ? encodeCursor({ createdAt: last.created_at, id: last.id })
+          : null,
+    };
   }
 
   async findByItem(itemId: string): Promise<ActionHistoryEntry[]> {

@@ -169,6 +169,13 @@ export interface HistoryEntry {
  * lit à travers toute l'étagère, donc chaque ligne doit nommer l'item — sans
  * quoi « ×2 pris » ne dit rien.
  */
+/** Une page du journal, et de quoi demander la suivante. */
+export interface GroupHistoryPage {
+  entries: GroupHistoryEntry[];
+  /** `null` quand on tient la fin — pas quand la page est pleine. */
+  nextCursor: string | null;
+}
+
 export interface GroupHistoryEntry {
   id: string;
   actionType: ActionType;

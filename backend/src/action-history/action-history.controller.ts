@@ -29,6 +29,7 @@ export class ActionHistoryController {
       memberId: query.memberId,
       since: query.since ? new Date(query.since) : undefined,
       limit: query.limit ?? DEFAULT_LIMIT,
+      cursor: query.cursor,
     });
   }
 }

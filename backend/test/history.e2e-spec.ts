@@ -48,11 +48,10 @@ describe('Journal du groupe (e2e)', () => {
 
     const res = await journal(bob).expect(200);
 
-    expect(res.body).toHaveLength(2);
-    expect(res.body.map((e: { itemName: string }) => e.itemName)).toEqual([
-      'Papier toilette',
-      'Café',
-    ]);
+    expect(res.body.entries).toHaveLength(2);
+    expect(
+      res.body.entries.map((e: { itemName: string }) => e.itemName),
+    ).toEqual(['Papier toilette', 'Café']);
   });
 
   it('nomme l’item, l’auteur, l’action et la quantité', async () => {
@@ -68,7 +67,7 @@ describe('Journal du groupe (e2e)', () => {
 
     const entries = await journal(bob).expect(200);
 
-    expect(entries.body[0]).toMatchObject({
+    expect(entries.body.entries[0]).toMatchObject({
       itemName: 'Café',
       memberName: 'Bob',
       actionType: 'taken',
@@ -83,8 +82,8 @@ describe('Journal du groupe (e2e)', () => {
 
     const res = await journal(bob).expect(200);
 
-    expect(res.body[0].actionType).toBe('restocked');
-    expect(res.body[1].actionType).toBe('taken');
+    expect(res.body.entries[0].actionType).toBe('restocked');
+    expect(res.body.entries[1].actionType).toBe('taken');
   });
 
   it('répond à « qu’a sorti untel »', async () => {
@@ -95,8 +94,8 @@ describe('Journal du groupe (e2e)', () => {
 
     const res = await journal(bob, `?memberId=${bob.id}`).expect(200);
 
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].memberName).toBe('Bob');
+    expect(res.body.entries).toHaveLength(1);
+    expect(res.body.entries[0].memberName).toBe('Bob');
   });
 
   it('borne la période', async () => {
@@ -106,7 +105,7 @@ describe('Journal du groupe (e2e)', () => {
     const demain = new Date(Date.now() + 86_400_000).toISOString();
     const res = await journal(bob, `?since=${demain}`).expect(200);
 
-    expect(res.body).toEqual([]);
+    expect(res.body.entries).toEqual([]);
   });
 
   it('garde la trace d’un item supprimé', async () => {
@@ -118,8 +117,8 @@ describe('Journal du groupe (e2e)', () => {
 
     const res = await journal(bob).expect(200);
 
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].itemName).toBe('Café');
+    expect(res.body.entries).toHaveLength(1);
+    expect(res.body.entries[0].itemName).toBe('Café');
   });
 
   it('ne montre pas le journal d’un autre groupe', async () => {
@@ -130,7 +129,7 @@ describe('Journal du groupe (e2e)', () => {
     await createGroupWith(app, carol);
 
     const res = await journal(carol).expect(200);
-    expect(res.body).toEqual([]);
+    expect(res.body.entries).toEqual([]);
   });
 
   it('est ouvert à un simple membre — un registre illisible ne prouve rien', async () => {
@@ -145,5 +144,89 @@ describe('Journal du groupe (e2e)', () => {
     const dave = await signUp(app, 'Dave');
 
     await journal(dave).expect(403);
+  });
+
+  describe('la pagination', () => {
+    /** Un item et `count` prises dessus, dans l'ordre. */
+    const noise = async (count: number) => {
+      const cafe = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: count,
+      });
+      for (let i = 0; i < count; i += 1) {
+        await auth(app, alice).post(`/items/${cafe.id}/take`).expect(200);
+      }
+    };
+
+    it('ne rend pas de curseur quand la page tient tout', async () => {
+      await noise(2);
+
+      const res = await journal(bob).expect(200);
+
+      // `null` dit « il n'y a plus rien », pas « on n'a pas regardé ».
+      expect(res.body.entries).toHaveLength(2);
+      expect(res.body.nextCursor).toBeNull();
+    });
+
+    it('rend un curseur dès qu’il reste quelque chose derrière', async () => {
+      await noise(5);
+
+      const res = await journal(bob, '?limit=2').expect(200);
+
+      expect(res.body.entries).toHaveLength(2);
+      expect(res.body.nextCursor).toEqual(expect.any(String));
+    });
+
+    it('descend le registre entier sans sauter ni répéter une ligne', async () => {
+      // Cinq prises dans la même seconde : c'est le cas où une pagination sur
+      // la seule date perdrait des lignes, et il est ordinaire — clôturer des
+      // courses écrit un rachat par ligne cochée.
+      await noise(5);
+
+      const vus: string[] = [];
+      let cursor: string | null = null;
+
+      do {
+        const query: string = `?limit=2${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+        const page = await journal(bob, query).expect(200);
+
+        vus.push(...page.body.entries.map((e: { id: string }) => e.id));
+        cursor = page.body.nextCursor as string | null;
+      } while (cursor);
+
+      expect(vus).toHaveLength(5);
+      expect(new Set(vus).size).toBe(5);
+    });
+
+    it('garde les filtres d’une page à l’autre', async () => {
+      const cafe = await createItem({
+        name: 'Café',
+        trackingType: 'quantity',
+        quantity: 10,
+      });
+      await auth(app, alice).post(`/items/${cafe.id}/take`).expect(200);
+      await auth(app, bob).post(`/items/${cafe.id}/take`).expect(200);
+      await auth(app, bob).post(`/items/${cafe.id}/take`).expect(200);
+
+      const first = await journal(bob, `?memberId=${bob.id}&limit=1`).expect(
+        200,
+      );
+      const next = await journal(
+        bob,
+        `?memberId=${bob.id}&limit=1&cursor=${encodeURIComponent(first.body.nextCursor)}`,
+      ).expect(200);
+
+      // Le curseur ne relâche pas le filtre : Alice n'apparaît nulle part.
+      expect(first.body.entries[0].memberName).toBe('Bob');
+      expect(next.body.entries[0].memberName).toBe('Bob');
+      expect(next.body.nextCursor).toBeNull();
+    });
+
+    it('refuse un curseur illisible plutôt que de repartir du début', async () => {
+      // Repartir du début serait pire qu'échouer : on relirait la première
+      // page en croyant descendre.
+      await journal(bob, '?cursor=pas-du-base64-valide!!').expect(400);
+    });
   });
 });

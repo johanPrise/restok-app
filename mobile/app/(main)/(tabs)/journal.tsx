@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useGroup, useMembers } from '@/api/groups';
-import { HISTORY_LIMIT, useGroupHistory } from '@/api/history';
+import { useGroupHistory } from '@/api/history';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
 import { TagCard } from '@/components/TagCard';
@@ -17,7 +17,6 @@ import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import {
   groupByDay,
-  isTruncated,
   journalSummary,
   periodLabel,
   since,
@@ -28,6 +27,10 @@ import type { GroupHistoryEntry } from '@/types/api';
 
 /** Tout le monde, c'est-à-dire aucun filtre sur la personne. */
 const EVERYONE = 'all';
+
+/** Points restants sous le doigt avant d'aller chercher la page suivante. */
+const LOAD_AHEAD = 600;
+const SCROLL_THROTTLE_MS = 200;
 
 /**
  * Le journal du groupe.
@@ -67,11 +70,8 @@ export default function Journal() {
   );
 
   const history = useGroupHistory(filters);
-  // `?? []` fabrique un tableau neuf à chaque rendu : mémoriser le regroupement
-  // sur lui revenait à ne rien mémoriser du tout.
-  const entries = useMemo(() => history.data ?? [], [history.data]);
+  const { entries } = history;
   const days = useMemo(() => groupByDay(entries, locale), [entries, locale]);
-  const coupé = isTruncated(entries, HISTORY_LIMIT);
 
   // Tant que le type du groupe est inconnu, on ne renvoie personne :
   // `useIsAssociation` répond « non » pendant le chargement, et une
@@ -91,6 +91,22 @@ export default function Journal() {
       <ScrollView
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}
+        // Le registre se remonte en descendant. Le seuil est large : on veut
+        // la page suivante avant d'avoir touché le fond, pas après.
+        scrollEventThrottle={SCROLL_THROTTLE_MS}
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const restant =
+            contentSize.height - layoutMeasurement.height - contentOffset.y;
+
+          if (
+            restant < LOAD_AHEAD &&
+            history.hasNextPage &&
+            !history.isFetchingNextPage
+          ) {
+            void history.fetchNextPage();
+          }
+        }}
         refreshControl={
           <RefreshControl
             refreshing={history.isRefetching}
@@ -154,13 +170,10 @@ export default function Journal() {
           </View>
         ))}
 
-        {/* Le serveur ne pagine pas : au plafond, il se tait sur le reste. Le
-            dire est le minimum qu'un registre doive à qui vient le lire. */}
-        {coupé && (
-          <Text variant="caption" color="inkSoft" style={styles.truncation}>
-            {t('journal.tronque', { count: HISTORY_LIMIT })}
-          </Text>
-        )}
+        {/* Le registre ne s'arrête plus en silence : il descend jusqu'au bout.
+            Reste à dire qu'on va chercher la suite, sinon la liste paraît
+            finie une demi-seconde de trop. */}
+        {history.isFetchingNextPage && <TagSkeleton />}
       </ScrollView>
     </Screen>
   );

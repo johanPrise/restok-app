@@ -32,6 +32,7 @@ export const BUSINESS_CODES = {
   INGREDIENT_ALREADY_IN_RECIPE: 'ingredient_already_in_recipe',
   INGREDIENT_NEEDS_ITEM_OR_LABEL: 'ingredient_needs_item_or_label',
   INITIAL_QUANTITY_REQUIRED: 'initial_quantity_required',
+  INVALID_CURSOR: 'invalid_cursor',
   ITEM_ALREADY_EMPTY: 'item_already_empty',
   ITEM_CHANGED_MEANWHILE: 'item_changed_meanwhile',
   LAST_ADMIN_MUST_HAND_OVER: 'last_admin_must_hand_over',

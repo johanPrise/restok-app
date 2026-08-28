@@ -391,8 +391,6 @@ export const fr = {
     resume: '%{prises}, %{rachats}',
     prises: { one: '%{count} prise', other: '%{count} prises' },
     rachats: { one: '%{count} rachat', other: '%{count} rachats' },
-    tronque:
-      'Les %{count} dernières actions seulement. Restreins la période ou choisis une personne pour voir plus loin.',
 
     periode: 'Période',
     periodeMois: '30 jours',

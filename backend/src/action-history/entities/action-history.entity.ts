@@ -20,6 +20,9 @@ export enum ActionType {
 @Entity('action_history')
 @Index('idx_history_item', ['itemId'])
 @Index('idx_history_member', ['memberId'])
+// La pagination du journal lit sur ce couple, du plus récent au plus ancien.
+// Voir la migration `HistoryPagination`.
+@Index('idx_history_page', ['createdAt', 'id'])
 export class ActionHistory {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -352,8 +352,6 @@ export const en = {
     resume: '%{prises}, %{rachats}',
     prises: { one: '%{count} taken', other: '%{count} taken' },
     rachats: { one: '%{count} restock', other: '%{count} restocks' },
-    tronque:
-      'The last %{count} actions only. Narrow the period or pick a person to see further back.',
 
     periode: 'Period',
     periodeMois: '30 days',
