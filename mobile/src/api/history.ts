@@ -1,8 +1,10 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useMutation, useInfiniteQuery } from '@tanstack/react-query';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useMemo } from 'react';
 import { useSession } from '@/store/session';
 import type { GroupHistoryPage } from '@/types/api';
-import { authedRequest } from './authed';
+import { authedRequest, authedText } from './authed';
 import { queryKeys } from './query-client';
 
 /** Une page. Le reste se demande en descendant. */
@@ -57,4 +59,56 @@ export function useGroupHistory(filters: JournalFilters = {}) {
   );
 
   return { ...query, entries };
+}
+
+/** Les filtres, dans la même forme que le journal, pour l'URL. */
+function toParams(filters: JournalFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.memberId) params.set('memberId', filters.memberId);
+  if (filters.since) params.set('since', filters.since);
+
+  return params;
+}
+
+/**
+ * Le registre, en fichier.
+ *
+ * Un journal qu'on ne peut pas remettre à quelqu'un ne sert qu'à celui qui le
+ * regarde. Une association rend des comptes — à un bureau, à une assemblée —
+ * et cela suppose un fichier, pas un écran qu'on fait défiler devant témoin.
+ *
+ * Le fichier part dans le cache et non dans les documents : il n'a d'existence
+ * que le temps du partage, et le système le nettoie. Le garder ferait
+ * s'accumuler des registres périmés que personne ne relira.
+ *
+ * L'export reprend **les filtres affichés**. Exporter tout le registre pendant
+ * qu'on regarde le mois de Marc donnerait un fichier qui ne correspond pas à
+ * l'écran d'où on l'a demandé.
+ */
+export function useExportHistory(filters: JournalFilters = {}) {
+  return useMutation({
+    mutationFn: async () => {
+      const params = toParams(filters);
+      const csv = await authedText(`/history/export?${params}`);
+
+      // Daté : deux exports du même registre à des semaines d'écart ne doivent
+      // pas porter le même nom dans le dossier de celui qui les reçoit.
+      const jour = new Date().toISOString().slice(0, 10);
+      const file = new File(Paths.cache, `registre-${jour}.csv`);
+
+      // Un export précédent du même jour occupe déjà la place.
+      if (file.exists) file.delete();
+      file.create();
+      file.write(csv);
+
+      if (!(await Sharing.isAvailableAsync())) return { shared: false };
+
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'text/csv',
+        UTI: 'public.comma-separated-values-text',
+      });
+
+      return { shared: true };
+    },
+  });
 }

@@ -29,6 +29,7 @@ export const BUSINESS_CODES = {
   ADMIN_CANNOT_REMOVE_SELF: 'admin_cannot_remove_self',
   BAD_CREDENTIALS: 'bad_credentials',
   EMAIL_TAKEN: 'email_taken',
+  EXPORT_TOO_LARGE: 'export_too_large',
   INGREDIENT_ALREADY_IN_RECIPE: 'ingredient_already_in_recipe',
   INGREDIENT_NEEDS_ITEM_OR_LABEL: 'ingredient_needs_item_or_label',
   INITIAL_QUANTITY_REQUIRED: 'initial_quantity_required',

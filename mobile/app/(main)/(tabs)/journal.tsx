@@ -7,11 +7,13 @@ import {
   View,
 } from 'react-native';
 import { useGroup, useMembers } from '@/api/groups';
-import { useGroupHistory } from '@/api/history';
+import { useExportHistory, useGroupHistory } from '@/api/history';
+import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
+import { useToast } from '@/components/Toast';
 import { Text } from '@/components/Text';
 import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -70,6 +72,8 @@ export default function Journal() {
   );
 
   const history = useGroupHistory(filters);
+  const exporter = useExportHistory(filters);
+  const toast = useToast();
   const { entries } = history;
   const days = useMemo(() => groupByDay(entries, locale), [entries, locale]);
 
@@ -135,9 +139,31 @@ export default function Journal() {
           />
         )}
 
-        {history.isError && (
+        {/* Le registre sort de l'écran. Sous les filtres, et non en tête :
+            ce qu'on exporte est ce qu'on vient de composer au-dessus. */}
+        {entries.length > 0 && (
+          <Button
+            variant="secondary"
+            label={t('journal.exporter')}
+            loading={exporter.isPending}
+            onPress={() =>
+              exporter.mutate(undefined, {
+                onSuccess: ({ shared }) =>
+                  toast(
+                    t(
+                      shared
+                        ? 'journal.exporte'
+                        : 'journal.partageIndisponible',
+                    ),
+                  ),
+              })
+            }
+          />
+        )}
+
+        {(history.isError || exporter.isError) && (
           <Text variant="caption" color="rustClay">
-            {apiErrorMessage(history.error, locale)}
+            {apiErrorMessage(history.error ?? exporter.error, locale)}
           </Text>
         )}
 

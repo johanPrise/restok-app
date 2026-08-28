@@ -46,3 +46,14 @@ export class QueryHistoryDto {
   @IsString()
   cursor?: string;
 }
+
+/** L'export ne pagine pas : il prend les mêmes filtres, sans curseur ni page. */
+export class ExportHistoryDto {
+  @IsOptional()
+  @IsUUID()
+  memberId?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  since?: string;
+}

@@ -1,5 +1,5 @@
 import { useSession } from '@/store/session';
-import { ApiError, apiRequest, RequestOptions } from './client';
+import { ApiError, apiRequest, apiText, RequestOptions } from './client';
 import { purgePersistedCache } from './persist';
 import { queryClient } from './query-client';
 
@@ -22,6 +22,18 @@ export async function authedRequest<T>(
 
   try {
     return await apiRequest<T>(path, { ...options, token });
+  } catch (error) {
+    if (error instanceof ApiError) await reconcileSession(error);
+    throw error;
+  }
+}
+
+/** Comme `authedRequest`, pour une réponse qui n'est pas du JSON. */
+export async function authedText(path: string): Promise<string> {
+  const { token } = useSession.getState();
+
+  try {
+    return await apiText(path, { token });
   } catch (error) {
     if (error instanceof ApiError) await reconcileSession(error);
     throw error;

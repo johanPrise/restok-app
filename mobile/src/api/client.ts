@@ -77,6 +77,39 @@ export interface RequestOptions {
   token?: string | null;
 }
 
+/**
+ * Une réponse qui n'est pas du JSON — aujourd'hui le registre en CSV.
+ *
+ * Elle partage la lecture d'erreur : un refus reste du JSON même quand la
+ * réussite ne l'est pas, et il doit arriver au client sous la même forme que
+ * partout ailleurs, code métier compris.
+ */
+export async function apiText(
+  path: string,
+  { method = 'GET', token }: Omit<RequestOptions, 'body'> = {},
+): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    let parsed: unknown = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      // Une erreur qui n'est pas du JSON : le statut dira ce qu'il peut.
+    }
+
+    const { message, fromValidation, code, values } = readError(parsed);
+    throw new ApiError(response.status, message, fromValidation, code, values);
+  }
+
+  return text;
+}
+
 export async function apiRequest<T>(
   path: string,
   { method = 'GET', body, token }: RequestOptions = {},

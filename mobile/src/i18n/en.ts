@@ -27,9 +27,12 @@ export const en = {
       'An admin cannot remove themselves from the group.',
     bad_credentials: 'Wrong email or password.',
     email_taken: 'An account already exists with that email.',
+    export_too_large:
+      'That ledger is too long for one file — %{max} rows at most. Narrow the period, or pick a person.',
     ingredient_already_in_recipe: 'That item is already in the recipe.',
     ingredient_needs_item_or_label:
       'Pick an item from the shelf, or write the ingredient’s name.',
+    invalid_cursor: 'The rest of the ledger could not load. Reload the screen.',
     initial_quantity_required:
       'Set the starting quantity for an item tracked by count.',
     item_already_empty:
@@ -366,6 +369,10 @@ export const en = {
       'This person took and restocked nothing here. Widen the period to look further back.',
     aPris: 'took',
     aRachete: 'restocked',
+    exporter: 'Export the ledger',
+    exporte: 'Ledger exported',
+    partageIndisponible:
+      'The file is ready, but nothing on this device can share it.',
   },
 
   recettes: {

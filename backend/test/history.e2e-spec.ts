@@ -229,4 +229,62 @@ describe('Journal du groupe (e2e)', () => {
       await journal(bob, '?cursor=pas-du-base64-valide!!').expect(400);
     });
   });
+
+  describe('l’export', () => {
+    const csv = (member: TestMember, query = '') =>
+      auth(app, member).get(`/history/export${query}`);
+
+    it('rend un fichier CSV, pas du JSON', async () => {
+      const cafe = await createItem({ name: 'Café' });
+      await auth(app, alice).post(`/items/${cafe.id}/take`).expect(200);
+
+      const res = await csv(bob).expect(200);
+
+      expect(res.headers['content-type']).toContain('text/csv');
+      expect(res.headers['content-disposition']).toContain('attachment');
+      // Sérialisé en JSON, le fichier arriverait entre guillemets avec ses
+      // retours à la ligne échappés.
+      expect(res.text.startsWith('{')).toBe(false);
+    });
+
+    it('ouvre sur les en-têtes et porte une ligne par action', async () => {
+      const cafe = await createItem({ name: 'Café' });
+      await auth(app, alice).post(`/items/${cafe.id}/take`).expect(200);
+      await auth(app, bob).post(`/items/${cafe.id}/restock`).expect(200);
+
+      const lignes = (await csv(bob).expect(200)).text.trimEnd().split('\r\n');
+
+      expect(lignes[0]).toContain('date,membre,item,action,quantite');
+      expect(lignes).toHaveLength(3);
+      expect(lignes[1]).toContain('Bob,Café,restocked');
+      expect(lignes[2]).toContain('Alice,Café,taken');
+    });
+
+    it('reprend les mêmes filtres que le journal', async () => {
+      const cafe = await createItem({ name: 'Café' });
+      await auth(app, alice).post(`/items/${cafe.id}/take`).expect(200);
+      await auth(app, bob).post(`/items/${cafe.id}/restock`).expect(200);
+
+      const res = await csv(bob, `?memberId=${bob.id}`).expect(200);
+
+      expect(res.text).toContain('Bob');
+      expect(res.text).not.toContain('Alice');
+    });
+
+    it('échappe un nom d’item qui contient une virgule', async () => {
+      // Sans ça, une seule ligne décale toutes les colonnes du fichier.
+      const item = await createItem({ name: 'Pastilles, format familial' });
+      await auth(app, alice).post(`/items/${item.id}/take`).expect(200);
+
+      const res = await csv(bob).expect(200);
+
+      expect(res.text).toContain('"Pastilles, format familial"');
+    });
+
+    it('reste fermé à qui n’est pas du groupe', async () => {
+      const dave = await signUp(app, 'Dave');
+
+      await csv(dave).expect(403);
+    });
+  });
 });

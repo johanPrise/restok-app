@@ -39,9 +39,13 @@ export const fr = {
       'Un admin ne peut pas se retirer lui-même du groupe.',
     bad_credentials: 'Email ou mot de passe incorrect.',
     email_taken: 'Un compte existe déjà avec cet email.',
+    export_too_large:
+      'Ce registre est trop long pour un seul fichier — %{max} lignes au maximum. Restreins la période, ou choisis une personne.',
     ingredient_already_in_recipe: 'Cet item est déjà dans la recette.',
     ingredient_needs_item_or_label:
       'Choisis un item de l’étagère, ou écris le nom de l’ingrédient.',
+    invalid_cursor:
+      'La suite du registre n’a pas pu être chargée. Recharge l’écran.',
     initial_quantity_required:
       'Précise la quantité initiale pour un item suivi en quantité.',
     item_already_empty:
@@ -405,6 +409,10 @@ export const fr = {
       'Cette personne n’a rien pris ni racheté ici. Élargis la période pour remonter plus loin.',
     aPris: 'a pris',
     aRachete: 'a racheté',
+    exporter: 'Exporter le registre',
+    exporte: 'Registre exporté',
+    partageIndisponible:
+      'Le fichier est prêt, mais rien sur cet appareil ne sait le partager.',
   },
 
   recettes: {

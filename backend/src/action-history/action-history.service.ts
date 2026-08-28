@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { badRequest, BUSINESS_CODES } from '../common/business-error';
 import { decodeCursor, encodeCursor } from './cursor';
 import { ActionHistory, ActionType } from './entities/action-history.entity';
 
@@ -60,6 +61,12 @@ interface LastActionRow {
   created_at: Date;
   member_name: string | null;
 }
+
+/**
+ * Le plafond de l'export. Généreux — plusieurs années d'une association
+ * active — mais fini : un fichier se fabrique en mémoire avant de partir.
+ */
+const EXPORT_LIMIT = 10_001;
 
 @Injectable()
 export class ActionHistoryService {
@@ -211,6 +218,39 @@ export class ActionHistoryService {
           ? encodeCursor({ createdAt: last.created_at, id: last.id })
           : null,
     };
+  }
+
+  /**
+   * Le registre entier, pour l'export.
+   *
+   * Sans pagination, délibérément : un export partiel qu'on remet à un bureau
+   * est plus dangereux qu'une absence d'export, parce qu'il sera lu comme
+   * complet.
+   *
+   * D'où le plafond, et d'où le **refus** quand il est atteint plutôt qu'une
+   * troncature silencieuse. C'est la même règle que le journal à l'écran :
+   * mieux vaut dire qu'on ne sait pas répondre que répondre à moitié sans le
+   * dire. On demande donc une ligne de plus que le plafond, et sa présence
+   * suffit à savoir qu'il faut refuser.
+   */
+  async exportByGroup(
+    groupId: string,
+    filters: { memberId?: string; since?: Date },
+  ): Promise<GroupHistoryEntry[]> {
+    const { entries } = await this.findByGroup(groupId, {
+      ...filters,
+      limit: EXPORT_LIMIT,
+    });
+
+    if (entries.length > EXPORT_LIMIT - 1) {
+      throw badRequest(
+        BUSINESS_CODES.EXPORT_TOO_LARGE,
+        'Ce registre est trop long pour un seul fichier. Restreins la période, ou choisis une personne.',
+        { max: EXPORT_LIMIT - 1 },
+      );
+    }
+
+    return entries;
   }
 
   async findByItem(itemId: string): Promise<ActionHistoryEntry[]> {
