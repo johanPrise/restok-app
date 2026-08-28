@@ -46,12 +46,11 @@ export default function Join() {
       <TagCard>
         <Text variant="tagName">{t('onboarding.rejoindreGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
-          Saisissez le code d&apos;invitation à {INVITE_CODE_LENGTH} caractères
-          pour accéder à l&apos;inventaire partagé.
+          {t('onboarding.codeInvite', { count: INVITE_CODE_LENGTH })}
         </Text>
 
         <Text variant="monoLabel" color="inkSoft" style={styles.label}>
-          Code d&apos;invitation
+          {t('onboarding.codeInviteLabel')}
         </Text>
         <CodeInput value={code} onChange={setCode} autoFocus />
 

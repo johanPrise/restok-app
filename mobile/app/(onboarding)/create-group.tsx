@@ -42,8 +42,7 @@ export default function CreateGroup() {
       <TagCard>
         <Text variant="tagName">{t('onboarding.creerGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
-          Vous en devenez l&apos;administrateur. Un code d&apos;invitation sera
-          généré pour les autres.
+          {t('onboarding.tuDeviensAdmin')}
         </Text>
 
         <View style={styles.form}>

@@ -56,7 +56,10 @@ export function InviteCodeCard({
 
   const share = () =>
     Share.share({
-      message: `Rejoins « ${groupName} » sur Restock avec le code ${formatInviteCode(code)}.`,
+      message: t('commun.invitation', {
+        groupe: groupName,
+        code: formatInviteCode(code),
+      }),
     });
 
   return (
@@ -74,7 +77,7 @@ export function InviteCodeCard({
       />
 
       <Text variant="monoLabel" color="inkSoft" style={styles.label}>
-        Code d&apos;invitation
+        {t('onboarding.codeInviteLabel')}
       </Text>
 
       <View style={styles.codeRow}>
