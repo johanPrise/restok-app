@@ -33,6 +33,22 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
+  /**
+   * Pose un nouveau mot de passe, et coupe les sessions ouvertes avec l'ancien.
+   *
+   * `passwordChangedAt` est ce qui les coupe : les JWT ne se révoquent pas un
+   * par un, mais un token émis avant cette date est refusé. Sans elle, une
+   * réinitialisation ne reprendrait pas le compte à qui s'y était introduit —
+   * il garderait sa session jusqu'à expiration, c'est-à-dire le contraire de
+   * ce qu'on vient de faire.
+   */
+  async setPassword(memberId: string, password: string): Promise<void> {
+    await this.memberRepo.update(memberId, {
+      password: await bcrypt.hash(password, BCRYPT_ROUNDS),
+      passwordChangedAt: new Date(),
+    });
+  }
+
   async register(dto: RegisterDto): Promise<AuthResponse> {
     const existing = await this.memberRepo.findOne({
       where: { email: dto.email },

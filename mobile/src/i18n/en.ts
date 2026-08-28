@@ -43,6 +43,8 @@ export const en = {
       'You are the only admin: make someone else one before leaving, or delete the group.',
     password_required_for_email_change:
       'Confirm your password to change your email.',
+    reset_code_invalid:
+      'That code is not valid, or it expired. Ask for a new one.',
     quantity_required_to_switch:
       'Set the quantity in stock to switch to tracking by count.',
     restock_quantity_required:
@@ -165,6 +167,19 @@ export const en = {
     exempleEmail: 'you@example.com',
     motDePasse: 'Password',
     caracteresMinimum: '%{count} characters minimum',
+    motDePasseOublie: 'Forgot your password?',
+    oubliTitre: 'Get back into your account',
+    oubliQuoi:
+      'Enter the address on your account. If it has one, a %{count}-character code lands there within a minute.',
+    envoyerLeCode: 'Send the code',
+    oubliEnvoye:
+      'If an account exists at that address, the code has just gone out. It lasts fifteen minutes.',
+    nouveauTitre: 'New password',
+    codeRecu: 'Code received',
+    nouveauMotDePasse: 'New password',
+    valider: 'Change the password',
+    change: 'Password changed — you are signed in',
+    renvoyer: 'I did not get anything',
     statutIdentifiants: 'Status: awaiting_credentials',
     statutCreation: 'Status: creating_account',
   },

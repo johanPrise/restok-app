@@ -39,6 +39,7 @@ export const BUSINESS_CODES = {
   LAST_ADMIN_MUST_HAND_OVER: 'last_admin_must_hand_over',
   PASSWORD_REQUIRED_FOR_EMAIL_CHANGE: 'password_required_for_email_change',
   QUANTITY_REQUIRED_TO_SWITCH: 'quantity_required_to_switch',
+  RESET_CODE_INVALID: 'reset_code_invalid',
   RESTOCK_QUANTITY_REQUIRED: 'restock_quantity_required',
   SHOPPING_ITEM_ALREADY_LISTED: 'shopping_item_already_listed',
   SHOPPING_LINE_NEEDS_ITEM_OR_LABEL: 'shopping_line_needs_item_or_label',

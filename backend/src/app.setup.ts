@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 
 /**
  * Configuration partagée entre `main.ts` et les tests e2e.
@@ -7,6 +8,14 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
  * 400 que la production renvoie.
  */
 export function configureApp(app: INestApplication): INestApplication {
+  /**
+   * Les en-têtes que tout serveur devrait poser et qu'aucun ne pose seul.
+   *
+   * `contentSecurityPolicy` est laissée par défaut : l'API ne rend que du JSON
+   * et un CSV, jamais de HTML, donc rien qu'un navigateur exécuterait.
+   */
+  app.use(helmet());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

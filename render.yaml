@@ -59,3 +59,16 @@ services:
       # une version web existe ; l'app mobile, elle, n'envoie pas d'origine.
       - key: CORS_ORIGINS
         sync: false
+
+      # « Mot de passe oublié » n'existe que si un email peut partir. Le
+      # démarrage échoue sans ces deux-là en production, délibérément : une
+      # porte de récupération qui n'écrit que dans les journaux n'existe pas,
+      # et on ne s'en apercevrait que le jour où quelqu'un a besoin d'entrer.
+      #
+      # SMTP plutôt que l'API d'un fournisseur : Resend, Postmark, SendGrid ou
+      # une boîte quelconque en donnent tous les identifiants, sous la forme
+      # `smtps://utilisateur:motdepasse@serveur:465`.
+      - key: MAIL_URL
+        sync: false
+      - key: MAIL_FROM
+        sync: false
