@@ -1,5 +1,5 @@
 import type { ActionType, GroupHistoryEntry } from '@/types/api';
-import { groupByDay, isTruncated, journalSummary, since } from './journal';
+import { groupByDay, journalSummary, since } from './journal';
 
 const entry = (
   id: string,
@@ -53,18 +53,6 @@ describe('groupByDay', () => {
 
   it('tient sur un journal vide', () => {
     expect(groupByDay([], 'fr')).toEqual([]);
-  });
-});
-
-describe('isTruncated', () => {
-  it('avertit dès que le plafond est atteint', () => {
-    expect(isTruncated([entry('a', '2026-08-24T10:00:00.000Z')], 1)).toBe(true);
-  });
-
-  it('se tait en dessous', () => {
-    expect(isTruncated([entry('a', '2026-08-24T10:00:00.000Z')], 2)).toBe(
-      false,
-    );
   });
 });
 

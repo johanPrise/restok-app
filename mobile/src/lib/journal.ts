@@ -52,21 +52,6 @@ function journalDay(date: Date, locale: Locale): string {
     .toLocaleUpperCase(locale);
 }
 
-/**
- * Le registre est-il coupé ?
- *
- * Le serveur ne pagine pas : il rend au plus `limit` lignes et se tait sur le
- * reste. Atteindre exactement le plafond ne prouve pas qu'il manque quelque
- * chose — mais ne pas le dire, alors qu'on lit un registre pour savoir ce qui
- * s'est passé, serait pire que de le dire pour rien.
- */
-export function isTruncated(
-  entries: readonly GroupHistoryEntry[],
-  limit: number,
-): boolean {
-  return entries.length >= limit;
-}
-
 /** Les fenêtres proposées. « Tout » se lit sous le plafond du serveur. */
 export type Period = 'month' | 'quarter' | 'all';
 

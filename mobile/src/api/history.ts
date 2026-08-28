@@ -1,15 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useInfiniteQuery } from '@tanstack/react-query';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { useMemo } from 'react';
 import { useSession } from '@/store/session';
-import type { GroupHistoryEntry } from '@/types/api';
-import { authedRequest } from './authed';
+import type { GroupHistoryPage } from '@/types/api';
+import { authedRequest, authedText } from './authed';
 import { queryKeys } from './query-client';
 
-/**
- * Le plafond du serveur. Il n'y a pas de pagination : au-delà, le journal ne
- * renvoie simplement pas le reste. L'écran doit donc le dire — un registre qui
- * s'arrête sans prévenir ment sur ce qu'il contient.
- */
-export const HISTORY_LIMIT = 200;
+/** Une page. Le reste se demande en descendant. */
+const PAGE_SIZE = 50;
 
 export interface JournalFilters {
   /** L'identifiant d'un membre, ou `undefined` pour tout le groupe. */
@@ -19,12 +18,16 @@ export interface JournalFilters {
 }
 
 /**
- * Le journal du groupe.
+ * Le journal du groupe, page par page.
  *
- * Les filtres partent au serveur plutôt que d'être appliqués ici : c'est lui
- * qui porte le plafond, et filtrer après coup ne ferait que trier les 200
- * dernières lignes toutes personnes confondues — on croirait lire l'année de
- * quelqu'un alors qu'on ne lirait que sa part de la dernière semaine.
+ * Il s'arrêtait à 200 lignes et le disait — « restreins la période pour voir
+ * plus loin ». C'était un aveu, pas une réponse : pour une association active,
+ * 200 lignes font une semaine, et un registre qu'on ne peut pas remonter ne
+ * prouve rien de ce qui s'est passé avant.
+ *
+ * Les filtres partent au serveur plutôt que d'être appliqués ici : filtrer une
+ * page déjà reçue ne montrerait qu'une part de la dernière semaine en la
+ * faisant passer pour l'année.
  *
  * Chaque combinaison de filtres a sa propre clé, donc son propre cache :
  * revenir à « tout le groupe » ne redemande rien.
@@ -32,15 +35,80 @@ export interface JournalFilters {
 export function useGroupHistory(filters: JournalFilters = {}) {
   const groupId = useSession((s) => s.member?.groupId);
 
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: queryKeys.groupHistory(filters),
-    queryFn: () => {
-      const params = new URLSearchParams({ limit: String(HISTORY_LIMIT) });
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
       if (filters.memberId) params.set('memberId', filters.memberId);
       if (filters.since) params.set('since', filters.since);
+      if (pageParam) params.set('cursor', pageParam);
 
-      return authedRequest<GroupHistoryEntry[]>(`/history?${params}`);
+      return authedRequest<GroupHistoryPage>(`/history?${params}`);
     },
+    // `null` dit qu'on tient la fin ; TanStack Query attend `undefined` pour
+    // arrêter de proposer une suite.
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
     enabled: Boolean(groupId),
+  });
+
+  // Les pages recollées, pour que l'écran continue de lire une seule liste.
+  const entries = useMemo(
+    () => (query.data?.pages ?? []).flatMap((page) => page.entries),
+    [query.data],
+  );
+
+  return { ...query, entries };
+}
+
+/** Les filtres, dans la même forme que le journal, pour l'URL. */
+function toParams(filters: JournalFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.memberId) params.set('memberId', filters.memberId);
+  if (filters.since) params.set('since', filters.since);
+
+  return params;
+}
+
+/**
+ * Le registre, en fichier.
+ *
+ * Un journal qu'on ne peut pas remettre à quelqu'un ne sert qu'à celui qui le
+ * regarde. Une association rend des comptes — à un bureau, à une assemblée —
+ * et cela suppose un fichier, pas un écran qu'on fait défiler devant témoin.
+ *
+ * Le fichier part dans le cache et non dans les documents : il n'a d'existence
+ * que le temps du partage, et le système le nettoie. Le garder ferait
+ * s'accumuler des registres périmés que personne ne relira.
+ *
+ * L'export reprend **les filtres affichés**. Exporter tout le registre pendant
+ * qu'on regarde le mois de Marc donnerait un fichier qui ne correspond pas à
+ * l'écran d'où on l'a demandé.
+ */
+export function useExportHistory(filters: JournalFilters = {}) {
+  return useMutation({
+    mutationFn: async () => {
+      const params = toParams(filters);
+      const csv = await authedText(`/history/export?${params}`);
+
+      // Daté : deux exports du même registre à des semaines d'écart ne doivent
+      // pas porter le même nom dans le dossier de celui qui les reçoit.
+      const jour = new Date().toISOString().slice(0, 10);
+      const file = new File(Paths.cache, `registre-${jour}.csv`);
+
+      // Un export précédent du même jour occupe déjà la place.
+      if (file.exists) file.delete();
+      file.create();
+      file.write(csv);
+
+      if (!(await Sharing.isAvailableAsync())) return { shared: false };
+
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'text/csv',
+        UTI: 'public.comma-separated-values-text',
+      });
+
+      return { shared: true };
+    },
   });
 }
