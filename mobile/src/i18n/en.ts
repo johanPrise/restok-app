@@ -81,11 +81,13 @@ export const en = {
     retrograder: 'Demote',
     nommerAdmin: 'Make admin',
     retirer: 'Remove',
-    masquerBalayage: 'Hide the swipe explanation',
+    gerer: 'Manage',
+    terminer: 'Done',
     copierLeCode: 'Copy the code',
     copier: 'Copy',
     copie: 'Copied',
     partager: 'Share',
+    invitation: 'Join “%{groupe}” on Restock with the code %{code}.',
     formatEnregistre: 'Size saved',
     formatDuProduit: 'Product size',
     exempleFormat: '1.5 L · 500 g · ×6',
@@ -109,12 +111,33 @@ export const en = {
   },
 
   geste: {
-    titre: 'The gesture',
     compris: 'Got it',
-    explication:
-      'Drag a tag *left* when you take something, *right* when you restock it. The further you pull, the higher the count.',
-  },
+    masquer: 'Hide this explanation',
 
+    swipe: {
+      titre: 'The gesture',
+      explication:
+        'Drag a tag *left* when you take something, *right* when you restock it. The further you pull, the higher the count.',
+    },
+
+    shoppingLoop: {
+      titre: 'Back home',
+      explication:
+        'Check off what you picked up, then *I did the shopping*: everything checked goes back into stock on the shelf, in one move.',
+    },
+
+    recipeSort: {
+      titre: 'The order',
+      explication:
+        'Dishes come sorted by *what you are least missing*. The ones on top can be cooked with what is already in the cupboard.',
+    },
+
+    rename: {
+      titre: 'The name',
+      explication:
+        'The name at the top of the shelf changes by *tapping it*. That is where you read it, so that is where you fix it.',
+    },
+  },
   onglets: {
     inventaire: 'Inventory',
     courses: 'Shopping',
@@ -169,7 +192,10 @@ export const en = {
     groupeCree: 'Group “%{nom}” created',
     statutConfig: 'Status: setup',
     inventairePret: 'Your inventory is ready',
-    codeInvite: 'Enter the eight-character code you were given to reach the shared inventory.',
+    codeInvite: 'Enter the %{count}-character code you were given to reach the shared inventory.',
+    codeInviteLabel: 'Invite code',
+    tuDeviensAdmin:
+      'You become its admin. An invite code will be generated for the others.',
     rejoindre: 'Join',
     creerNouveau: 'Create a new group',
     statutPret: 'Status: ready',
@@ -298,6 +324,7 @@ export const en = {
     },
     retirerTitre: 'Remove from the list?',
     retirer: 'Remove',
+    retirerLigne: 'Remove %{nom} from the list',
     annuler: 'Cancel',
     reessayer: 'Try again',
 
@@ -435,8 +462,6 @@ export const en = {
     deconnecte: 'You are signed out',
     ouvrirAuxAutres: 'Open it to others',
     membres: 'Members',
-    gerer: 'Manage',
-    terminer: 'Done',
     estAdmin: '%{nom} is an admin',
     nEstPlusAdmin: '%{nom} is no longer an admin',
     retireDuGroupe: '%{nom} removed from the group',

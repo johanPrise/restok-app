@@ -83,7 +83,7 @@ export function SwipeableStockTag({
   const { colors } = useTheme();
   const t = useT();
   const reduced = useReducedMotion();
-  const markSwipeLearned = useSession((state) => state.markSwipeLearned);
+  const markLearned = useSession((state) => state.markLearned);
   const actions = useItemActions(item);
 
   const base = fillRatio(item);
@@ -187,7 +187,7 @@ export function SwipeableStockTag({
     void feedback(action);
     pending.value = 0;
     // Le repère qui enseigne ce geste a fait son travail : il ne reviendra pas.
-    void markSwipeLearned();
+    void markLearned('swipe');
 
     if (action === 'restock') {
       translateX.value = withSpring(0, SNAP_BACK);

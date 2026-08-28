@@ -17,10 +17,10 @@ import { Button } from '@/components/Button';
 import { EditableGroupName } from '@/components/EditableGroupName';
 import { FeasibleTonight } from '@/components/FeasibleTonight';
 import { FAB_SIZE } from '@/components/Fab';
+import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
-import { SwipeHint } from '@/components/SwipeHint';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useT } from '@/i18n/useT';
@@ -29,6 +29,7 @@ import { groupByUrgency, searchItems } from '@/lib/group-items';
 import { offlineNotice } from '@/lib/offline';
 import { feasibleNow } from '@/lib/recipes';
 import { itemsOnList } from '@/lib/shopping-list';
+import { useHint } from '@/lib/useHint';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useLocale } from '@/i18n/useT';
 import { usePendingGestures } from '@/lib/usePendingGestures';
@@ -56,8 +57,7 @@ export default function Shelf() {
   const solo = useIsSolo();
   const t = useT();
   const locale = useLocale();
-  const swipeLearned = useSession((s) => s.swipeLearned);
-  const markSwipeLearned = useSession((s) => s.markSwipeLearned);
+  const hint = useHint('shelf');
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -155,11 +155,9 @@ export default function Shelf() {
           />
         }
       >
-        {/* Au-dessus du premier tag, et seulement s'il y en a un : un geste
-            s'explique là où il s'exerce, pas sur une étagère vide. */}
-        {!swipeLearned && sections.length > 0 && (
-          <SwipeHint onDismiss={() => void markSwipeLearned()} />
-        )}
+        {/* Au-dessus du premier tag : ce qui s'explique ici s'y exerce.
+            `useHint` garantit qu'un seul repère paraît dans toute l'app. */}
+        {hint !== null && <Hint id={hint} />}
 
         <FeasibleTonight
           recipes={tonight}

@@ -20,6 +20,17 @@ interface ShoppingRowProps {
   solo: boolean;
   onToggle: () => void;
   onRemove: () => void;
+  /**
+   * Le mode gestion est ouvert : chaque ligne montre de quoi la retirer.
+   *
+   * Retirer se faisait **uniquement** par appui long. La maquette ne dessine
+   * aucun bouton de suppression, et en poser un à demeure mettrait un geste
+   * destructeur à un pouce du geste qu'on répète le plus — mais un geste
+   * qu'aucun écran n'annonce n'existe que pour ceux qui l'ont deviné. D'où un
+   * mode séparé, comme celui des membres dans les réglages : le raccourci
+   * reste pour ceux qui le connaissent, et il cesse d'être un secret.
+   */
+  managing: boolean;
   /** Corriger ce qu'on prend vraiment. `null` ferme la correction. */
   editing: boolean;
   onEdit: () => void;
@@ -44,6 +55,7 @@ interface ShoppingRowProps {
 export function ShoppingRow({
   line,
   solo,
+  managing,
   onToggle,
   onRemove,
   editing,
@@ -153,6 +165,24 @@ export function ShoppingRow({
         </View>
 
         <View style={styles.marks}>
+          {/* En mode gestion seulement : à demeure, il serait à un pouce de la
+              case qu'on coche vingt fois dans un magasin. */}
+          {managing && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('courses.retirerLigne', {
+                nom: line.name,
+              })}
+              onPress={onRemove}
+              hitSlop={spacing.xs}
+              style={styles.remove}
+            >
+              <Text variant="monoLabel" color="rustClay">
+                {t('commun.retirer')}
+              </Text>
+            </Pressable>
+          )}
+
           {/* La pastille dit *qui* a coché : dans une colocation, c'est
               l'information qui évite d'acheter la chose en double. */}
           {who && (
@@ -261,6 +291,7 @@ const styles = StyleSheet.create({
   // n'a donc rien à faire dans un variant de `Text`.
   struck: { textDecorationLine: 'line-through' },
   marks: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  remove: { minHeight: MIN_TOUCH_TARGET, justifyContent: 'center' },
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,

@@ -180,7 +180,7 @@ function Members({
         </Text>
         {canManage && members.length > 1 && (
           <Button
-            label={t(managing ? 'parametres.terminer' : 'parametres.gerer')}
+            label={t(managing ? 'commun.terminer' : 'commun.gerer')}
             variant="secondary"
             onPress={() => setManaging((on) => !on)}
             style={styles.manage}

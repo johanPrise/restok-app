@@ -4,6 +4,7 @@ import { useRenameGroup } from '@/api/groups';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useLocale, useT } from '@/i18n/useT';
+import { useSession } from '@/store/session';
 import { border, radius, spacing, textStyles, useTheme } from '@/theme';
 import { Text } from './Text';
 import { useToast } from './Toast';
@@ -37,6 +38,7 @@ export function EditableGroupName({
   const rename = useRenameGroup();
   const toast = useToast();
   const solo = useIsSolo();
+  const markLearned = useSession((s) => s.markLearned);
   const [draft, setDraft] = useState<string | null>(null);
 
   const commit = () => {
@@ -45,6 +47,10 @@ export function EditableGroupName({
 
     // Un nom trop court ou inchangé n'a pas à faire un aller-retour réseau.
     if (next.length < MIN_LENGTH || next === name) return;
+
+    // Le repère qui enseigne ce geste n'a plus rien à apprendre à quelqu'un
+    // qui vient de le faire.
+    void markLearned('rename');
     rename.mutate(next, {
       onSuccess: () =>
         toast(

@@ -7,6 +7,7 @@ import { useRecipes } from '@/api/recipes';
 import { Button } from '@/components/Button';
 import { FAB_SIZE } from '@/components/Fab';
 import { RecipeCard } from '@/components/RecipeCard';
+import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
@@ -15,6 +16,8 @@ import { useT } from '@/i18n/useT';
 import { useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { offlineNotice } from '@/lib/offline';
+import { useHint } from '@/lib/useHint';
+import { useSession } from '@/store/session';
 import { sortByFeasibility } from '@/lib/recipes';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import { spacing, useTheme } from '@/theme';
@@ -28,6 +31,8 @@ export default function Recipes() {
   const pending = usePendingGestures();
   const locale = useLocale();
   const t = useT();
+  const hint = useHint('recipes');
+  const markLearned = useSession((state) => state.markLearned);
 
   // Le croisement se fait ici, sur deux listes déjà en cache : c'est ce qui
   // permet de décider quoi cuisiner sans réseau.
@@ -85,12 +90,21 @@ export default function Recipes() {
           />
         )}
 
+        {/* En tête de liste, là où l'ordre se lit : c'est l'ordre qu'il
+            explique, et il ne veut rien dire ailleurs. */}
+        {hint !== null && <Hint id={hint} />}
+
         {sorted.map(({ recipe, state }) => (
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
             state={state}
-            onPress={() => router.push(`/recipes/${recipe.id}`)}
+            onPress={() => {
+              // Ouvrir une fiche, c'est s'être servi du tri : celle du haut
+              // est celle qui manque le moins.
+              void markLearned('recipeSort');
+              router.push(`/recipes/${recipe.id}`);
+            }}
           />
         ))}
       </ScrollView>

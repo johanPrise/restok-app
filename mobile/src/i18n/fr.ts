@@ -103,11 +103,16 @@ export const fr = {
     retrograder: 'Rétrograder',
     nommerAdmin: 'Nommer admin',
     retirer: 'Retirer',
-    masquerBalayage: 'Masquer l’explication du balayage',
+    gerer: 'Gérer',
+    terminer: 'Terminer',
     copierLeCode: 'Copier le code',
     copier: 'Copier',
     copie: 'Copié',
     partager: 'Partager',
+    // Ce message-ci sort de l'app. Il part dans la langue de celui qui
+    // invite, faute de savoir lire celle du destinataire — mais il la suit,
+    // plutôt que de rester français pour tout le monde.
+    invitation: 'Rejoins « %{groupe} » sur Restock avec le code %{code}.',
     formatEnregistre: 'Format enregistré',
     formatDuProduit: 'Format du produit',
     // La virgule décimale suit la langue : « 1.5 L » en anglais.
@@ -132,15 +137,36 @@ export const fr = {
   },
 
   geste: {
-    titre: 'Le geste',
     compris: 'Compris',
+    masquer: 'Masquer cette explication',
+
     // Les astérisques marquent ce qui passe en gras. Un marqueur plutôt que
     // trois clés à recoller : l'ordre des mots change d'une langue à l'autre,
     // et « swipe *left* » ne se découpe pas comme « vers la *gauche* ».
-    explication:
-      'Tire un tag vers la *gauche* quand tu prends quelque chose, vers la *droite* quand tu en rachètes. Plus tu tires loin, plus la quantité monte.',
-  },
+    swipe: {
+      titre: 'Le geste',
+      explication:
+        'Tire un tag vers la *gauche* quand tu prends quelque chose, vers la *droite* quand tu en rachètes. Plus tu tires loin, plus la quantité monte.',
+    },
 
+    shoppingLoop: {
+      titre: 'Au retour',
+      explication:
+        'Coche ce que tu as pris, puis *J’ai fait les courses* : tout ce qui est coché repart en stock sur l’étagère, d’un seul geste.',
+    },
+
+    recipeSort: {
+      titre: 'L’ordre',
+      explication:
+        'Les plats arrivent triés par *ce qui te manque le moins*. Ceux du haut se font avec ce qu’il y a déjà dans le placard.',
+    },
+
+    rename: {
+      titre: 'Le nom',
+      explication:
+        'Le nom en haut de l’étagère se change en *appuyant dessus*. C’est là qu’on le lit, donc c’est là qu’on le corrige.',
+    },
+  },
   onglets: {
     inventaire: 'Inventaire',
     courses: 'Courses',
@@ -195,7 +221,10 @@ export const fr = {
     groupeCree: 'Groupe « %{nom} » créé',
     statutConfig: 'Statut: configuration',
     inventairePret: 'Ton inventaire est prêt',
-    codeInvite: 'Entre le code à huit caractères qu’on t’a donné pour accéder à l’inventaire partagé.',
+    codeInvite: 'Entre le code à %{count} caractères qu’on t’a donné pour accéder à l’inventaire partagé.',
+    codeInviteLabel: 'Code d’invitation',
+    tuDeviensAdmin:
+      'Vous en devenez l’administrateur. Un code d’invitation sera généré pour les autres.',
     rejoindre: 'Rejoindre',
     creerNouveau: 'Créer un nouveau groupe',
     statutPret: 'Statut: prêt',
@@ -330,6 +359,7 @@ export const fr = {
     },
     retirerTitre: 'Retirer de la liste ?',
     retirer: 'Retirer',
+    retirerLigne: 'Retirer %{nom} de la liste',
     annuler: 'Annuler',
     reessayer: 'Réessayer',
 
@@ -478,8 +508,6 @@ export const fr = {
     deconnecte: 'Tu es déconnecté',
     ouvrirAuxAutres: 'Ouvrir aux autres',
     membres: 'Membres',
-    gerer: 'Gérer',
-    terminer: 'Terminer',
     estAdmin: '%{nom} est admin',
     nEstPlusAdmin: '%{nom} n’est plus admin',
     retireDuGroupe: '%{nom} retiré du groupe',
