@@ -42,10 +42,7 @@ const SECTIONS: {
   },
 ];
 
-export function groupByUrgency(
-  items: Item[],
-  locale: Locale,
-): ItemSection[] {
+export function groupByUrgency(items: Item[], locale: Locale): ItemSection[] {
   return SECTIONS.map(({ key, titleKey, color, matches }) => ({
     key,
     title: translate(locale, titleKey),

@@ -107,10 +107,7 @@ export function pluralCategory(
  * En développement, on préfère l'erreur au silence — c'est le seul moment où
  * quelqu'un peut encore corriger la cause.
  */
-function fallbackCategory(
-  locale: Locale,
-  count: number,
-): Intl.LDMLPluralRule {
+function fallbackCategory(locale: Locale, count: number): Intl.LDMLPluralRule {
   if (__DEV__) {
     throw new Error(
       "Intl.PluralRules est absent de ce moteur : les pluriels seraient devinés. Vérifie la configuration de Hermes avant d'aller plus loin.",

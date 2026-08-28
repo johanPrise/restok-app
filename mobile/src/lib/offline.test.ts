@@ -39,7 +39,9 @@ describe('offlineNotice', () => {
   });
 
   it('dit la même chose en anglais, avec ses propres accords', () => {
-    expect(offlineNotice(false, 1, 0, 'en')).toBe('Offline — 1 gesture waiting');
+    expect(offlineNotice(false, 1, 0, 'en')).toBe(
+      'Offline — 1 gesture waiting',
+    );
     expect(offlineNotice(false, 4, 0, 'en')).toBe(
       'Offline — 4 gestures waiting',
     );

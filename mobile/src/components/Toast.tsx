@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet } from 'react-native';
 import { usePathname } from 'expo-router';
 import Animated, {
   FadeInDown,

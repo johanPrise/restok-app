@@ -21,7 +21,7 @@ export default function Choose() {
     <Screen>
       <View style={styles.header}>
         <Text variant="monoLabel" color="inkSoft">
-          Onboarding / Étape 02
+          {t('onboarding.etape02')}
         </Text>
         <Text variant="title">{t('onboarding.votreEspace')}</Text>
       </View>
@@ -77,7 +77,7 @@ export default function Choose() {
         />
       </ScrollView>
 
-      <SystemFooter left="Restock_os // system_ready // ver_2.4" />
+      <SystemFooter left={t('onboarding.systeme')} />
     </Screen>
   );
 }

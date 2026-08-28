@@ -162,7 +162,6 @@ export interface HistoryEntry {
   member: { id: string; name: string } | null;
 }
 
-
 /**
  * Une entrée du journal du groupe.
  *

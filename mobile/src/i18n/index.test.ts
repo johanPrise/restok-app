@@ -49,7 +49,9 @@ describe('les dictionnaires', () => {
     // chemins mais rendrait « %{count} » brut dans une des deux langues.
     const plurals = (dict: unknown) =>
       paths(dict)
-        .filter((chemin) => chemin.endsWith('.one') || chemin.endsWith('.other'))
+        .filter(
+          (chemin) => chemin.endsWith('.one') || chemin.endsWith('.other'),
+        )
         .sort();
 
     expect(plurals(en)).toEqual(plurals(fr));

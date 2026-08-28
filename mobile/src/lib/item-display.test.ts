@@ -45,16 +45,26 @@ describe('statusBadge', () => {
 
   it('distingue le stock bas ordinaire du bord de la rupture', () => {
     expect(
-      statusBadge(item({ status: 'low', quantity: 5, targetQuantity: 20 }), 'fr'),
+      statusBadge(
+        item({ status: 'low', quantity: 5, targetQuantity: 20 }),
+        'fr',
+      ),
     ).toBe('Stock bas');
     expect(
-      statusBadge(item({ status: 'low', quantity: 1, targetQuantity: 20 }), 'fr'),
+      statusBadge(
+        item({ status: 'low', quantity: 1, targetQuantity: 20 }),
+        'fr',
+      ),
     ).toBe('Critique');
   });
 
   it('annonce le rachat sur les deux statuts épuisés', () => {
-    expect(statusBadge(item({ status: 'to_restock' }), 'fr')).toBe('À racheter');
-    expect(statusBadge(item({ status: 'out_of_stock' }), 'fr')).toBe('À racheter');
+    expect(statusBadge(item({ status: 'to_restock' }), 'fr')).toBe(
+      'À racheter',
+    );
+    expect(statusBadge(item({ status: 'out_of_stock' }), 'fr')).toBe(
+      'À racheter',
+    );
   });
 });
 
@@ -111,9 +121,9 @@ describe('tagMeta', () => {
   it('met le format en premier — il dit quoi acheter', () => {
     // La dernière action décrit ce qui s'est passé ; le format sert à celui
     // qui part faire les courses.
-    expect(tagMeta(item({ format: '1,5 L', lastAction: action }), 'fr')).toMatch(
-      /^1,5 L · Sam · /,
-    );
+    expect(
+      tagMeta(item({ format: '1,5 L', lastAction: action }), 'fr'),
+    ).toMatch(/^1,5 L · Sam · /);
   });
 });
 

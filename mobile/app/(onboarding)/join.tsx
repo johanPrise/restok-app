@@ -10,8 +10,7 @@ import { TagCard } from '@/components/TagCard';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BackLink } from '@/components/BackLink';
-import { useLocale } from '@/i18n/useT';
-import { useT } from '@/i18n/useT';
+import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { border, spacing, useTheme } from '@/theme';
@@ -46,12 +45,11 @@ export default function Join() {
       <TagCard>
         <Text variant="tagName">{t('onboarding.rejoindreGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
-          Saisissez le code d&apos;invitation à {INVITE_CODE_LENGTH} caractères
-          pour accéder à l&apos;inventaire partagé.
+          {t('onboarding.codeInvite', { count: INVITE_CODE_LENGTH })}
         </Text>
 
         <Text variant="monoLabel" color="inkSoft" style={styles.label}>
-          Code d&apos;invitation
+          {t('onboarding.codeInviteLabel')}
         </Text>
         <CodeInput value={code} onChange={setCode} autoFocus />
 

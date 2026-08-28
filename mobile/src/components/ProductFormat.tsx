@@ -14,8 +14,7 @@ import {
 import type { Item } from '@/types/api';
 import { Text } from './Text';
 import { useToast } from './Toast';
-import { useLocale } from '@/i18n/useT';
-import { useT } from '@/i18n/useT';
+import { useLocale, useT } from '@/i18n/useT';
 
 interface ProductFormatProps {
   item: Item;

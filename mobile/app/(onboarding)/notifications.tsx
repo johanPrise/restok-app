@@ -134,7 +134,11 @@ export default function NotificationsStep() {
           style={styles.later}
         >
           <Text variant="monoLabel" color="pantryTeal">
-            {notice === null ? 'Plus tard' : 'Continuer'}
+            {t(
+              notice === null
+                ? 'onboarding.plusTard'
+                : 'onboarding.continuerSimple',
+            )}
           </Text>
         </Pressable>
       </View>

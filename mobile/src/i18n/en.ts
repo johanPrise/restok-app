@@ -23,7 +23,8 @@ export const en = {
     already_in_a_group:
       'You are already in a group — leave it before joining another.',
     admin_cannot_change_own_role: 'An admin does not change their own role.',
-    admin_cannot_remove_self: 'An admin cannot remove themselves from the group.',
+    admin_cannot_remove_self:
+      'An admin cannot remove themselves from the group.',
     bad_credentials: 'Wrong email or password.',
     email_taken: 'An account already exists with that email.',
     ingredient_already_in_recipe: 'That item is already in the recipe.',
@@ -31,7 +32,8 @@ export const en = {
       'Pick an item from the shelf, or write the ingredient’s name.',
     initial_quantity_required:
       'Set the starting quantity for an item tracked by count.',
-    item_already_empty: '“%{nom}” is already out — there is nothing left to take.',
+    item_already_empty:
+      '“%{nom}” is already out — there is nothing left to take.',
     item_changed_meanwhile:
       'That item changed in the meantime. Refresh to see where it stands.',
     last_admin_must_hand_over:
@@ -81,17 +83,18 @@ export const en = {
     retrograder: 'Demote',
     nommerAdmin: 'Make admin',
     retirer: 'Remove',
-    masquerBalayage: 'Hide the swipe explanation',
+    gerer: 'Manage',
+    terminer: 'Done',
     copierLeCode: 'Copy the code',
     copier: 'Copy',
     copie: 'Copied',
     partager: 'Share',
+    invitation: 'Join “%{groupe}” on Restock with the code %{code}.',
     formatEnregistre: 'Size saved',
     formatDuProduit: 'Product size',
     exempleFormat: '1.5 L · 500 g · ×6',
     preciserFormat: 'Set the product size',
-    relevéVideSolo:
-      'Nothing yet — the first thing you take gets written here.',
+    relevéVideSolo: 'Nothing yet — the first thing you take gets written here.',
     relevéVideGroupe:
       'Nothing yet — whoever takes something first opens the ledger.',
     chargementHistorique: 'Loading the history…',
@@ -109,12 +112,33 @@ export const en = {
   },
 
   geste: {
-    titre: 'The gesture',
     compris: 'Got it',
-    explication:
-      'Drag a tag *left* when you take something, *right* when you restock it. The further you pull, the higher the count.',
-  },
+    masquer: 'Hide this explanation',
 
+    swipe: {
+      titre: 'The gesture',
+      explication:
+        'Drag a tag *left* when you take something, *right* when you restock it. The further you pull, the higher the count.',
+    },
+
+    shoppingLoop: {
+      titre: 'Back home',
+      explication:
+        'Check off what you picked up, then *I did the shopping*: everything checked goes back into stock on the shelf, in one move.',
+    },
+
+    recipeSort: {
+      titre: 'The order',
+      explication:
+        'Dishes come sorted by *what you are least missing*. The ones on top can be cooked with what is already in the cupboard.',
+    },
+
+    rename: {
+      titre: 'The name',
+      explication:
+        'The name at the top of the shelf changes by *tapping it*. That is where you read it, so that is where you fix it.',
+    },
+  },
   onglets: {
     inventaire: 'Inventory',
     courses: 'Shopping',
@@ -169,7 +193,11 @@ export const en = {
     groupeCree: 'Group “%{nom}” created',
     statutConfig: 'Status: setup',
     inventairePret: 'Your inventory is ready',
-    codeInvite: 'Enter the eight-character code you were given to reach the shared inventory.',
+    codeInvite:
+      'Enter the %{count}-character code you were given to reach the shared inventory.',
+    codeInviteLabel: 'Invite code',
+    tuDeviensAdmin:
+      'You become its admin. An invite code will be generated for the others.',
     rejoindre: 'Join',
     creerNouveau: 'Create a new group',
     statutPret: 'Status: ready',
@@ -180,9 +208,11 @@ export const en = {
     activer: 'Turn on notifications →',
     plusTard: 'Later',
     continuerSimple: 'Continue',
-    refusees: 'Notifications turned down. You can enable them later in your phone settings.',
+    refusees:
+      'Notifications turned down. You can enable them later in your phone settings.',
     echecActivation: 'Turning them on failed. You can try again later.',
-    expoGo: 'Expo Go does not receive notifications — you will need the compiled app.',
+    expoGo:
+      'Expo Go does not receive notifications — you will need the compiled app.',
     simulateur: 'A simulator does not receive notifications.',
     pasDisponible: 'Notifications are not available in this build of the app.',
   },
@@ -257,8 +287,7 @@ export const en = {
     racheteToast: '%{quoi} restocked',
     indiceQuantite:
       'Swipe right to take, left to restock. The further you go, the higher the count.',
-    indicePresence:
-      'Swipe right when it has run out, left after a restock.',
+    indicePresence: 'Swipe right when it has run out, left after a restock.',
 
     enStock: '%{quoi} in stock',
     quandCestPlein: '%{count} when full',
@@ -281,7 +310,8 @@ export const en = {
     retireDeLaListe: '%{nom} removed from the list',
     faitLesCourses: 'I did the shopping',
     rienAAcheter: 'Nothing to buy',
-    etagereReclame: 'The shelf is already asking for things — pour them in here.',
+    etagereReclame:
+      'The shelf is already asking for things — pour them in here.',
     ajouteOuReviens: 'Add something, or come back when a stock runs low.',
     recupererTout: 'Pull in what needs restocking',
     recuperer: {
@@ -298,6 +328,7 @@ export const en = {
     },
     retirerTitre: 'Remove from the list?',
     retirer: 'Remove',
+    retirerLigne: 'Remove %{nom} from the list',
     annuler: 'Cancel',
     reessayer: 'Try again',
 
@@ -390,7 +421,8 @@ export const en = {
     nonSuivi: 'Not tracked',
     ilNyEnAPlus: 'There is none left',
     signaleEpuise: '%{nom} marked as out',
-    rienDeNoteLien: 'Nothing written here — the recipe is at the end of the link.',
+    rienDeNoteLien:
+      'Nothing written here — the recipe is at the end of the link.',
     rienDeNote:
       'Nothing written. Without steps, this card only says what to take out of the cupboard.',
     toutDejaSurListe: 'Everything missing is already on the shopping list.',
@@ -417,7 +449,8 @@ export const en = {
     exempleIngredients: 'Rice, salt, tomatoes…',
     exempleIndications:
       'Wash and spin the salad.\nDrain the tuna, flake it.\nMix, season at the last moment.',
-    uneEtapeParLigne: 'One step per line. That is what you reread while cooking.',
+    uneEtapeParLigne:
+      'One step per line. That is what you reread while cooking.',
     ouLaTrouver: 'Where to find it',
     exempleSource: 'https://… or “the red book, p. 42”',
     pourCombien: 'For how many people',
@@ -435,8 +468,6 @@ export const en = {
     deconnecte: 'You are signed out',
     ouvrirAuxAutres: 'Open it to others',
     membres: 'Members',
-    gerer: 'Manage',
-    terminer: 'Done',
     estAdmin: '%{nom} is an admin',
     nEstPlusAdmin: '%{nom} is no longer an admin',
     retireDuGroupe: '%{nom} removed from the group',

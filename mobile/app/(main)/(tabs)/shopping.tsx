@@ -20,6 +20,7 @@ import {
   useToggleShoppingLine,
 } from '@/api/shopping';
 import { Button } from '@/components/Button';
+import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ShoppingRow } from '@/components/ShoppingRow';
@@ -28,11 +29,12 @@ import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
-import { useT } from '@/i18n/useT';
+import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
+import { useHint } from '@/lib/useHint';
+import { useSession } from '@/store/session';
 import { completeBlockedReason, offlineNotice } from '@/lib/offline';
 import { useIsSolo } from '@/lib/useIsSolo';
-import { useLocale } from '@/i18n/useT';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import {
   checkedCount,
@@ -66,6 +68,9 @@ export default function Shopping() {
   const solo = useIsSolo();
   const t = useT();
   const locale = useLocale();
+  const hint = useHint('shopping');
+  const [managing, setManaging] = useState(false);
+  const markLearned = useSession((state) => state.markLearned);
   // Répartis par garantie : ce qui repartira seul, et ce qui ne survivrait pas
   // à une fermeture de l'app.
   const pending = usePendingGestures();
@@ -92,16 +97,17 @@ export default function Shopping() {
    * décoche toute seule au refus du serveur, et sans ce message on croirait à
    * un bug de l'appli plutôt qu'à un appel refusé.
    */
-  const failure = latestFailure([
-    add,
-    toggle,
-    remove,
-    setQuantity,
-    refill,
-    complete,
-  ], locale);
+  const failure = latestFailure(
+    [add, toggle, remove, setQuantity, refill, complete],
+    locale,
+  );
 
-  const notice = offlineNotice(online, pending.durable, pending.volatile, locale);
+  const notice = offlineNotice(
+    online,
+    pending.durable,
+    pending.volatile,
+    locale,
+  );
   const blocked = completeBlockedReason(online, locale);
 
   const label = draft.trim();
@@ -176,6 +182,7 @@ export default function Shopping() {
               key={line.id}
               line={line}
               solo={solo}
+              managing={managing}
               onToggle={() =>
                 toggle.mutate({ id: line.id, checked: !line.checked })
               }
@@ -194,8 +201,22 @@ export default function Shopping() {
       <View style={styles.header}>
         <Text variant="display">{t('onglets.courses')}</Text>
         <Text variant="monoLabel" color="inkSoft">
-          {shopping.isError ? t('courses.nonChargee') : checkedSummary(lines, locale)}
+          {shopping.isError
+            ? t('courses.nonChargee')
+            : checkedSummary(lines, locale)}
         </Text>
+
+        {/* Retirer se faisait par appui long, et rien ne le disait. Le mode
+            gestion le rend visible sans poser un geste destructeur à demeure
+            à côté de la case qu'on coche vingt fois dans un magasin. */}
+        {lines.length > 0 && (
+          <Button
+            label={t(managing ? 'commun.terminer' : 'commun.gerer')}
+            variant="secondary"
+            onPress={() => setManaging((on) => !on)}
+            style={styles.manage}
+          />
+        )}
       </View>
 
       <ScrollView
@@ -230,9 +251,7 @@ export default function Shopping() {
             onRefill={() =>
               refill.mutate(undefined, {
                 onSuccess: () =>
-                  toast(
-                    t('courses.verses', { count: missing.length }),
-                  ),
+                  toast(t('courses.verses', { count: missing.length })),
               })
             }
           />
@@ -250,9 +269,7 @@ export default function Shopping() {
             onPress={() =>
               refill.mutate(undefined, {
                 onSuccess: () =>
-                  toast(
-                    t('courses.verses', { count: missing.length }),
-                  ),
+                  toast(t('courses.verses', { count: missing.length })),
               })
             }
           />
@@ -319,6 +336,11 @@ export default function Shopping() {
           />
         </View>
 
+        {/* Juste au-dessus du bouton qu'il explique : la clôture est le seul
+            geste de l'app dont l'effet se produit sur un autre écran, et rien
+            ne le disait avant qu'on appuie. */}
+        {hint !== null && <Hint id={hint} />}
+
         {/* Répondre au « pourquoi est-il gris ? », et seulement quand la
             question se pose — c'est-à-dire quand il y a de quoi valider. */}
         {blocked !== null && checked > 0 && (
@@ -335,10 +357,12 @@ export default function Shopping() {
           // ailleurs : le stock est remonté et le journal l'a enregistré.
           onPress={() =>
             complete.mutate(undefined, {
-              onSuccess: () =>
-                toast(
-                  t('courses.rachatsEnregistres', { count: checked }),
-                ),
+              onSuccess: () => {
+                // La boucle vient d'être bouclée sous ses yeux : le repère qui
+                // l'annonçait n'a plus rien à annoncer.
+                void markLearned('shoppingLoop');
+                toast(t('courses.rachatsEnregistres', { count: checked }));
+              },
             })
           }
         />
@@ -437,13 +461,18 @@ function ErrorState({
       <Text variant="body" color="inkSoft" style={styles.centered}>
         {message}
       </Text>
-      <Button label={t('courses.reessayer')} onPress={onRetry} style={styles.emptyAction} />
+      <Button
+        label={t('courses.reessayer')}
+        onPress={onRetry}
+        style={styles.emptyAction}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: { alignItems: 'center', paddingTop: spacing.sm, gap: 2 },
+  manage: { marginTop: spacing.xs, paddingHorizontal: spacing.md },
   list: { paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.md },
   section: { gap: spacing.xs },
   empty: { gap: spacing.xs, paddingVertical: spacing.lg },

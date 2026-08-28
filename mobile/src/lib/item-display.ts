@@ -44,7 +44,10 @@ export function relativeDate(iso: string, locale: Locale): string {
   const threshold = subDays(new Date(), RELATIVE_DATE_MAX_DAYS);
 
   if (isAfter(date, threshold)) {
-    return formatDistanceToNowStrict(date, { addSuffix: true, locale: dateLocale(locale) });
+    return formatDistanceToNowStrict(date, {
+      addSuffix: true,
+      locale: dateLocale(locale),
+    });
   }
 
   return format(date, 'd MMM', { locale: dateLocale(locale) });

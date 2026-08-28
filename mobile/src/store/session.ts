@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { type HintId, type Learned, learnedFrom } from '@/lib/hints';
 import type { AuthenticatedMember } from '@/types/api';
 import { secureStorage } from './secure-storage';
 
@@ -14,17 +15,27 @@ interface PersistedSession {
    */
   notificationsPrompted: boolean;
   /**
-   * Le balayage d'un tag a-t-il déjà été fait ? Persisté par compte, comme
-   * ci-dessus : le geste s'apprend une fois, pas à chaque installation.
+   * Ce que les repères ont déjà enseigné. Persisté par compte, comme ci-dessus :
+   * un geste s'apprend une fois, pas à chaque installation.
    */
-  swipeLearned: boolean;
+  learned: Learned;
+  /**
+   * L'ancien drapeau, du temps où le balayage était le seul repère.
+   *
+   * Il n'est plus écrit, seulement lu : une session déjà sur l'appareil le
+   * porte encore, et l'ignorer ferait réapprendre le balayage à tous ceux qui
+   * le connaissent — la mise à jour se manifesterait par une régression.
+   *
+   * @deprecated Repris par `learned.swipe` à la première relecture.
+   */
+  swipeLearned?: boolean;
 }
 
 interface SessionState {
   token: string | null;
   member: AuthenticatedMember | null;
   notificationsPrompted: boolean;
-  swipeLearned: boolean;
+  learned: Learned;
   /** Faux tant que la session n'a pas été relue du stockage sécurisé. */
   isHydrated: boolean;
 
@@ -38,17 +49,20 @@ interface SessionState {
   setMember: (member: AuthenticatedMember) => Promise<void>;
   markNotificationsPrompted: () => Promise<void>;
   /**
-   * Le balayage d'un tag a été fait au moins une fois — le repère qui
-   * l'enseigne n'a plus lieu d'être.
+   * Ce repère a fait son travail — il ne reviendra pas.
+   *
+   * Appelé au **geste**, pas seulement au renvoi : un repère qui ne
+   * disparaîtrait qu'en le chassant réapparaîtrait devant quelqu'un qui a déjà
+   * compris.
    */
-  markSwipeLearned: () => Promise<void>;
+  markLearned: (id: HintId) => Promise<void>;
 }
 
 const EMPTY = {
   token: null,
   member: null,
   notificationsPrompted: false,
-  swipeLearned: false,
+  learned: {} as Learned,
 } as const;
 
 /**
@@ -63,7 +77,7 @@ const EMPTY = {
 export const useSession = create<SessionState>((set, get) => {
   /** Écrit l'état courant dans le stockage sécurisé, token présent ou non. */
   const persist = async (next: Partial<PersistedSession>) => {
-    const { token, member, notificationsPrompted, swipeLearned } = {
+    const { token, member, notificationsPrompted, learned } = {
       ...get(),
       ...next,
     };
@@ -75,7 +89,7 @@ export const useSession = create<SessionState>((set, get) => {
         token,
         member,
         notificationsPrompted,
-        swipeLearned,
+        learned,
       } satisfies PersistedSession),
     );
   };
@@ -92,7 +106,7 @@ export const useSession = create<SessionState>((set, get) => {
           token: session?.token ?? null,
           member: session?.member ?? null,
           notificationsPrompted: session?.notificationsPrompted ?? false,
-          swipeLearned: session?.swipeLearned ?? false,
+          learned: learnedFrom(session),
           isHydrated: true,
         });
       } catch {
@@ -107,14 +121,9 @@ export const useSession = create<SessionState>((set, get) => {
         token,
         member,
         notificationsPrompted: false,
-        swipeLearned: false,
+        learned: {},
       });
-      set({
-        token,
-        member,
-        notificationsPrompted: false,
-        swipeLearned: false,
-      });
+      set({ token, member, notificationsPrompted: false, learned: {} });
     },
 
     signOut: async () => {
@@ -132,10 +141,12 @@ export const useSession = create<SessionState>((set, get) => {
       set({ notificationsPrompted: true });
     },
 
-    markSwipeLearned: async () => {
-      if (get().swipeLearned) return;
-      await persist({ swipeLearned: true });
-      set({ swipeLearned: true });
+    markLearned: async (id) => {
+      if (get().learned[id]) return;
+
+      const learned = { ...get().learned, [id]: true };
+      await persist({ learned });
+      set({ learned });
     },
   };
 });

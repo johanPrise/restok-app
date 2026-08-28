@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useGroup, useMembers } from '@/api/groups';
 import { HISTORY_LIMIT, useGroupHistory } from '@/api/history';
 import { Screen } from '@/components/Screen';
@@ -7,8 +13,7 @@ import { Segmented } from '@/components/Segmented';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
-import { useT } from '@/i18n/useT';
-import { useLocale } from '@/i18n/useT';
+import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import {
   groupByDay,
@@ -62,7 +67,9 @@ export default function Journal() {
   );
 
   const history = useGroupHistory(filters);
-  const entries = history.data ?? [];
+  // `?? []` fabrique un tableau neuf à chaque rendu : mémoriser le regroupement
+  // sur lui revenait à ne rien mémoriser du tout.
+  const entries = useMemo(() => history.data ?? [], [history.data]);
   const days = useMemo(() => groupByDay(entries, locale), [entries, locale]);
   const coupé = isTruncated(entries, HISTORY_LIMIT);
 
@@ -127,7 +134,9 @@ export default function Journal() {
               {t('journal.rienSurPeriode')}
             </Text>
             <Text variant="body" color="inkSoft">
-              {t(who === EVERYONE ? 'journal.videTous' : 'journal.videPersonne')}
+              {t(
+                who === EVERYONE ? 'journal.videTous' : 'journal.videPersonne',
+              )}
             </Text>
           </TagCard>
         )}
@@ -137,9 +146,7 @@ export default function Journal() {
             <Text variant="monoLabel" color="inkSoft">
               {day.label}
             </Text>
-            <View
-              style={[styles.rows, { borderColor: colors.thread }]}
-            >
+            <View style={[styles.rows, { borderColor: colors.thread }]}>
               {day.entries.map((entry) => (
                 <Row key={entry.id} entry={entry} />
               ))}
@@ -184,7 +191,12 @@ function Row({ entry }: Readonly<{ entry: GroupHistoryEntry }>) {
       <Text variant="mono" style={styles.who} numberOfLines={1}>
         {(entry.memberName ?? t('item.quelquun')).toUpperCase()}
       </Text>
-      <Text variant="mono" color="inkSoft" style={styles.item} numberOfLines={1}>
+      <Text
+        variant="mono"
+        color="inkSoft"
+        style={styles.item}
+        numberOfLines={1}
+      >
         {entry.itemName}
       </Text>
       <Text variant="mono" style={styles.count}>
@@ -215,7 +227,10 @@ function WhoFilter({
 }>) {
   const { colors } = useTheme();
   const t = useT();
-  const choices = [{ id: EVERYONE, name: t('journal.toutLeMonde') }, ...members];
+  const choices = [
+    { id: EVERYONE, name: t('journal.toutLeMonde') },
+    ...members,
+  ];
 
   return (
     <View style={styles.group}>

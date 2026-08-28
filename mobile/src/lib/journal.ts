@@ -92,7 +92,10 @@ export function periodLabel(period: Period, locale: Locale): string {
  * `now` est un paramètre plutôt qu'un `new Date()` interne : sans lui, la
  * fonction ne serait pas testable sans geler l'horloge.
  */
-export function since(period: Period, now: Date = new Date()): string | undefined {
+export function since(
+  period: Period,
+  now: Date = new Date(),
+): string | undefined {
   if (period === 'all') return undefined;
 
   const from = new Date(now);

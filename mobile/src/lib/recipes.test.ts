@@ -249,7 +249,10 @@ describe('feasibleNow', () => {
 });
 
 describe('recipeByline', () => {
-  const signed = (servings: number | null, createdBy: string | null): Recipe => ({
+  const signed = (
+    servings: number | null,
+    createdBy: string | null,
+  ): Recipe => ({
     ...recipe('Risotto', []),
     servings,
     createdBy,

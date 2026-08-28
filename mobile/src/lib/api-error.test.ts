@@ -6,7 +6,10 @@ const NETWORK = 'Pas de connexion pour le moment.';
 describe('apiErrorMessage', () => {
   it('reprend une règle métier telle quelle — elle est écrite pour être lue', () => {
     expect(
-      apiErrorMessage(new ApiError(409, 'Cet item est déjà sur la liste'), 'fr'),
+      apiErrorMessage(
+        new ApiError(409, 'Cet item est déjà sur la liste'),
+        'fr',
+      ),
     ).toBe('Cet item est déjà sur la liste');
   });
 
@@ -59,9 +62,9 @@ describe('apiErrorMessage', () => {
   });
 
   it('assume la panne côté service sans en détailler la cause', () => {
-    expect(apiErrorMessage(new ApiError(503, 'Service Unavailable'), 'fr')).toBe(
-      'Ça coince de notre côté. Réessaie dans un moment.',
-    );
+    expect(
+      apiErrorMessage(new ApiError(503, 'Service Unavailable'), 'fr'),
+    ).toBe('Ça coince de notre côté. Réessaie dans un moment.');
   });
 
   it('reste compréhensible quand le corps est vide', () => {
@@ -76,12 +79,15 @@ describe('apiErrorMessage — les refus nommés par le serveur', () => {
     status: number,
     code: string,
     values: Record<string, string | number> = {},
-  ) => new ApiError(status, 'la phrase française du serveur', false, code, values);
+  ) =>
+    new ApiError(status, 'la phrase française du serveur', false, code, values);
 
   it('dit le refus dans la langue choisie, pas dans celle du serveur', () => {
     const error = named(409, 'shopping_item_already_listed');
 
-    expect(apiErrorMessage(error, 'fr')).toBe('Cet item est déjà sur la liste.');
+    expect(apiErrorMessage(error, 'fr')).toBe(
+      'Cet item est déjà sur la liste.',
+    );
     expect(apiErrorMessage(error, 'en')).toBe(
       'That item is already on the list.',
     );
@@ -154,10 +160,10 @@ describe('latestFailure', () => {
     // Un échec ancien resté en mémoire masquerait celui que l'utilisateur
     // vient de déclencher.
     expect(
-      latestFailure([
-        mutation(true, 10, 'Vieux refus'),
-        mutation(true, 20, 'Refus récent'),
-      ], 'fr'),
+      latestFailure(
+        [mutation(true, 10, 'Vieux refus'), mutation(true, 20, 'Refus récent')],
+        'fr',
+      ),
     ).toBe('Refus récent');
   });
 
