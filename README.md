@@ -148,6 +148,19 @@ eas build --profile preview --platform android   # un APK à installer
 eas build --profile production --platform all
 ```
 
+`google-services.json` n'est **pas** versionné : Google le documente comme non
+secret — sa clé est restreinte au nom de paquet — mais il nomme le projet
+Firebase, et un fichier d'infrastructure n'a rien à faire dans un dépôt public.
+Il se pose une fois pour toutes en variable de type fichier :
+
+```bash
+eas env:create --name GOOGLE_SERVICES_JSON --type file \
+  --value ./google-services.json --visibility secret
+```
+
+`app.config.js` la lit, et retombe sur le fichier local — présent sur ta
+machine, ignoré par git — quand elle n'est pas là.
+
 Les profils `preview` et `production` pointent `EXPO_PUBLIC_API_URL` sur
 `https://restock-api.onrender.com`, l'adresse que Render donne au service nommé
 `restock-api` dans le blueprint. **Changer l'un, c'est changer l'autre.**
