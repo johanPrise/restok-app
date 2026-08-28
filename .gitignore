@@ -26,3 +26,8 @@ google-service-account*.json
 .agents/
 .claude/skills/
 .claude/settings.local.json
+
+# Configuration Firebase Android. Google la documente comme non secrète — sa
+# clé est restreinte au nom de paquet — mais elle nomme le projet et n'a rien à
+# faire dans un dépôt public. Elle se pose en secret de fichier côté EAS.
+google-services.json
