@@ -66,7 +66,9 @@ export function Field({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
-              revealed ? t('commun.masquerMotDePasse') : t('commun.afficherMotDePasse')
+              revealed
+                ? t('commun.masquerMotDePasse')
+                : t('commun.afficherMotDePasse')
             }
             onPress={() => setRevealed((shown) => !shown)}
             style={styles.action}

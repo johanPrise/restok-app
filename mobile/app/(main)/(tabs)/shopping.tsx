@@ -29,13 +29,12 @@ import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
-import { useT } from '@/i18n/useT';
+import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage, latestFailure } from '@/lib/api-error';
 import { useHint } from '@/lib/useHint';
 import { useSession } from '@/store/session';
 import { completeBlockedReason, offlineNotice } from '@/lib/offline';
 import { useIsSolo } from '@/lib/useIsSolo';
-import { useLocale } from '@/i18n/useT';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import {
   checkedCount,
@@ -98,16 +97,17 @@ export default function Shopping() {
    * décoche toute seule au refus du serveur, et sans ce message on croirait à
    * un bug de l'appli plutôt qu'à un appel refusé.
    */
-  const failure = latestFailure([
-    add,
-    toggle,
-    remove,
-    setQuantity,
-    refill,
-    complete,
-  ], locale);
+  const failure = latestFailure(
+    [add, toggle, remove, setQuantity, refill, complete],
+    locale,
+  );
 
-  const notice = offlineNotice(online, pending.durable, pending.volatile, locale);
+  const notice = offlineNotice(
+    online,
+    pending.durable,
+    pending.volatile,
+    locale,
+  );
   const blocked = completeBlockedReason(online, locale);
 
   const label = draft.trim();
@@ -201,7 +201,9 @@ export default function Shopping() {
       <View style={styles.header}>
         <Text variant="display">{t('onglets.courses')}</Text>
         <Text variant="monoLabel" color="inkSoft">
-          {shopping.isError ? t('courses.nonChargee') : checkedSummary(lines, locale)}
+          {shopping.isError
+            ? t('courses.nonChargee')
+            : checkedSummary(lines, locale)}
         </Text>
 
         {/* Retirer se faisait par appui long, et rien ne le disait. Le mode
@@ -249,9 +251,7 @@ export default function Shopping() {
             onRefill={() =>
               refill.mutate(undefined, {
                 onSuccess: () =>
-                  toast(
-                    t('courses.verses', { count: missing.length }),
-                  ),
+                  toast(t('courses.verses', { count: missing.length })),
               })
             }
           />
@@ -269,9 +269,7 @@ export default function Shopping() {
             onPress={() =>
               refill.mutate(undefined, {
                 onSuccess: () =>
-                  toast(
-                    t('courses.verses', { count: missing.length }),
-                  ),
+                  toast(t('courses.verses', { count: missing.length })),
               })
             }
           />
@@ -463,7 +461,11 @@ function ErrorState({
       <Text variant="body" color="inkSoft" style={styles.centered}>
         {message}
       </Text>
-      <Button label={t('courses.reessayer')} onPress={onRetry} style={styles.emptyAction} />
+      <Button
+        label={t('courses.reessayer')}
+        onPress={onRetry}
+        style={styles.emptyAction}
+      />
     </View>
   );
 }

@@ -105,7 +105,11 @@ contraintes d'unicité, des suppressions en cascade et des transactions, qu'un
 faux ne reproduit pas.
 
 La CI (`.github/workflows/ci.yml`) rejoue les trois suites plus le typage et le
-lint, sur chaque PR et sur chaque poussée dans `main`.
+lint des deux côtés, sur chaque PR et sur chaque poussée dans `main`.
+
+Le mobile linte avec `eslint-config-expo`, qui connaît `expo-router`, les
+règles des hooks et les particularités de React Native. Prettier passe en
+dernier et fait de son formatage la seule autorité, comme côté backend.
 
 ## Déployer
 

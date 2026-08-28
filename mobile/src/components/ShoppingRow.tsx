@@ -92,9 +92,9 @@ export function ShoppingRow({
       accessibilityLabel={[line.name, line.format, quantity]
         .filter(Boolean)
         .join(', ')}
-      accessibilityHint={
-        t(line.checked ? 'courses.decocher' : 'courses.cocher')
-      }
+      accessibilityHint={t(
+        line.checked ? 'courses.decocher' : 'courses.cocher',
+      )}
       accessibilityActions={[
         { name: 'longpress', label: t('commun.retirer') },
         ...(editable
@@ -243,7 +243,9 @@ function QuantityEditor({
         </Text>
         <QuantityStepper
           label={t(
-            hasPacks(line) ? 'courses.paquetsAPrendre' : 'courses.unitesAPrendre',
+            hasPacks(line)
+              ? 'courses.paquetsAPrendre'
+              : 'courses.unitesAPrendre',
           )}
           value={packs}
           onChange={setPacks}

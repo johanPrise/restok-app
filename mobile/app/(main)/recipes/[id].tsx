@@ -18,7 +18,7 @@ import { itemsOnList, suggestedQuantity } from '@/lib/shopping-list';
 import { useGoBack } from '@/lib/useGoBack';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useLocale, useT } from '@/i18n/useT';
-import type { Item, Recipe } from '@/types/api';
+import type { Item } from '@/types/api';
 import { border, radius, spacing, textOn, useTheme } from '@/theme';
 
 export default function RecipeDetail() {
@@ -189,9 +189,7 @@ export default function RecipeDetail() {
                   quantity: suggestedQuantity(item),
                 }),
               );
-              toast(
-                t('recettes.manquantsAjoutes', { count: toBuy.length }),
-              );
+              toast(t('recettes.manquantsAjoutes', { count: toBuy.length }));
             }}
           />
         )}

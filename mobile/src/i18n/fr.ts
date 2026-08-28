@@ -221,7 +221,8 @@ export const fr = {
     groupeCree: 'Groupe « %{nom} » créé',
     statutConfig: 'Statut: configuration',
     inventairePret: 'Ton inventaire est prêt',
-    codeInvite: 'Entre le code à %{count} caractères qu’on t’a donné pour accéder à l’inventaire partagé.',
+    codeInvite:
+      'Entre le code à %{count} caractères qu’on t’a donné pour accéder à l’inventaire partagé.',
     codeInviteLabel: 'Code d’invitation',
     tuDeviensAdmin:
       'Vous en devenez l’administrateur. Un code d’invitation sera généré pour les autres.',
@@ -237,11 +238,14 @@ export const fr = {
     activer: 'Activer les notifications →',
     plusTard: 'Plus tard',
     continuerSimple: 'Continuer',
-    refusees: 'Notifications refusées. Tu peux les activer plus tard dans les réglages du téléphone.',
+    refusees:
+      'Notifications refusées. Tu peux les activer plus tard dans les réglages du téléphone.',
     echecActivation: 'L’activation a échoué. Tu pourras réessayer plus tard.',
-    expoGo: 'Expo Go ne reçoit pas les notifications — il faudra l’app compilée.',
+    expoGo:
+      'Expo Go ne reçoit pas les notifications — il faudra l’app compilée.',
     simulateur: 'Un simulateur ne reçoit pas de notifications.',
-    pasDisponible: 'Les notifications ne sont pas disponibles dans cette version de l’app.',
+    pasDisponible:
+      'Les notifications ne sont pas disponibles dans cette version de l’app.',
   },
 
   stock: {
@@ -298,8 +302,7 @@ export const fr = {
   item: {
     quelquun: 'Quelqu’un',
     introuvable: 'Item introuvable — il a peut-être été supprimé.',
-    actionRatee:
-      'L’action n’est pas passée. Vérifie ta connexion et réessaie.',
+    actionRatee: 'L’action n’est pas passée. Vérifie ta connexion et réessaie.',
     historique: 'Historique',
     dejaSurLaListe: ', déjà sur la liste de courses',
 

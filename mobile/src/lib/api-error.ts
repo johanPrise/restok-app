@@ -37,8 +37,7 @@ export function apiErrorMessage(error: unknown, locale: Locale): string {
   if (error.status === 401) return translate(locale, 'erreurs.sessionExpiree');
   if (error.status === 403) return translate(locale, 'erreurs.pasAcces');
   if (error.status === 404) return translate(locale, 'erreurs.disparu');
-  if (error.status >= 500)
-    return translate(locale, 'erreurs.cotéServeur');
+  if (error.status >= 500) return translate(locale, 'erreurs.cotéServeur');
 
   // Un refus que le serveur n'a pas nommé — ou nommé d'un code plus récent que
   // cette version de l'app. Sa phrase reste écrite pour être lue.

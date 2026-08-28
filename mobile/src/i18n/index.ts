@@ -47,4 +47,3 @@ export function translate(
 
   return i18n.t(key, values);
 }
-

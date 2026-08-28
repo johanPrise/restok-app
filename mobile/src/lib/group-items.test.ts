@@ -19,11 +19,14 @@ const item = (name: string, status: ItemStatus = 'available'): Item =>
 
 describe('groupByUrgency', () => {
   it("place ce qui demande une action en tête — l'ordre EST l'information", () => {
-    const sections = groupByUrgency([
-      item('Café'),
-      item('Litière', 'low'),
-      item('Papier toilette', 'to_restock'),
-    ], 'fr');
+    const sections = groupByUrgency(
+      [
+        item('Café'),
+        item('Litière', 'low'),
+        item('Papier toilette', 'to_restock'),
+      ],
+      'fr',
+    );
 
     expect(sections.map((s) => s.key)).toEqual([
       'to_restock',
@@ -34,10 +37,10 @@ describe('groupByUrgency', () => {
 
   it('range les deux statuts épuisés ensemble', () => {
     // `out_of_stock` n'est jamais persisté, mais rien ne doit le perdre.
-    const sections = groupByUrgency([
-      item('Papier toilette', 'to_restock'),
-      item('Ampoules', 'out_of_stock'),
-    ], 'fr');
+    const sections = groupByUrgency(
+      [item('Papier toilette', 'to_restock'), item('Ampoules', 'out_of_stock')],
+      'fr',
+    );
 
     expect(sections).toHaveLength(1);
     expect(sections[0].items.map((i) => i.name)).toEqual([
@@ -47,11 +50,10 @@ describe('groupByUrgency', () => {
   });
 
   it('trie par ordre alphabétique à l’intérieur d’une section', () => {
-    const [section] = groupByUrgency([
-      item('Zeste'),
-      item('Ail'),
-      item('Miel'),
-    ], 'fr');
+    const [section] = groupByUrgency(
+      [item('Zeste'), item('Ail'), item('Miel')],
+      'fr',
+    );
 
     expect(section.items.map((i) => i.name)).toEqual(['Ail', 'Miel', 'Zeste']);
   });
@@ -69,11 +71,10 @@ describe('groupByUrgency', () => {
   });
 
   it('donne à chaque section sa couleur de statut', () => {
-    const sections = groupByUrgency([
-      item('A', 'to_restock'),
-      item('B', 'low'),
-      item('C'),
-    ], 'fr');
+    const sections = groupByUrgency(
+      [item('A', 'to_restock'), item('B', 'low'), item('C')],
+      'fr',
+    );
 
     expect(sections.map((s) => s.color)).toEqual([
       'rustClay',

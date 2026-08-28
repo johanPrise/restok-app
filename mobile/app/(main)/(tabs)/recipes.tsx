@@ -12,8 +12,7 @@ import { Screen } from '@/components/Screen';
 import { TagCard } from '@/components/TagCard';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
-import { useT } from '@/i18n/useT';
-import { useLocale } from '@/i18n/useT';
+import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { offlineNotice } from '@/lib/offline';
 import { useHint } from '@/lib/useHint';
@@ -42,7 +41,12 @@ export default function Recipes() {
   );
 
   const ready = sorted.filter((entry) => entry.state.kind === 'ready').length;
-  const notice = offlineNotice(online, pending.durable, pending.volatile, locale);
+  const notice = offlineNotice(
+    online,
+    pending.durable,
+    pending.volatile,
+    locale,
+  );
 
   return (
     <Screen edges={['top']}>

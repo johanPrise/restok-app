@@ -29,12 +29,7 @@
  * d'autre ne se fait ; les deux idées ensuite, parce qu'elles sont ce que
  * l'app a en propre ; le renommage en dernier, parce qu'il est un confort.
  */
-export const HINTS = [
-  'swipe',
-  'shoppingLoop',
-  'recipeSort',
-  'rename',
-] as const;
+export const HINTS = ['swipe', 'shoppingLoop', 'recipeSort', 'rename'] as const;
 
 export type HintId = (typeof HINTS)[number];
 

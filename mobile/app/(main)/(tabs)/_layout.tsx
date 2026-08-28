@@ -106,21 +106,41 @@ export default function TabsLayout() {
         ]}
       >
         <TabTrigger name="shelf" asChild>
-          <TabBarButton icon={ShelfIcon} label={t('onglets.inventaire')} compact={showJournal} />
+          <TabBarButton
+            icon={ShelfIcon}
+            label={t('onglets.inventaire')}
+            compact={showJournal}
+          />
         </TabTrigger>
         <TabTrigger name="shopping" asChild>
-          <TabBarButton icon={BasketIcon} label={t('onglets.courses')} compact={showJournal} />
+          <TabBarButton
+            icon={BasketIcon}
+            label={t('onglets.courses')}
+            compact={showJournal}
+          />
         </TabTrigger>
         <TabTrigger name="recipes" asChild>
-          <TabBarButton icon={RecipeIcon} label={t('onglets.recettes')} compact={showJournal} />
+          <TabBarButton
+            icon={RecipeIcon}
+            label={t('onglets.recettes')}
+            compact={showJournal}
+          />
         </TabTrigger>
         {showJournal && (
           <TabTrigger name="journal" asChild>
-            <TabBarButton icon={JournalIcon} label={t('onglets.journal')} compact={showJournal} />
+            <TabBarButton
+              icon={JournalIcon}
+              label={t('onglets.journal')}
+              compact={showJournal}
+            />
           </TabTrigger>
         )}
         <TabTrigger name="settings" asChild>
-          <TabBarButton icon={SettingsIcon} label={t('onglets.parametres')} compact={showJournal} />
+          <TabBarButton
+            icon={SettingsIcon}
+            label={t('onglets.parametres')}
+            compact={showJournal}
+          />
         </TabTrigger>
       </View>
 

@@ -117,7 +117,9 @@ describe('checkedCount', () => {
 
 describe('lineQuantity', () => {
   it('accorde le nom de l’unité', () => {
-    expect(lineQuantity(line({ quantity: 3, unit: 'bidon' }), 'fr')).toBe('3 bidons');
+    expect(lineQuantity(line({ quantity: 3, unit: 'bidon' }), 'fr')).toBe(
+      '3 bidons',
+    );
   });
 
   it('dit les paquets *et* les unités — « 2 » de quoi, sinon ?', () => {

@@ -30,7 +30,8 @@ export function offlineNotice(
 
   // Dès qu'un seul geste est volatile, c'est la garantie la plus faible qui
   // gouverne le message entier : on ne trie pas les rassurances par lot.
-  const key = volatile > 0 ? 'commun.horsLigneVolatile' : 'commun.horsLigneEnAttente';
+  const key =
+    volatile > 0 ? 'commun.horsLigneVolatile' : 'commun.horsLigneEnAttente';
 
   return translate(locale, key, { count: pending });
 }
@@ -46,7 +47,5 @@ export function completeBlockedReason(
   online: boolean,
   locale: Locale,
 ): string | null {
-  return online
-    ? null
-    : translate(locale, 'commun.validerDemandeConnexion');
+  return online ? null : translate(locale, 'commun.validerDemandeConnexion');
 }

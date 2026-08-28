@@ -54,9 +54,12 @@ export function EditableGroupName({
     rename.mutate(next, {
       onSuccess: () =>
         toast(
-          t(solo ? 'parametres.inventaireRenomme' : 'parametres.groupeRenomme', {
-            nom: next,
-          }),
+          t(
+            solo ? 'parametres.inventaireRenomme' : 'parametres.groupeRenomme',
+            {
+              nom: next,
+            },
+          ),
         ),
     });
   };

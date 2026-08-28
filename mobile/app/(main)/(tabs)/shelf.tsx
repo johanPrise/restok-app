@@ -23,7 +23,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
 import { TagSkeleton } from '@/components/TagSkeleton';
 import { Text } from '@/components/Text';
-import { useT } from '@/i18n/useT';
+import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
 import { groupByUrgency, searchItems } from '@/lib/group-items';
 import { offlineNotice } from '@/lib/offline';
@@ -31,7 +31,6 @@ import { feasibleNow } from '@/lib/recipes';
 import { itemsOnList } from '@/lib/shopping-list';
 import { useHint } from '@/lib/useHint';
 import { useIsSolo } from '@/lib/useIsSolo';
-import { useLocale } from '@/i18n/useT';
 import { usePendingGestures } from '@/lib/usePendingGestures';
 import { useSession } from '@/store/session';
 import {
@@ -91,7 +90,12 @@ export default function Shelf() {
   // Prendre et racheter ne sont pas persistés : hors-ligne, le balayage se
   // mettait en pause sans que rien ne bouge à l'écran, et le geste disparaissait
   // à la fermeture de l'app. Il faut au moins le dire.
-  const notice = offlineNotice(online, pending.durable, pending.volatile, locale);
+  const notice = offlineNotice(
+    online,
+    pending.durable,
+    pending.volatile,
+    locale,
+  );
 
   const toggle = (key: string) =>
     setCollapsed((state) => ({ ...state, [key]: !state[key] }));
@@ -243,7 +247,11 @@ function ErrorState({
       <Text variant="body" color="inkSoft" style={styles.emptyBody}>
         {message}
       </Text>
-      <Button label={t('etagere.reessayer')} onPress={onRetry} style={styles.emptyAdd} />
+      <Button
+        label={t('etagere.reessayer')}
+        onPress={onRetry}
+        style={styles.emptyAdd}
+      />
     </View>
   );
 }

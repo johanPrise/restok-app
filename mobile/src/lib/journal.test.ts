@@ -1,10 +1,5 @@
 import type { ActionType, GroupHistoryEntry } from '@/types/api';
-import {
-  groupByDay,
-  isTruncated,
-  journalSummary,
-  since,
-} from './journal';
+import { groupByDay, isTruncated, journalSummary, since } from './journal';
 
 const entry = (
   id: string,
@@ -22,11 +17,14 @@ const entry = (
 
 describe('groupByDay', () => {
   it('rassemble les actions d’une même journée sous un seul en-tête', () => {
-    const days = groupByDay([
-      entry('a', '2026-08-24T18:00:00.000Z'),
-      entry('b', '2026-08-24T09:00:00.000Z'),
-      entry('c', '2026-08-23T20:00:00.000Z'),
-    ], 'fr');
+    const days = groupByDay(
+      [
+        entry('a', '2026-08-24T18:00:00.000Z'),
+        entry('b', '2026-08-24T09:00:00.000Z'),
+        entry('c', '2026-08-23T20:00:00.000Z'),
+      ],
+      'fr',
+    );
 
     expect(days).toHaveLength(2);
     expect(days[0].entries.map((e) => e.id)).toEqual(['a', 'b']);
@@ -34,10 +32,13 @@ describe('groupByDay', () => {
   });
 
   it('garde l’ordre du serveur — un registre se relit du plus récent', () => {
-    const days = groupByDay([
-      entry('a', '2026-08-24T10:00:00.000Z'),
-      entry('b', '2026-08-20T10:00:00.000Z'),
-    ], 'fr');
+    const days = groupByDay(
+      [
+        entry('a', '2026-08-24T10:00:00.000Z'),
+        entry('b', '2026-08-20T10:00:00.000Z'),
+      ],
+      'fr',
+    );
 
     expect(days.map((d) => d.key)).toEqual(['2026-08-24', '2026-08-20']);
   });
@@ -61,7 +62,9 @@ describe('isTruncated', () => {
   });
 
   it('se tait en dessous', () => {
-    expect(isTruncated([entry('a', '2026-08-24T10:00:00.000Z')], 2)).toBe(false);
+    expect(isTruncated([entry('a', '2026-08-24T10:00:00.000Z')], 2)).toBe(
+      false,
+    );
   });
 });
 

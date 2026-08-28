@@ -52,7 +52,10 @@ export default function Intro() {
         ))}
       </View>
 
-      <Button label={t('onboarding.continuer')} onPress={() => router.push('/choose')} />
+      <Button
+        label={t('onboarding.continuer')}
+        onPress={() => router.push('/choose')}
+      />
       <SystemFooter left={t('onboarding.pied')} />
     </Screen>
   );

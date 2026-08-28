@@ -37,7 +37,6 @@ import type { GroupDetail, MemberSummary } from '@/types/api';
  */
 export default function Settings() {
   const member = useSession((s) => s.member);
-  const locale = useLocale();
   const t = useT();
   const group = useGroup();
   const members = useMembers();

@@ -43,9 +43,7 @@ export function ReceiptHistory({
   if (entries.length === 0) {
     return (
       <Text variant="body" color="inkSoft">
-        {solo
-          ? t('commun.relevéVideSolo')
-          : t('commun.relevéVideGroupe')}
+        {solo ? t('commun.relevéVideSolo') : t('commun.relevéVideGroupe')}
       </Text>
     );
   }
@@ -117,10 +115,7 @@ function receiptDate(iso: string, locale: Locale): string {
     .toUpperCase();
 }
 
-function actionLabel(
-  action: ActionType,
-  t: (key: string) => string,
-): string {
+function actionLabel(action: ActionType, t: (key: string) => string): string {
   return t(action === 'taken' ? 'commun.pris' : 'commun.rachete');
 }
 
