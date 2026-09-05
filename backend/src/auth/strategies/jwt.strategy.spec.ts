@@ -79,6 +79,16 @@ describe('JwtStrategy', () => {
     await strategy.validate({ sub: 'member-1' });
 
     const options = memberRepo.findOne.mock.calls[0][0];
-    expect(options.select).toEqual({ id: true, groupId: true, role: true });
+
+    // L'intention d'abord : le hash ne doit jamais remonter d'une requête
+    // faite à chaque appel authentifié.
+    expect(options.select).not.toHaveProperty('password');
+    expect(options.select).toEqual({
+      id: true,
+      groupId: true,
+      role: true,
+      // Lu pour refuser un token antérieur au dernier changement.
+      passwordChangedAt: true,
+    });
   });
 });

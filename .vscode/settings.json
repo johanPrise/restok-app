@@ -1,0 +1,16 @@
+{
+  // `backend/` et `mobile/` sont deux projets indépendants : chacun a son
+  // `node_modules`, son `eslint.config.mjs` et son `tsconfig.json`, et la
+  // racine n'a ni config ni dépendances.
+  //
+  // Sans ces répertoires de travail, l'extension ESLint tourne depuis la racine
+  // du workspace, n'y trouve aucun programme TypeScript, et toutes les règles
+  // typées se mettent à crier : `recommendedTypeChecked` voit alors chaque type
+  // comme non résolu, y compris les classes du projet, et `no-unsafe-call`
+  // signale jusqu'aux appels les plus ordinaires. En ligne de commande le lint
+  // passait — c'est l'IDE seul qui se trompait d'endroit.
+  "eslint.workingDirectories": [
+    { "directory": "backend", "changeProcessCWD": true },
+    { "directory": "mobile", "changeProcessCWD": true }
+  ]
+}

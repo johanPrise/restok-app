@@ -3,8 +3,10 @@ import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/app.setup';
+import { MAIL_PROVIDER } from '../../src/mail/mail-provider.interface';
 import { PUSH_PROVIDER } from '../../src/notifications/providers/push-provider.interface';
 import { CATALOGUE } from '../../src/recipes/catalogue/catalogue';
+import { RecordingMailProvider } from './recording-mail.provider';
 import { RecordingPushProvider } from './recording-push.provider';
 
 export interface E2EContext {
@@ -25,6 +27,10 @@ export async function createE2EApp(): Promise<E2EContext> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(PUSH_PROVIDER)
     .useClass(RecordingPushProvider)
+    // Aucun email ne sort : le faux garde les messages, ce qui permet en plus
+    // de lire le code envoyé et de dérouler la réinitialisation en entier.
+    .overrideProvider(MAIL_PROVIDER)
+    .useClass(RecordingMailProvider)
     .overrideProvider(CATALOGUE)
     .useValue({
       search: (query: string, limit: number) =>
@@ -66,7 +72,7 @@ export async function createE2EApp(): Promise<E2EContext> {
       // TRUNCATE plutôt que DELETE : ignore les contraintes et remet à zéro
       // sans se soucier de l'ordre des tables.
       await dataSource.query(
-        'TRUNCATE TABLE recipe_ingredient, recipe, shopping_line, action_history, item, member, "group" CASCADE',
+        'TRUNCATE TABLE refresh_token, password_reset, recipe_ingredient, recipe, shopping_line, action_history, item, member, "group" CASCADE',
       );
       push.clear();
       push.succeedAlways();

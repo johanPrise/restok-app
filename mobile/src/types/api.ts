@@ -16,6 +16,12 @@ export interface AuthenticatedMember {
 
 export interface AuthResponse {
   accessToken: string;
+  /**
+   * La session longue. L'access token ci-dessus ne vaut qu'une heure et sert à
+   * chaque requête ; celui-ci vaut deux mois et ne sert qu'à en obtenir des
+   * neufs, sans redemander le mot de passe. Voir `api/session.ts`.
+   */
+  refreshToken: string;
   member: AuthenticatedMember;
 }
 

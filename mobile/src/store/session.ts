@@ -7,6 +7,15 @@ const SESSION_KEY = 'restock.session';
 
 interface PersistedSession {
   token: string;
+  /**
+   * La session longue.
+   *
+   * Optionnel : une session déjà sur l'appareil a été écrite avant que le
+   * renouvellement existe, et ne le porte donc pas. Elle continue de
+   * fonctionner jusqu'à son premier 401, où faute de quoi renouveler elle se
+   * referme — c'est-à-dire exactement ce qu'elle faisait avant.
+   */
+  refreshToken?: string;
   member: AuthenticatedMember;
   /**
    * L'utilisateur a-t-il déjà vu l'écran de permission des notifications ?
@@ -31,8 +40,15 @@ interface PersistedSession {
   swipeLearned?: boolean;
 }
 
+/** Ce que le serveur rend à l'ouverture d'une session, et à son renouvellement. */
+export interface SessionTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
 interface SessionState {
   token: string | null;
+  refreshToken: string | null;
   member: AuthenticatedMember | null;
   notificationsPrompted: boolean;
   learned: Learned;
@@ -40,8 +56,17 @@ interface SessionState {
   isHydrated: boolean;
 
   hydrate: () => Promise<void>;
-  signIn: (token: string, member: AuthenticatedMember) => Promise<void>;
+  signIn: (tokens: SessionTokens, member: AuthenticatedMember) => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * La même session, avec des jetons neufs — après un renouvellement.
+   *
+   * Distinct de `signIn` sur un point qui compte : les repères déjà appris et
+   * l'écran de permission déjà vu **restent**. Les réinitialiser ferait
+   * réexpliquer le balayage toutes les heures à quelqu'un qui n'a rien fait
+   * d'autre que laisser l'app ouverte.
+   */
+  renew: (tokens: SessionTokens, member: AuthenticatedMember) => Promise<void>;
   /**
    * Met à jour le membre sans toucher au token — après création ou jointure
    * d'un groupe, ou quand le serveur révèle que l'appartenance a changé.
@@ -60,6 +85,7 @@ interface SessionState {
 
 const EMPTY = {
   token: null,
+  refreshToken: null,
   member: null,
   notificationsPrompted: false,
   learned: {} as Learned,
@@ -77,7 +103,7 @@ const EMPTY = {
 export const useSession = create<SessionState>((set, get) => {
   /** Écrit l'état courant dans le stockage sécurisé, token présent ou non. */
   const persist = async (next: Partial<PersistedSession>) => {
-    const { token, member, notificationsPrompted, learned } = {
+    const { token, refreshToken, member, notificationsPrompted, learned } = {
       ...get(),
       ...next,
     };
@@ -87,6 +113,7 @@ export const useSession = create<SessionState>((set, get) => {
       SESSION_KEY,
       JSON.stringify({
         token,
+        ...(refreshToken ? { refreshToken } : {}),
         member,
         notificationsPrompted,
         learned,
@@ -104,6 +131,7 @@ export const useSession = create<SessionState>((set, get) => {
         const session = raw ? (JSON.parse(raw) as PersistedSession) : null;
         set({
           token: session?.token ?? null,
+          refreshToken: session?.refreshToken ?? null,
           member: session?.member ?? null,
           notificationsPrompted: session?.notificationsPrompted ?? false,
           learned: learnedFrom(session),
@@ -116,14 +144,26 @@ export const useSession = create<SessionState>((set, get) => {
       }
     },
 
-    signIn: async (token, member) => {
+    signIn: async ({ accessToken, refreshToken }, member) => {
       await persist({
-        token,
+        token: accessToken,
+        refreshToken,
         member,
         notificationsPrompted: false,
         learned: {},
       });
-      set({ token, member, notificationsPrompted: false, learned: {} });
+      set({
+        token: accessToken,
+        refreshToken,
+        member,
+        notificationsPrompted: false,
+        learned: {},
+      });
+    },
+
+    renew: async ({ accessToken, refreshToken }, member) => {
+      await persist({ token: accessToken, refreshToken, member });
+      set({ token: accessToken, refreshToken, member });
     },
 
     signOut: async () => {

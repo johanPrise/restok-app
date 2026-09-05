@@ -10,6 +10,11 @@ import { MemberRole } from '../../members/entities/member.entity';
  */
 export interface JwtPayload {
   sub: string;
+  /**
+   * Posé par `jsonwebtoken` à l'émission, en secondes. Sert à refuser un token
+   * antérieur au dernier changement de mot de passe.
+   */
+  iat?: number;
 }
 
 /** Ce que `JwtStrategy.validate` attache à `request.user`, lu en base. */

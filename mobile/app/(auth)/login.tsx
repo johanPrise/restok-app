@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useLogin } from '@/api/auth';
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
@@ -11,7 +11,7 @@ import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
-import { border, spacing, useTheme } from '@/theme';
+import { border, MIN_TOUCH_TARGET, spacing, useTheme } from '@/theme';
 
 export default function Login() {
   const router = useRouter();
@@ -95,6 +95,19 @@ export default function Login() {
           style={styles.secondary}
         />
 
+        {/* Sous les deux boutons et non entre eux : c'est la porte de secours,
+            elle ne doit pas se disputer la place avec le geste ordinaire. */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/forgot-password')}
+          hitSlop={spacing.xs}
+          style={styles.forgot}
+        >
+          <Text variant="monoLabel" color="pantryTeal">
+            {t('acces.motDePasseOublie')}
+          </Text>
+        </Pressable>
+
         <View style={[styles.rule, { backgroundColor: colors.thread }]} />
         <SystemFooter left={t('acces.statutIdentifiants')} />
       </TagCard>
@@ -108,5 +121,11 @@ const styles = StyleSheet.create({
   error: { marginTop: spacing.sm },
   submit: { marginTop: spacing.md },
   secondary: { marginTop: spacing.sm },
+  forgot: {
+    marginTop: spacing.md,
+    minHeight: MIN_TOUCH_TARGET,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   rule: { height: border.hairline, marginTop: spacing.md },
 });

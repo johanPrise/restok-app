@@ -55,7 +55,28 @@ services:
       - key: JWT_EXPIRES_IN
         value: 1h
 
+      # La session longue, portée par le refresh token. L'access token ci-dessus
+      # ne dure qu'une heure et ne se révoque pas ; celui-là dure deux mois, se
+      # révoque, et est repoussé à chaque usage. Sans lui, une heure était aussi
+      # la durée de la session : quelqu'un qui ouvre l'app trente secondes au
+      # magasin retapait son mot de passe une fois sur deux.
+      - key: REFRESH_TOKEN_DAYS
+        value: '60'
+
       # Vide en production, l'app refuse toute origine. À renseigner le jour où
       # une version web existe ; l'app mobile, elle, n'envoie pas d'origine.
       - key: CORS_ORIGINS
+        sync: false
+
+      # « Mot de passe oublié » n'existe que si un email peut partir. Le
+      # démarrage échoue sans ces deux-là en production, délibérément : une
+      # porte de récupération qui n'écrit que dans les journaux n'existe pas,
+      # et on ne s'en apercevrait que le jour où quelqu'un a besoin d'entrer.
+      #
+      # SMTP plutôt que l'API d'un fournisseur : Resend, Postmark, SendGrid ou
+      # une boîte quelconque en donnent tous les identifiants, sous la forme
+      # `smtps://utilisateur:motdepasse@serveur:465`.
+      - key: MAIL_URL
+        sync: false
+      - key: MAIL_FROM
         sync: false

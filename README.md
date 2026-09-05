@@ -95,9 +95,9 @@ viser un autre serveur, poser `EXPO_PUBLIC_API_URL`.
 ## Les tests
 
 ```bash
-cd backend && pnpm test        # 228 unitaires
-cd backend && pnpm test:e2e    # 228 e2e, contre un vrai PostgreSQL
-cd mobile  && pnpm test        # 204
+cd backend && pnpm test        # 260 unitaires
+cd backend && pnpm test:e2e    # 267 e2e, contre un vrai PostgreSQL
+cd mobile  && pnpm test        # 240
 ```
 
 Les e2e parlent à une vraie base plutôt qu'à un double : ils vérifient des
@@ -217,10 +217,72 @@ client plus ancien que le déploiement.
 Ajouter un refus, c'est donc ajouter un code des deux côtés — un code sans
 phrase dégrade proprement vers celle du serveur, mais reste français.
 
+## Entrer, et rentrer
+
+Se connecter demande un email et un mot de passe. L'email étant l'identifiant,
+et le changer exigeant justement le mot de passe, l'oublier enfermait dehors
+définitivement — d'où « mot de passe oublié », qui envoie un code à huit
+caractères valable un quart d'heure.
+
+Le code n'est stocké que sous forme de hash bcrypt, ce qui interdit de
+retrouver une demande par lui : l'app repasse donc l'email d'un écran à
+l'autre. La route ne dit jamais si un compte existe, sous peine de servir
+d'annuaire, et l'écran ne le dit pas non plus. Un changement de mot de passe
+**coupe les sessions ouvertes avec l'ancien** : sans quoi une réinitialisation
+ne reprendrait pas le compte à qui s'y était introduit.
+
+L'envoi passe par SMTP — `MAIL_URL`, `MAIL_FROM` — plutôt que par l'API d'un
+fournisseur : Resend, Postmark ou une boîte quelconque en donnent tous les
+identifiants. Sans configuration, le développement écrit le code dans la
+console ; la production, elle, **refuse de démarrer**, parce qu'une porte de
+récupération qui n'écrit que dans les journaux n'existe pas.
+
+### Rester connecté
+
+Le JWT vaut une heure et ne se révoque pas : c'est la contrepartie assumée d'un
+jeton qu'aucune requête n'a besoin d'aller valider. Mais sans rien derrière, une
+heure était aussi la durée de la **session** — quelqu'un qui ouvre l'app trente
+secondes au magasin retapait son mot de passe une fois sur deux.
+
+D'où le refresh token : deux mois (`REFRESH_TOKEN_DAYS`), une ligne en base
+qu'on peut effacer, et repoussé à chaque usage. Ce sont deux mois de *silence*
+qui referment un compte, pas deux mois d'usage. L'app l'échange toute seule au
+premier 401 et rejoue la requête ; personne ne voit rien passer.
+
+Il **tourne** à chaque échange, et ce n'est pas une cérémonie : c'est ce qui
+rend un vol visible. Un token volé finit par être présenté deux fois — une fois
+par le voleur, une fois par le propriétaire — et cette seconde présentation
+coupe toutes les sessions du membre, puisqu'à ce stade seul le mot de passe
+permet de trancher. Un token éternel n'aurait jamais donné ce signal.
+
+La rotation a un angle mort, qu'il faut couvrir : le serveur consomme le token
+avant que l'app reçoive le suivant, donc une réponse perdue dans un tunnel
+laisse l'app avec un token déjà usé. Une fenêtre de trente secondes la
+rattrape — au-delà, ce n'est plus une réponse en retard. Côté app, une rafale
+de 401 simultanés ne déclenche qu'un seul renouvellement
+([`single-flight.ts`](mobile/src/lib/single-flight.ts)) : sans ça, la deuxième
+requête aurait présenté un token consommé, et la session serait tombée pour vol
+à l'instant où elle essayait de survivre.
+
+Un changement de mot de passe les efface tous. `passwordChangedAt` ne refuse que
+les JWT antérieurs, et un refresh token n'en est pas un : sans révocation
+explicite, une réinitialisation n'aurait fermé qu'une porte sur deux.
+
+Les routes publiques sont plafonnées : dix connexions par quart d'heure, cinq
+inscriptions par heure, cinq demandes de code par heure, trente
+renouvellements — un appareil y passe une fois par heure sans rien avoir à se
+reprocher. Le plafond général est large — quelqu'un qui coche sa liste au
+magasin envoie des rafales — et ce sont les portes ouvertes sans jeton qui se
+resserrent. `helmet` pose les en-têtes que personne ne pose seul.
+
 ## Ce qui manque
 
-- **Un seul tutoriel**, sur le balayage.
-- **Le mode association n'a que le journal** de plus que la colocation.
+- **Le mode association** s'arrête au journal et à son export : pas de
+  recherche dans les membres, pas de rôles plus fins.
+- **Aucun test de rendu.** Les tests du mobile sont tous de la logique pure ;
+  aucun composant ni écran n'est monté.
+- **Aucune supervision en production.** Un plantage chez quelqu'un est invisible.
+- **Pas de politique de confidentialité**, que les stores exigent.
 - **Les notifications push n'ont jamais été vérifiées de bout en bout.** Le
   circuit est complet des deux côtés, mais l'essayer exige un build EAS : Expo
   Go ne reçoit pas de notifications.

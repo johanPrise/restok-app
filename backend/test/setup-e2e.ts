@@ -11,6 +11,13 @@ process.env.DB_NAME = process.env.DB_NAME_TEST ?? 'restock_test';
 process.env.JWT_SECRET ??= 'secret-de-test-e2e';
 process.env.JWT_EXPIRES_IN ??= '1h';
 
+/**
+ * Le plafond de débit est éteint par défaut dans les e2e : la suite crée des
+ * dizaines de comptes en quelques secondes, ce que le plafond d'inscription
+ * arrêterait au sixième. `throttle.e2e-spec.ts` le rallume pour lui seul.
+ */
+process.env.THROTTLE_DISABLED ??= 'true';
+
 // Aucune requête ne doit sortir vers l'API Expo : le provider est de toute
 // façon remplacé par un faux, ceci est la ceinture en plus des bretelles.
 process.env.EXPO_PUSH_URL = 'http://127.0.0.1:1/never-called';

@@ -5,12 +5,14 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Member, MemberRole } from '../members/entities/member.entity';
 import { AuthService } from './auth.service';
+import { RefreshTokenService } from './refresh-token.service';
 import { TokenService } from './token.service';
 
 describe('AuthService', () => {
   let service: AuthService;
   let memberRepo: jest.Mocked<Repository<Member>>;
   let tokenService: jest.Mocked<TokenService>;
+  let refreshTokens: jest.Mocked<RefreshTokenService>;
 
   const buildMember = (overrides: Partial<Member> = {}): Member =>
     ({
@@ -34,11 +36,21 @@ describe('AuthService', () => {
             findOne: jest.fn(),
             create: jest.fn((dto: Partial<Member>) => dto as Member),
             save: jest.fn(),
+            update: jest.fn(),
           },
         },
         {
           provide: TokenService,
           useValue: { issue: jest.fn(() => 'signed.jwt') },
+        },
+        {
+          provide: RefreshTokenService,
+          useValue: {
+            issue: jest.fn(() => Promise.resolve('refresh-1')),
+            rotate: jest.fn(),
+            revoke: jest.fn(),
+            revokeAllFor: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -46,6 +58,7 @@ describe('AuthService', () => {
     service = moduleRef.get(AuthService);
     memberRepo = moduleRef.get(getRepositoryToken(Member));
     tokenService = moduleRef.get(TokenService);
+    refreshTokens = moduleRef.get(RefreshTokenService);
   });
 
   describe('register', () => {
@@ -161,6 +174,90 @@ describe('AuthService', () => {
 
       // Ni groupId ni role : ils sont relus en base par JwtStrategy.
       expect(tokenService.issue).toHaveBeenCalledWith('member-1');
+    });
+
+    it('ouvre une session longue en même temps que la courte', async () => {
+      const password = await bcrypt.hash('motdepasse123', 10);
+      memberRepo.findOne.mockResolvedValue(buildMember({ password }));
+
+      const result = await service.login({
+        email: 'yorick@test.dev',
+        password: 'motdepasse123',
+      });
+
+      expect(refreshTokens.issue).toHaveBeenCalledWith('member-1');
+      expect(result.refreshToken).toBe('refresh-1');
+    });
+  });
+
+  describe('refresh', () => {
+    it('rend un access token neuf et le refresh qui a tourné', async () => {
+      refreshTokens.rotate.mockResolvedValue({
+        memberId: 'member-1',
+        token: 'refresh-2',
+      });
+      memberRepo.findOne.mockResolvedValue(buildMember());
+
+      const result = await service.refresh('refresh-1');
+
+      expect(result.accessToken).toBe('signed.jwt');
+      expect(result.refreshToken).toBe('refresh-2');
+    });
+
+    it('relit le membre plutôt que de le reprendre de la session', async () => {
+      refreshTokens.rotate.mockResolvedValue({
+        memberId: 'member-1',
+        token: 'refresh-2',
+      });
+      // Le membre a rejoint un groupe et est devenu admin depuis la connexion.
+      memberRepo.findOne.mockResolvedValue(
+        buildMember({ groupId: 'group-1', role: MemberRole.ADMIN }),
+      );
+
+      const result = await service.refresh('refresh-1');
+
+      expect(result.member).toMatchObject({
+        groupId: 'group-1',
+        role: MemberRole.ADMIN,
+      });
+    });
+
+    it('refuse et coupe tout si le compte a disparu', async () => {
+      refreshTokens.rotate.mockResolvedValue({
+        memberId: 'member-1',
+        token: 'refresh-2',
+      });
+      // `findOne` ignore les membres soft-deleted.
+      memberRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.refresh('refresh-1')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
+      expect(refreshTokens.revokeAllFor).toHaveBeenCalledWith('member-1');
+    });
+  });
+
+  describe('setPassword', () => {
+    it('coupe aussi les sessions longues, que la date ne périme pas', async () => {
+      await service.setPassword('member-1', 'nouveaumotdepasse');
+
+      // `passwordChangedAt` ne refuse que les JWT antérieurs ; un refresh token
+      // n'en est pas un et survivrait deux mois à la réinitialisation.
+      const [id, patch] = memberRepo.update.mock.calls[0] as [
+        string,
+        Partial<Member>,
+      ];
+      expect(id).toBe('member-1');
+      expect(patch.passwordChangedAt).toBeInstanceOf(Date);
+      expect(refreshTokens.revokeAllFor).toHaveBeenCalledWith('member-1');
+    });
+  });
+
+  describe('logout', () => {
+    it('révoque le token présenté', async () => {
+      await service.logout('refresh-1');
+
+      expect(refreshTokens.revoke).toHaveBeenCalledWith('refresh-1');
     });
   });
 });

@@ -56,6 +56,8 @@ export const fr = {
       'Tu es le seul admin : nomme quelqu’un d’autre avant de partir, ou supprime le groupe.',
     password_required_for_email_change:
       'Confirme ton mot de passe pour changer ton email.',
+    reset_code_invalid:
+      'Ce code n’est pas valable, ou il a expiré. Redemandes-en un.',
     quantity_required_to_switch:
       'Précise la quantité en stock pour passer en suivi par quantité.',
     restock_quantity_required:
@@ -194,6 +196,21 @@ export const fr = {
     exempleEmail: 'vous@exemple.fr',
     motDePasse: 'Mot de passe',
     caracteresMinimum: '%{count} caractères minimum',
+    motDePasseOublie: 'Mot de passe oublié ?',
+    oubliTitre: 'Retrouver son compte',
+    oubliQuoi:
+      'Entre l’adresse de ton compte. Si elle en a un, un code à %{count} caractères y arrive dans la minute.',
+    envoyerLeCode: 'Envoyer le code',
+    // Jamais « c'est envoyé » : le serveur ne dit pas si le compte existe, et
+    // l'écran ne doit pas le dire à sa place.
+    oubliEnvoye:
+      'Si un compte existe à cette adresse, le code vient d’y partir. Il vaut un quart d’heure.',
+    nouveauTitre: 'Nouveau mot de passe',
+    codeRecu: 'Code reçu',
+    nouveauMotDePasse: 'Nouveau mot de passe',
+    valider: 'Changer le mot de passe',
+    change: 'Mot de passe changé — te voilà connecté',
+    renvoyer: 'Je n’ai rien reçu',
     statutIdentifiants: 'Statut: attente_identifiants',
     statutCreation: 'Statut: création_compte',
   },

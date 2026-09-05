@@ -3,9 +3,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MailModule } from '../mail/mail.module';
 import { Member } from '../members/entities/member.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { PasswordReset } from './entities/password-reset.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { PasswordResetService } from './password-reset.service';
+import { RefreshTokenService } from './refresh-token.service';
 import { AdminGuard } from './guards/admin.guard';
 import { GroupMemberGuard } from './guards/group-member.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -14,7 +19,8 @@ import { TokenService } from './token.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Member]),
+    TypeOrmModule.forFeature([Member, PasswordReset, RefreshToken]),
+    MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -35,6 +41,8 @@ import { TokenService } from './token.service';
   controllers: [AuthController],
   providers: [
     AuthService,
+    PasswordResetService,
+    RefreshTokenService,
     TokenService,
     JwtStrategy,
     JwtAuthGuard,
