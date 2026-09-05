@@ -5,6 +5,7 @@ import { authedRequest } from './authed';
 import { apiRequest } from './client';
 import { purgePersistedCache } from './persist';
 import { queryKeys } from './query-client';
+import { revokeSession } from './session';
 
 interface RegisterInput {
   name: string;
@@ -27,7 +28,8 @@ export function useRegister() {
         method: 'POST',
         body: input,
       }),
-    onSuccess: ({ accessToken, member }) => signIn(accessToken, member),
+    onSuccess: ({ accessToken, refreshToken, member }) =>
+      signIn({ accessToken, refreshToken }, member),
   });
 }
 
@@ -37,7 +39,8 @@ export function useLogin() {
   return useMutation({
     mutationFn: (input: LoginInput) =>
       apiRequest<AuthResponse>('/auth/login', { method: 'POST', body: input }),
-    onSuccess: ({ accessToken, member }) => signIn(accessToken, member),
+    onSuccess: ({ accessToken, refreshToken, member }) =>
+      signIn({ accessToken, refreshToken }, member),
   });
 }
 
@@ -74,7 +77,8 @@ export function useResetPassword() {
         method: 'POST',
         body: input,
       }),
-    onSuccess: ({ accessToken, member }) => signIn(accessToken, member),
+    onSuccess: ({ accessToken, refreshToken, member }) =>
+      signIn({ accessToken, refreshToken }, member),
   });
 }
 
@@ -116,6 +120,11 @@ export function useSignOut() {
   const queryClient = useQueryClient();
 
   return async () => {
+    // Lu avant d'effacer, et envoyé sans qu'on l'attende : sans ça la session
+    // longue resterait ouverte côté serveur pendant deux mois, et se
+    // déconnecter n'aurait fermé la porte que sur cet appareil.
+    revokeSession(useSession.getState().refreshToken);
+
     await signOut();
     // Sans ça, le prochain compte connecté verrait un instant l'étagère du
     // précédent — et depuis que le cache va sur disque, il la reverrait même

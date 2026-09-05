@@ -3,12 +3,12 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
+import { RefreshTokenDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
 import { PasswordResetService } from './password-reset.service';
 
 /**
- * Les deux seules routes ouvertes sans jeton — donc les deux seules qu'un
- * inconnu peut marteler.
+ * Les routes ouvertes sans jeton — donc les seules qu'un inconnu peut marteler.
  *
  * Le plafond global les couvre déjà, mais il est calibré pour quelqu'un qui
  * coche sa liste au magasin : cent vingt requêtes par minute laissent tout le
@@ -67,5 +67,38 @@ export class AuthController {
     await this.authService.setPassword(memberId, dto.password);
 
     return this.authService.login({ email: dto.email, password: dto.password });
+  }
+
+  /**
+   * Un access token neuf contre un refresh token valable.
+   *
+   * Ouverte sans jeton, forcément : on vient ici *parce que* l'access token ne
+   * vaut plus rien, et exiger celui qu'on remplace n'aurait pas de sens.
+   *
+   * Le plafond est plus large que les autres : un appareil passe ici une fois
+   * par heure sans rien avoir à se reprocher, et le resserrer déconnecterait
+   * quelqu'un qui a simplement laissé l'app ouverte. Il n'y a d'ailleurs rien à
+   * deviner — 256 bits ne se martèlent pas — ce qu'on borne ici, c'est la
+   * charge, pas une porte.
+   */
+  @Post('refresh')
+  @Throttle({ default: { limit: 30, ttl: 900_000 } })
+  @HttpCode(HttpStatus.OK)
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refresh(dto.refreshToken);
+  }
+
+  /**
+   * Ferme la session longue. 204 même sur un token inconnu.
+   *
+   * Le contraire ferait de cette route un oracle : on saurait, en la
+   * questionnant, quels tokens existent. Et quelqu'un qui se déconnecte a de
+   * toute façon obtenu ce qu'il voulait — l'app efface sa session sans
+   * attendre la réponse.
+   */
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(@Body() dto: RefreshTokenDto): Promise<void> {
+    await this.authService.logout(dto.refreshToken);
   }
 }

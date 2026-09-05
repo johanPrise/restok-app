@@ -59,6 +59,10 @@ docker exec restock-postgres psql -U restock -d restock -c '\dt'
 |---|---|---|---|
 | POST | `/auth/register` | public | Inscription — crée un membre sans groupe |
 | POST | `/auth/login` | public | Connexion |
+| POST | `/auth/refresh` | public | Échange un refresh token contre des jetons neufs |
+| POST | `/auth/logout` | public | Ferme la session longue — 204 même sur un token inconnu |
+| POST | `/auth/forgot-password` | public | Envoie un code — 204 que le compte existe ou non |
+| POST | `/auth/reset-password` | public | Pose le mot de passe et ouvre une session |
 | POST | `/groups` | authentifié | Créer un groupe — le créateur devient admin |
 | POST | `/groups/join` | authentifié | Rejoindre via code d'invitation |
 | GET | `/groups/me` | membre | Détail du groupe + nombre de membres |
@@ -101,10 +105,38 @@ Ce que ça change :
 | `POST /groups` / `/groups/join` | renvoyaient un token réémis | renvoient le groupe seul |
 | Coût par requête authentifiée | 0 requête | 1 `SELECT` par clé primaire |
 
-Le client mobile n'a donc **jamais** à remplacer son token en cours de session.
+Le client mobile ne remplace donc **jamais** son token pour un changement de
+droits : il n'y a rien à réémettre. Il le remplace à l'expiration, et seulement
+à l'expiration, par `POST /auth/refresh` — voir ci-dessous.
 
 Si la charge le justifiait un jour, l'optimisation se fait par un cache court
 (quelques secondes) devant ce lookup — pas en remettant les droits dans le token.
+
+### Les sessions longues
+
+L'access token dure une heure et ne se révoque pas ; le refresh token dure deux
+mois, se révoque, et ne sert qu'à obtenir des access tokens neufs. Sans lui, une
+heure était aussi la durée de la session.
+
+Il **tourne** à chaque usage, ce qui rend un vol visible : un token volé finit
+par être présenté deux fois, et la seconde présentation coupe toutes les
+sessions du membre. Une fenêtre de trente secondes distingue ce cas d'une
+réponse perdue en chemin, que la rotation produirait sinon toute seule.
+
+Trois choses valent d'être sues avant d'y toucher :
+
+- Un token révoqué **sans remplaçant** est une déconnexion, pas un vol — et il
+  doit être refusé sans passer par la fenêtre de grâce, sinon se déconnecter ne
+  tiendrait que trente secondes.
+- Le hash est un SHA-256, pas un bcrypt comme les codes de réinitialisation :
+  un hash bcrypt ne s'interroge pas, et le client n'envoie que le token. Les
+  256 bits d'entropie rendent le durcissement inutile de toute façon.
+- `passwordChangedAt` ne périme que les JWT. Les refresh tokens sont effacés
+  explicitement par [`AuthService.setPassword`](src/auth/auth.service.ts) —
+  sans quoi une réinitialisation ne fermerait qu'une porte sur deux.
+
+Détails et raisons dans
+[`refresh-token.service.ts`](src/auth/refresh-token.service.ts).
 
 ## State machine des items
 
