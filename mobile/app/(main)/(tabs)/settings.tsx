@@ -332,8 +332,10 @@ function DeleteGroup({
 /**
  * Quitter le groupe, en deux temps.
  *
- * Le backend retient le dernier admin qui laisserait du monde derrière lui ; on
- * affiche son message tel quel plutôt que d'en réécrire un approximatif.
+ * Plus personne n'est retenu, pas même le dernier responsable : le backend
+ * transmet sa place au membre présent depuis le plus longtemps plutôt que de
+ * lui opposer un refus. Cet écran n'a donc plus de cas particulier à porter —
+ * il en portait un, du temps où partir pouvait échouer.
  */
 function LeaveGroup() {
   const locale = useLocale();

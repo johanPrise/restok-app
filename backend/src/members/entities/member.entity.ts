@@ -67,6 +67,21 @@ export class Member {
   @Column({ name: 'group_id', type: 'uuid', nullable: true })
   groupId: string | null;
 
+  /**
+   * Quand ce membre est entré dans son groupe — et non quand il s'est inscrit.
+   *
+   * La distinction ne servait à rien jusqu'à ce qu'un admin puisse partir : il
+   * faut alors désigner qui reprend les clés, et la règle retenue est « le
+   * membre présent depuis le plus longtemps ». `createdAt` aurait fait hériter
+   * quelqu'un d'inscrit il y a un an mais arrivé hier, devant un membre présent
+   * depuis six mois.
+   *
+   * `null` hors d'un groupe : il n'y a alors rien à dater. La colonne suit donc
+   * `groupId` — les deux sont posées et effacées ensemble.
+   */
+  @Column({ name: 'joined_at', type: 'timestamptz', nullable: true })
+  joinedAt: Date | null;
+
   @ManyToOne(() => Group, (group) => group.members, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'group_id' })
   group: Group | null;

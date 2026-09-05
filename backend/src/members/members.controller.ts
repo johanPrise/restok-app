@@ -66,6 +66,25 @@ export class MembersController {
     return this.membersService.leaveGroup(user.id, user.groupId!);
   }
 
+  /**
+   * Supprimer son compte.
+   *
+   * **Sans `GroupMemberGuard`**, contrairement à tout ce qui l'entoure : on doit
+   * pouvoir supprimer un compte qu'on vient de créer, avant même d'avoir
+   * rejoint qui que ce soit. Exiger un groupe enfermerait dehors ceux qui
+   * n'ont fait que s'inscrire.
+   *
+   * Le mot de passe n'est **pas** redemandé. Il l'est pour changer d'email,
+   * parce qu'un email volé sert à prendre le compte ; ici l'appelant est déjà
+   * authentifié et ne prend rien à personne. La confirmation est à l'écran,
+   * là où elle se lit.
+   */
+  @Delete('me/account')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteAccount(@CurrentUser() user: AuthenticatedUser) {
+    return this.membersService.deleteAccount(user.id);
+  }
+
   @Patch(':id/role')
   @UseGuards(GroupMemberGuard, AdminGuard)
   setRole(

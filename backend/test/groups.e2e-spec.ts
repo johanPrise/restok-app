@@ -417,11 +417,18 @@ describe('Groups & members (e2e)', () => {
       await auth(app, bob).delete('/members/me').expect(204);
     });
 
-    it('retient le dernier admin quand il laisse du monde derrière lui', async () => {
+    it('ne retient pas le dernier admin, et promeut à sa place', async () => {
       await createGroupWith(app, alice, [bob]);
 
-      await auth(app, alice).delete('/members/me').expect(409);
-      await auth(app, alice).get('/members').expect(200);
+      // Cette route répondait 409 : « nomme quelqu'un d'abord ». Le refus
+      // tenait tant qu'on pouvait choisir de rester ; la suppression de compte
+      // l'a rendu intenable, et le garder ici aurait fait dépendre le droit de
+      // partir du bouton sur lequel on appuie.
+      await auth(app, alice).delete('/members/me').expect(204);
+
+      // Bob a hérité des clés : il peut créer un item, ce qu'un simple membre
+      // ne peut pas faire.
+      await auth(app, bob).post('/items').send({ name: 'Éponges' }).expect(201);
     });
 
     it('laisse partir un admin seul dans son groupe', async () => {
@@ -431,7 +438,7 @@ describe('Groups & members (e2e)', () => {
       await auth(app, alice).get('/members').expect(403);
     });
 
-    it('libère le dernier admin une fois quelqu’un promu', async () => {
+    it('laisse partir un admin quand un autre reste en place', async () => {
       await createGroupWith(app, alice, [bob]);
 
       await auth(app, alice)

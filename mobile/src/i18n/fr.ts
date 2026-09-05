@@ -52,8 +52,6 @@ export const fr = {
       '« %{nom} » est déjà épuisé — il n’y a plus rien à prendre.',
     item_changed_meanwhile:
       'Cet item a changé entre-temps. Rafraîchis pour voir où il en est.',
-    last_admin_must_hand_over:
-      'Tu es le seul admin : nomme quelqu’un d’autre avant de partir, ou supprime le groupe.',
     password_required_for_email_change:
       'Confirme ton mot de passe pour changer ton email.',
     reset_code_invalid:
@@ -580,5 +578,14 @@ export const fr = {
     pourConfirmer: 'Pour confirmer le changement d’email',
     explication:
       'Ton nom s’affiche sous chaque prise et chaque rachat. Ton email sert à te connecter — le changer demande ton mot de passe.',
+    supprimer: 'Supprimer mon compte',
+    suppressionQuoi:
+      'Ton compte et ton email partent définitivement. Le registre garde ce que tu as pris et racheté, mais sans ton nom — les autres s’en servent pour savoir où en sont les stocks.',
+    suppressionSuccession:
+      'Tu es le seul responsable : quelqu’un d’autre reprendra le groupe à ta place.',
+    suppressionSeul: 'Ton inventaire part avec toi.',
+    suppressionSeulGroupe: 'Tu es seul dans le groupe : il part avec toi.',
+    supprimeDefinitivement: 'Supprimer définitivement',
+    compteSupprime: 'Ton compte a été supprimé.',
   },
 } as const;

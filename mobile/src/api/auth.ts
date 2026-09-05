@@ -115,6 +115,32 @@ export function useUpdateProfile() {
   });
 }
 
+/**
+ * Supprimer son compte — définitivement.
+ *
+ * La session locale est effacée dans la foulée : le compte n'existe plus, donc
+ * `JwtStrategy` refuserait la requête suivante de toute façon. Rien à révoquer
+ * côté serveur non plus, il vient de le faire lui-même.
+ *
+ * Le cache va avec, sur disque comme en mémoire. Sans ça, le prochain à se
+ * connecter sur cet appareil verrait l'étagère de quelqu'un dont le compte
+ * n'existe plus — et la reverrait après un redémarrage.
+ */
+export function useDeleteAccount() {
+  const signOut = useSession((s) => s.signOut);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      authedRequest<void>('/members/me/account', { method: 'DELETE' }),
+    onSuccess: async () => {
+      await signOut();
+      queryClient.clear();
+      purgePersistedCache();
+    },
+  });
+}
+
 export function useSignOut() {
   const signOut = useSession((s) => s.signOut);
   const queryClient = useQueryClient();

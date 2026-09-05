@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import { RefreshTokenService } from '../auth/refresh-token.service';
+import { GroupsService } from '../groups/groups.service';
 import { Member, MemberRole } from './entities/member.entity';
+import { pickSuccessor } from './succession';
 import { BUSINESS_CODES, badRequest, conflict } from '../common/business-error';
 
 export interface MemberSummary {
@@ -18,6 +21,9 @@ export class MembersService {
   constructor(
     @InjectRepository(Member)
     private readonly memberRepo: Repository<Member>,
+    private readonly groupsService: GroupsService,
+    private readonly refreshTokens: RefreshTokenService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findAllInGroup(groupId: string): Promise<MemberSummary[]> {
@@ -70,35 +76,120 @@ export class MembersService {
    * lui-même : `removeFromGroup` est réservée aux admins, et leur interdit de
    * se retirer eux-mêmes.
    *
-   * Le dernier admin n'est retenu que s'il **laisse du monde derrière lui** :
-   * un groupe sans admin n'a plus personne pour ajouter un item ni accepter
-   * quelqu'un. Seul dans son groupe, il ne bloque personne et part librement.
+   * Personne n'est retenu, y compris le dernier admin. Cette méthode lui
+   * opposait un refus — « nomme quelqu'un d'abord » — qui tenait tant qu'on
+   * pouvait choisir de rester ; la suppression de compte a rendu ce refus
+   * intenable, et le garder ici aurait fait dépendre le droit de partir du
+   * bouton sur lequel on appuie. La place est donc reprise d'office :
+   * voir `departFrom`.
    */
   async leaveGroup(memberId: string, groupId: string): Promise<void> {
-    const member = await this.memberRepo.findOne({
-      where: { id: memberId, groupId },
-    });
-    if (!member) {
-      throw new NotFoundException("Tu n'appartiens pas à ce groupe");
-    }
-
-    if (member.role === MemberRole.ADMIN) {
-      const [admins, total] = await Promise.all([
-        this.memberRepo.count({ where: { groupId, role: MemberRole.ADMIN } }),
-        this.memberRepo.count({ where: { groupId } }),
-      ]);
-
-      if (admins === 1 && total > 1) {
-        throw conflict(
-          BUSINESS_CODES.LAST_ADMIN_MUST_HAND_OVER,
-          "Tu es le seul admin : nomme quelqu'un d'autre avant de partir, ou supprime le groupe",
-        );
+    await this.dataSource.transaction(async (manager) => {
+      const member = await manager
+        .getRepository(Member)
+        .findOne({ where: { id: memberId, groupId } });
+      if (!member) {
+        throw new NotFoundException("Tu n'appartiens pas à ce groupe");
       }
+
+      await this.departFrom(manager, member);
+    });
+  }
+
+  /**
+   * Supprimer son compte — pour de bon, et sans rien demander à personne.
+   *
+   * Aucune condition, aucun refus : c'est une exigence des deux stores, et
+   * c'est surtout la seule réponse acceptable à quelqu'un qui veut s'en aller.
+   * Ce qui bloquait le départ du dernier admin est donc traité, pas opposé —
+   * voir `departFrom`.
+   *
+   * Le compte part en **soft-delete**, et c'est ce qui rend le journal
+   * anonyme sans le trouer : ses lignes restent, `JwtStrategy` et les lectures
+   * du registre ignorent déjà les membres supprimés, et « Sam · il y a 2
+   * jours » devient une action sans auteur. Effacer les lignes aurait crevé le
+   * registre des autres, qui s'en servent pour savoir qui a pris quoi ; les
+   * garder nommées aurait conservé une donnée personnelle après suppression.
+   *
+   * Les sessions longues partent avec : sans ça, un refresh token survivrait
+   * deux mois à un compte qui n'existe plus.
+   */
+  async deleteAccount(memberId: string): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(Member);
+      const member = await repo.findOne({ where: { id: memberId } });
+      if (!member) {
+        throw new NotFoundException('Membre introuvable');
+      }
+
+      if (member.groupId) {
+        await this.departFrom(manager, member);
+      }
+
+      // L'email est unique en base : le laisser tel quel interdirait de se
+      // réinscrire avec la même adresse, ce qui ferait d'une suppression un
+      // bannissement. Il est donc brouillé, en gardant la ligne lisible pour
+      // qui débogue.
+      await repo.update(member.id, {
+        email: `supprime+${member.id}@restock.invalid`,
+        pushToken: null,
+      });
+      await repo.softDelete(member.id);
+    });
+
+    // Hors transaction : la session est déjà morte pour `JwtStrategy`, qui ne
+    // trouve plus le membre. Ceci ferme la porte du renouvellement.
+    await this.refreshTokens.revokeAllFor(memberId);
+  }
+
+  /**
+   * Le départ d'un membre de son groupe, quelle qu'en soit la raison.
+   *
+   * Trois cas, dans cet ordre :
+   *
+   * - **Seul dans le groupe** — le groupe s'en va avec lui. Le laisser derrière
+   *   fabriquait un groupe vide que plus personne ne pouvait ni rouvrir ni
+   *   supprimer, avec son nom et ses items conservés indéfiniment.
+   * - **Dernier admin, mais pas seul** — la place est reprise d'office par le
+   *   membre présent depuis le plus longtemps. C'est ce que font WhatsApp et
+   *   Telegram, et c'est ce qui remplace le refus qu'opposait cette méthode.
+   * - **Sinon** — il n'y a rien à transmettre.
+   */
+  private async departFrom(
+    manager: EntityManager,
+    member: Member,
+  ): Promise<void> {
+    const repo = manager.getRepository(Member);
+    const groupId = member.groupId!;
+
+    const others = await repo.find({
+      where: { groupId },
+      select: { id: true, role: true, joinedAt: true, createdAt: true },
+    });
+    const remaining = others.filter((other) => other.id !== member.id);
+
+    if (remaining.length === 0) {
+      // `removeWithin` détache déjà tous les membres du groupe, celui-ci
+      // compris : il n'y a rien à faire de plus.
+      await this.groupsService.removeWithin(manager, groupId);
+      return;
     }
 
-    member.groupId = null;
-    member.role = MemberRole.MEMBER;
-    await this.memberRepo.save(member);
+    const lastAdmin =
+      member.role === MemberRole.ADMIN &&
+      !remaining.some((other) => other.role === MemberRole.ADMIN);
+
+    if (lastAdmin) {
+      const successor = pickSuccessor(remaining);
+      // `remaining` n'est pas vide, donc il y a forcément un successeur.
+      await repo.update(successor!.id, { role: MemberRole.ADMIN });
+    }
+
+    await repo.update(member.id, {
+      groupId: null,
+      role: MemberRole.MEMBER,
+      joinedAt: null,
+    });
   }
 
   /**
