@@ -95,9 +95,9 @@ viser un autre serveur, poser `EXPO_PUBLIC_API_URL`.
 ## Les tests
 
 ```bash
-cd backend && pnpm test        # 260 unitaires
-cd backend && pnpm test:e2e    # 267 e2e, contre un vrai PostgreSQL
-cd mobile  && pnpm test        # 240
+cd backend && pnpm test        # 276 unitaires
+cd backend && pnpm test:e2e    # 279 e2e, contre un vrai PostgreSQL
+cd mobile  && pnpm test        # 247
 ```
 
 Les e2e parlent à une vraie base plutôt qu'à un double : ils vérifient des
@@ -274,6 +274,33 @@ renouvellements — un appareil y passe une fois par heure sans rien avoir à se
 reprocher. Le plafond général est large — quelqu'un qui coche sa liste au
 magasin envoie des rafales — et ce sont les portes ouvertes sans jeton qui se
 resserrent. `helmet` pose les en-têtes que personne ne pose seul.
+
+## Partir
+
+On ne retient personne. Quitter son groupe ou supprimer son compte réussit
+toujours — y compris pour le dernier responsable, à qui cette app opposait
+jusqu'ici un refus : « nomme quelqu'un d'abord ». Le refus tenait tant qu'on
+pouvait choisir de rester ; la suppression de compte l'a rendu intenable, et le
+garder aurait fait dépendre le droit de partir du bouton sur lequel on appuie.
+
+La place est donc **reprise d'office** par le membre présent dans le groupe
+depuis le plus longtemps. C'est ce que font WhatsApp — qui promeut le suivant
+dans l'ordre d'arrivée — et Telegram, qui propose d'abord de désigner son
+successeur. L'app fait les deux : elle annonce qui héritera, et transmet sans
+elle si la personne ne choisit pas.
+
+Ce qu'on ne reprend **pas** de Telegram : le groupe laissé sans propriétaire
+quand il n'y a aucun admin à qui transmettre, état où plus personne ne peut
+ajouter ni retirer qui que ce soit. Ici n'importe quel membre restant peut
+hériter, et un groupe dont le dernier membre s'en va part avec lui — sans quoi
+il resterait un groupe vide que personne ne peut plus ni rouvrir ni supprimer.
+
+Le compte part en **soft-delete**, et c'est ce qui rend le journal anonyme sans
+le trouer. Les lignes restent, le nom disparaît : effacer les lignes aurait
+crevé le registre des autres, qui s'en servent pour savoir qui a pris quoi, et
+les garder nommées aurait conservé une donnée personnelle après suppression.
+L'email, lui, est brouillé — il est unique en base, et le laisser tel quel
+aurait transformé une suppression en bannissement de l'adresse.
 
 ## Ce qui manque
 

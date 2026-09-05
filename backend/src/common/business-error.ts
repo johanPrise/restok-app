@@ -36,7 +36,6 @@ export const BUSINESS_CODES = {
   INVALID_CURSOR: 'invalid_cursor',
   ITEM_ALREADY_EMPTY: 'item_already_empty',
   ITEM_CHANGED_MEANWHILE: 'item_changed_meanwhile',
-  LAST_ADMIN_MUST_HAND_OVER: 'last_admin_must_hand_over',
   PASSWORD_REQUIRED_FOR_EMAIL_CHANGE: 'password_required_for_email_change',
   QUANTITY_REQUIRED_TO_SWITCH: 'quantity_required_to_switch',
   REFRESH_TOKEN_INVALID: 'refresh_token_invalid',

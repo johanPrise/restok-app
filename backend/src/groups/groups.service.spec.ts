@@ -213,7 +213,9 @@ describe('GroupsService', () => {
       });
       expect(txMemberRepo.update).toHaveBeenCalledWith(
         { groupId: 'group-1' },
-        { groupId: null, role: MemberRole.MEMBER },
+        // `joinedAt` suit `groupId` : hors d'un groupe, il n'y a rien à dater,
+        // et une date qui traîne fausserait la succession du groupe suivant.
+        { groupId: null, role: MemberRole.MEMBER, joinedAt: null },
       );
       expect(txGroupRepo.softRemove).toHaveBeenCalled();
     });

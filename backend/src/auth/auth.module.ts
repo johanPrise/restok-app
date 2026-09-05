@@ -51,6 +51,9 @@ import { TokenService } from './token.service';
   ],
   exports: [
     TokenService,
+    // `MembersService` en a besoin : un compte supprimé ne doit pas laisser
+    // derrière lui un refresh token valable deux mois.
+    RefreshTokenService,
     JwtAuthGuard,
     AdminGuard,
     GroupMemberGuard,

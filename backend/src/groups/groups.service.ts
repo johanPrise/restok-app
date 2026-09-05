@@ -44,6 +44,9 @@ export class GroupsService {
       // Le créateur devient admin du groupe qu'il vient d'ouvrir.
       member.groupId = group.id;
       member.role = MemberRole.ADMIN;
+      // Daté à l'entrée, pas à l'inscription : c'est cette date qui désignera
+      // son successeur le jour où il partira. Voir `succession.ts`.
+      member.joinedAt = new Date();
       await manager.getRepository(Member).save(member);
 
       return group;
@@ -63,6 +66,7 @@ export class GroupsService {
 
       member.groupId = group.id;
       member.role = MemberRole.MEMBER;
+      member.joinedAt = new Date();
       await manager.getRepository(Member).save(member);
 
       // Un groupe « solo » qui accueille quelqu'un cesse d'en être un. Sans
@@ -105,20 +109,36 @@ export class GroupsService {
    * un autre.
    */
   async remove(groupId: string): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
-      const group = await manager
-        .getRepository(Group)
-        .findOne({ where: { id: groupId } });
-      if (!group) {
-        throw new NotFoundException('Groupe introuvable');
-      }
+    await this.dataSource.transaction((manager) =>
+      this.removeWithin(manager, groupId),
+    );
+  }
 
-      await manager.getRepository(Item).softDelete({ groupId });
-      await manager
-        .getRepository(Member)
-        .update({ groupId }, { groupId: null, role: MemberRole.MEMBER });
-      await manager.getRepository(Group).softRemove(group);
-    });
+  /**
+   * Le même travail, dans la transaction de l'appelant.
+   *
+   * `MembersService` en a besoin : quand le dernier membre s'en va — ou
+   * supprime son compte — le groupe qu'il laisse derrière lui n'a plus
+   * personne pour le rouvrir, et son départ doit l'emporter dans le même
+   * mouvement. Deux transactions imbriquées auraient laissé la fenêtre d'un
+   * groupe vidé de ses membres mais toujours vivant.
+   */
+  async removeWithin(manager: EntityManager, groupId: string): Promise<void> {
+    const group = await manager
+      .getRepository(Group)
+      .findOne({ where: { id: groupId } });
+    if (!group) {
+      throw new NotFoundException('Groupe introuvable');
+    }
+
+    await manager.getRepository(Item).softDelete({ groupId });
+    await manager
+      .getRepository(Member)
+      .update(
+        { groupId },
+        { groupId: null, role: MemberRole.MEMBER, joinedAt: null },
+      );
+    await manager.getRepository(Group).softRemove(group);
   }
 
   /** Charge le membre et refuse s'il appartient déjà à un groupe (MVP : un seul). */

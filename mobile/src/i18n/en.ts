@@ -39,8 +39,6 @@ export const en = {
       '“%{nom}” is already out — there is nothing left to take.',
     item_changed_meanwhile:
       'That item changed in the meantime. Refresh to see where it stands.',
-    last_admin_must_hand_over:
-      'You are the only admin: make someone else one before leaving, or delete the group.',
     password_required_for_email_change:
       'Confirm your password to change your email.',
     reset_code_invalid:
@@ -532,5 +530,14 @@ export const en = {
     pourConfirmer: 'To confirm the email change',
     explication:
       'Your name shows under every take and every restock. Your email signs you in — changing it asks for your password.',
+    supprimer: 'Delete my account',
+    suppressionQuoi:
+      'Your account and your email go for good. The log keeps what you took and restocked, but without your name — the others rely on it to know where the stock stands.',
+    suppressionSuccession:
+      'You are the only admin: someone else will take over the group in your place.',
+    suppressionSeul: 'Your inventory goes with you.',
+    suppressionSeulGroupe: 'You are alone in the group: it goes with you.',
+    supprimeDefinitivement: 'Delete for good',
+    compteSupprime: 'Your account has been deleted.',
   },
 } as const;

@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useUpdateProfile } from '@/api/auth';
+import { useDeleteAccount, useUpdateProfile } from '@/api/auth';
+import { useMembers } from '@/api/groups';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { Text } from '@/components/Text';
 import { useLocale, useT } from '@/i18n/useT';
+import { deletionConsequences } from '@/lib/account-deletion';
 import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
+import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
-import { spacing } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 
 /** Alignés sur UpdateProfileDto côté backend. */
 const MIN_NAME_LENGTH = 2;
@@ -28,6 +31,7 @@ export default function Account() {
   const goBack = useGoBack('/settings');
   const locale = useLocale();
   const t = useT();
+  const { colors } = useTheme();
   const member = useSession((s) => s.member);
   const update = useUpdateProfile();
 
@@ -149,7 +153,95 @@ export default function Account() {
         loading={update.isPending}
         style={styles.submit}
       />
+
+      <View style={[styles.danger, { borderTopColor: colors.thread }]}>
+        <DeleteAccount />
+      </View>
     </FormScreen>
+  );
+}
+
+/**
+ * Supprimer son compte, en deux temps.
+ *
+ * Les deux stores l'exigent d'une app qui permet d'en créer un, et c'est de
+ * toute façon la seule réponse acceptable à quelqu'un qui veut s'en aller.
+ *
+ * Le mot de passe n'est pas redemandé — il l'est pour changer d'email, parce
+ * qu'un email volé sert à prendre le compte ; ici, celui qui appuie ne prend
+ * rien à personne. Ce qui compte est de dire **ce qui va se passer** avant, et
+ * pas seulement que c'est irréversible : ce qu'il advient du registre que les
+ * autres lisent, et de qui reprend les clés.
+ */
+function DeleteAccount() {
+  const locale = useLocale();
+  const t = useT();
+  const solo = useIsSolo();
+  const member = useSession((s) => s.member);
+  const { data: members } = useMembers();
+  const [confirming, setConfirming] = useState(false);
+  const remove = useDeleteAccount();
+
+  if (!confirming) {
+    return (
+      <Button
+        label={t('compte.supprimer')}
+        variant="secondary"
+        onPress={() => setConfirming(true)}
+      />
+    );
+  }
+
+  // Ce que ce départ emporte : le groupe, ou les clés dans les mains de
+  // quelqu'un qui ne l'a pas demandé. Les deux phrases ne s'affichent que
+  // quand elles sont vraies — sinon elles deviennent un décor.
+  const { alone, lastAdmin } = deletionConsequences(member, members);
+
+  return (
+    <View style={styles.confirm}>
+      <Text variant="caption" color="inkSoft">
+        {t('compte.suppressionQuoi')}
+      </Text>
+
+      {alone && (
+        <Text variant="caption" color="inkSoft">
+          {/* Seul, on n'a pas de « groupe » : on a son étagère. Employer le mot
+              du partage devant quelqu'un qui ne partage rien, c'est lui parler
+              d'une chose qu'il n'a pas. */}
+          {t(solo ? 'compte.suppressionSeul' : 'compte.suppressionSeulGroupe')}
+        </Text>
+      )}
+
+      {lastAdmin && (
+        <Text variant="caption" color="inkSoft">
+          {t('compte.suppressionSuccession')}
+        </Text>
+      )}
+
+      {remove.isError && (
+        <Text variant="caption" color="rustClay">
+          {apiErrorMessage(remove.error, locale)}
+        </Text>
+      )}
+
+      <View style={styles.actions}>
+        <Button
+          label={t('commun.annuler')}
+          variant="secondary"
+          onPress={() => setConfirming(false)}
+          style={styles.action}
+        />
+        <Button
+          label={t('compte.supprimeDefinitivement')}
+          variant="danger"
+          loading={remove.isPending}
+          // Pas de `toast` au succès : l'écran disparaît avec la session, et le
+          // message serait posé sur une app qui retourne à la connexion.
+          onPress={() => remove.mutate()}
+          style={styles.action}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -188,4 +280,14 @@ const styles = StyleSheet.create({
   form: { gap: spacing.md },
   feedback: { marginTop: spacing.sm },
   submit: { marginTop: spacing.lg },
+  // Séparé du formulaire par un trait : ce qui suit ne s'enregistre pas, il
+  // s'exécute. Les deux boutons ne doivent pas se ressembler de loin.
+  danger: {
+    marginTop: spacing.xl,
+    paddingTop: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  confirm: { gap: spacing.sm },
+  actions: { flexDirection: 'row', gap: spacing.sm },
+  action: { flex: 1 },
 });

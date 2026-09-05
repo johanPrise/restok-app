@@ -69,7 +69,11 @@ docker exec restock-postgres psql -U restock -d restock -c '\dt'
 | PATCH | `/groups/me` | admin | Renommer le groupe |
 | DELETE | `/groups/me` | admin | Supprimer (soft-delete) |
 | GET | `/members` | membre | Lister les membres du groupe |
+| PATCH | `/members/me` | authentifié | Son nom, son email |
 | PATCH | `/members/me/push-token` | membre | Enregistrer le push token |
+| DELETE | `/members/me` | membre | Quitter le groupe |
+| DELETE | `/members/me/account` | authentifié | Supprimer son compte |
+| PATCH | `/members/:id/role` | admin | Promouvoir ou rétrograder |
 | DELETE | `/members/:id` | admin | Retirer un membre du groupe |
 | GET | `/items` | membre | Lister les items du groupe |
 | POST | `/items` | admin | Créer un item |
@@ -137,6 +141,41 @@ Trois choses valent d'être sues avant d'y toucher :
 
 Détails et raisons dans
 [`refresh-token.service.ts`](src/auth/refresh-token.service.ts).
+
+### Partir, et la succession
+
+Rien ne retient un membre — ni `leaveGroup`, ni la suppression de compte. La
+seconde a forcé la première : on ne peut pas refuser à quelqu'un de supprimer
+son compte, et garder le refus sur le départ aurait fait dépendre le droit de
+partir du bouton pressé.
+
+`departFrom` traite les trois cas ([members.service.ts](src/members/members.service.ts)) :
+
+| Situation | Ce qui se passe |
+|---|---|
+| Seul dans le groupe | Le groupe et ses items partent avec lui |
+| Dernier admin, du monde derrière | Le membre présent depuis le plus longtemps hérite |
+| Il reste un autre admin | Rien à transmettre |
+
+La règle de succession vit à part, en fonction pure
+([succession.ts](src/members/succession.ts)) — elle se teste sans base, et son
+départage des entrées simultanées se lit sans dérouler une transaction.
+
+C'est ce qui a imposé `joined_at` : `created_at` date la création du **compte**,
+et aurait fait hériter quelqu'un d'inscrit il y a un an mais arrivé hier, devant
+un membre présent depuis six mois.
+
+### La suppression de compte
+
+Soft-delete, et c'est le choix qui porte tout le reste : les lectures du
+registre filtrent déjà sur `deleted_at`, si bien que les lignes survivent à leur
+auteur en perdant son nom. Effacer les lignes aurait crevé le registre des
+autres ; les garder nommées aurait conservé une donnée personnelle après
+suppression.
+
+L'email est brouillé au passage. Il porte une contrainte d'unicité : le laisser
+tel quel aurait interdit de se réinscrire avec la même adresse, ce qui fait
+d'une suppression un bannissement.
 
 ## State machine des items
 
