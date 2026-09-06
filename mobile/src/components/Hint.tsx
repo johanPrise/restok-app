@@ -36,20 +36,20 @@ export function Hint({ id }: Readonly<{ id: HintId }>) {
       accessibilityRole="alert"
       style={[
         styles.block,
-        { backgroundColor: colors.paperRaised, borderColor: colors.pantryTeal },
+        { backgroundColor: colors.raised, borderColor: colors.accent },
       ]}
     >
       <View style={styles.row}>
-        <Text variant="monoLabel" color="pantryTeal">
+        <Text variant="dataLabel" color="accent">
           {t(`geste.${id}.titre`)}
         </Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('geste.masquer')}
-          hitSlop={spacing.xs}
+          hitSlop={spacing.tight}
           onPress={() => void markLearned(id)}
         >
-          <Text variant="monoLabel" color="inkSoft">
+          <Text variant="dataLabel" color="inkSoft">
             {t('geste.compris')}
           </Text>
         </Pressable>
@@ -64,13 +64,13 @@ export function Hint({ id }: Readonly<{ id: HintId }>) {
 
 const styles = StyleSheet.create({
   block: {
-    gap: spacing.xs,
-    padding: spacing.md,
+    gap: spacing.tight,
+    padding: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.tag,
+    borderRadius: radius.base,
     // Le coin corné des tags : le repère appartient à l'écran, il n'est pas
     // une notification venue d'ailleurs.
-    borderBottomRightRadius: radius.tagFoldedCorner,
+    borderBottomRightRadius: radius.base,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
 });

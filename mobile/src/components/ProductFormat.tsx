@@ -67,7 +67,7 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
         accessibilityLabel={t('commun.formatDuProduit')}
         style={[
           styles.input,
-          { color: colors.ink, borderColor: colors.pantryTeal },
+          { color: colors.ink, borderColor: colors.accent },
         ]}
       />
     );
@@ -83,10 +83,10 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
             : t('commun.preciserFormat')
         }
         onPress={() => setDraft(item.format ?? '')}
-        hitSlop={spacing.xs}
+        hitSlop={spacing.tight}
         style={styles.link}
       >
-        <Text variant="caption" color={item.format ? 'inkSoft' : 'pantryTeal'}>
+        <Text variant="caption" color={item.format ? 'inkSoft' : 'accent'}>
           {item.format
             ? `Format : ${item.format} — corriger`
             : t('commun.preciserFormat')}
@@ -94,7 +94,7 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
       </Pressable>
 
       {setFormat.isError && (
-        <Text variant="caption" color="rustClay">
+        <Text variant="caption" color="out">
           {apiErrorMessage(setFormat.error, locale)}
         </Text>
       )}
@@ -103,14 +103,14 @@ export function ProductFormat({ item }: Readonly<ProductFormatProps>) {
 }
 
 const styles = StyleSheet.create({
-  row: { gap: 2 },
+  row: { gap: spacing.hair },
   link: { minHeight: MIN_TOUCH_TARGET, justifyContent: 'center' },
   input: {
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
-    fontFamily: fontFamily.mono,
-    fontSize: fontSize.body,
+    borderRadius: radius.base,
+    fontFamily: fontFamily.data,
+    fontSize: fontSize.md,
   },
 });

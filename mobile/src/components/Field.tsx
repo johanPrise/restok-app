@@ -41,7 +41,7 @@ export function Field({
 
   return (
     <View style={styles.group}>
-      <Text variant="monoLabel" color="inkSoft">
+      <Text variant="dataLabel" color="inkSoft">
         {label}
       </Text>
 
@@ -54,8 +54,8 @@ export function Field({
             styles.input,
             canReveal && styles.inputWithAction,
             {
-              backgroundColor: colors.paperRaised,
-              borderColor: error ? colors.rustClay : colors.thread,
+              backgroundColor: colors.raised,
+              borderColor: error ? colors.out : colors.rule,
               color: colors.ink,
             },
             style,
@@ -73,7 +73,7 @@ export function Field({
             onPress={() => setRevealed((shown) => !shown)}
             style={styles.action}
           >
-            <Text variant="monoLabel" color="pantryTeal">
+            <Text variant="dataLabel" color="accent">
               {revealed ? t('commun.masquer') : t('commun.afficher')}
             </Text>
           </Pressable>
@@ -81,7 +81,7 @@ export function Field({
       </View>
 
       {error !== undefined && (
-        <Text variant="caption" color="rustClay">
+        <Text variant="caption" color="out">
           {error}
         </Text>
       )}
@@ -92,15 +92,15 @@ export function Field({
 const ACTION_WIDTH = 88;
 
 const styles = StyleSheet.create({
-  group: { gap: spacing.xs },
+  group: { gap: spacing.tight },
   inputRow: { justifyContent: 'center' },
   input: {
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
-    fontFamily: fontFamily.body,
-    fontSize: fontSize.body,
+    borderRadius: radius.base,
+    fontFamily: fontFamily.text,
+    fontSize: fontSize.md,
   },
   // Réserve la place du bouton pour que le texte saisi ne passe pas dessous.
   inputWithAction: { paddingRight: ACTION_WIDTH },

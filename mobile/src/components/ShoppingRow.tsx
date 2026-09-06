@@ -8,7 +8,7 @@ import type { ShoppingLine } from '@/types/api';
 import { Button } from './Button';
 import { CheckIcon } from './icons';
 import { QuantityStepper } from './QuantityStepper';
-import { TagCard } from './TagCard';
+import { Card } from './Card';
 import { Text } from './Text';
 
 /** Au-delà, ce n'est plus une course, c'est une livraison. */
@@ -107,10 +107,10 @@ export function ShoppingRow({
       onPress={onToggle}
       onLongPress={onRemove}
     >
-      <TagCard style={styles.card}>
+      <Card style={styles.card}>
         <View style={styles.text}>
           <Text
-            variant="tagName"
+            variant="title"
             color={line.checked ? 'inkSoft' : 'ink'}
             style={line.checked && styles.struck}
             // Deux lignes comme sur l'étagère : « Pastilles lave-vaisselle
@@ -126,7 +126,7 @@ export function ShoppingRow({
               « lessive », il y en a douze sortes ; « ×3 L », il y en a une. */}
           {line.format !== null && (
             <Text
-              variant="mono"
+              variant="data"
               color="inkSoft"
               style={line.checked && styles.struck}
               numberOfLines={1}
@@ -147,15 +147,15 @@ export function ShoppingRow({
                   : t('courses.preciserQuantiteDe', { nom: line.name })
               }
               onPress={onEdit}
-              hitSlop={spacing.xs}
+              hitSlop={spacing.tight}
             >
-              {/* L'invite est en `pantryTeal`, pas en gris pâle : à 1,33:1 sur
+              {/* L'invite est en `accent`, pas en gris pâle : à 1,33:1 sur
                   le papier elle était illisible, et c'est du texte, pas un
                   ornement. Le teal la distingue en plus d'une quantité réelle —
                   celle-ci est une donnée, celle-là une action. */}
               <Text
-                variant="monoLabel"
-                color={quantity ? 'inkSoft' : 'pantryTeal'}
+                variant="dataLabel"
+                color={quantity ? 'inkSoft' : 'accent'}
                 style={line.checked && styles.struck}
               >
                 {quantity ?? t('courses.quantiteInvite')}
@@ -174,10 +174,10 @@ export function ShoppingRow({
                 nom: line.name,
               })}
               onPress={onRemove}
-              hitSlop={spacing.xs}
+              hitSlop={spacing.tight}
               style={styles.remove}
             >
-              <Text variant="monoLabel" color="rustClay">
+              <Text variant="dataLabel" color="out">
                 {t('commun.retirer')}
               </Text>
             </Pressable>
@@ -187,7 +187,7 @@ export function ShoppingRow({
               l'information qui évite d'acheter la chose en double. */}
           {who && (
             <View style={[styles.avatar, { backgroundColor: colors.inkSoft }]}>
-              <Text variant="mono" color="paperRaised">
+              <Text variant="data" color="raised">
                 {initial(who)}
               </Text>
             </View>
@@ -196,17 +196,15 @@ export function ShoppingRow({
             style={[
               styles.box,
               {
-                backgroundColor: line.checked
-                  ? colors.pantryTeal
-                  : 'transparent',
-                borderColor: line.checked ? colors.pantryTeal : colors.thread,
+                backgroundColor: line.checked ? colors.accent : 'transparent',
+                borderColor: line.checked ? colors.accent : colors.rule,
               },
             ]}
           >
-            {line.checked && <CheckIcon color={colors.paperRaised} />}
+            {line.checked && <CheckIcon color={colors.raised} />}
           </View>
         </View>
-      </TagCard>
+      </Card>
     </Pressable>
   );
 }
@@ -236,9 +234,9 @@ function QuantityEditor({
   const units = unitsInPacks(line, packs);
 
   return (
-    <TagCard style={styles.editor}>
+    <Card style={styles.editor}>
       <View style={styles.editorHead}>
-        <Text variant="tagName" style={styles.name} numberOfLines={1}>
+        <Text variant="title" style={styles.name} numberOfLines={1}>
           {line.name}
         </Text>
         <QuantityStepper
@@ -272,7 +270,7 @@ function QuantityEditor({
           style={styles.editorAction}
         />
       </View>
-    </TagCard>
+    </Card>
   );
 }
 
@@ -283,16 +281,21 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.tight,
     minHeight: MIN_TOUCH_TARGET,
   },
-  text: { flex: 1, gap: 2, alignItems: 'flex-start', maxWidth: '100%' },
+  text: {
+    flex: 1,
+    gap: spacing.hair,
+    alignItems: 'flex-start',
+    maxWidth: '100%',
+  },
   // `flexShrink` sur le nom seul : c'est lui qu'on tronque, jamais le format —
   // « ×6 maxi » coupé en « ×6 m » ne désigne plus rien.
   // Le barré est un style d'état, pas une nouvelle voix typographique : il
   // n'a donc rien à faire dans un variant de `Text`.
   struck: { textDecorationLine: 'line-through' },
-  marks: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  marks: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   remove: { minHeight: MIN_TOUCH_TARGET, justifyContent: 'center' },
   avatar: {
     width: AVATAR_SIZE,
@@ -304,19 +307,19 @@ const styles = StyleSheet.create({
   box: {
     width: BOX_SIZE,
     height: BOX_SIZE,
-    borderRadius: radius.checkbox,
+    borderRadius: radius.none,
     borderWidth: border.hairline,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  editor: { gap: spacing.xs },
+  editor: { gap: spacing.tight },
   editorHead: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.xs,
+    gap: spacing.tight,
   },
   name: { flex: 1 },
-  editorActions: { flexDirection: 'row', gap: spacing.xs },
+  editorActions: { flexDirection: 'row', gap: spacing.tight },
   editorAction: { flex: 1 },
 });

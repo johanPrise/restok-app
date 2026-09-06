@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { INVITE_CODE_LENGTH } from '@/components/CodeInput';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -50,8 +50,8 @@ export default function ForgotPassword() {
     <FormScreen>
       <BackLink onPress={goBack} />
 
-      <TagCard>
-        <Text variant="tagName">{t('acces.oubliTitre')}</Text>
+      <Card>
+        <Text variant="title">{t('acces.oubliTitre')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {t('acces.oubliQuoi', { count: INVITE_CODE_LENGTH })}
         </Text>
@@ -74,7 +74,7 @@ export default function ForgotPassword() {
         </View>
 
         {forgot.isError && (
-          <Text variant="caption" color="rustClay" style={styles.error}>
+          <Text variant="caption" color="out" style={styles.error}>
             {apiErrorMessage(forgot.error, locale)}
           </Text>
         )}
@@ -86,14 +86,14 @@ export default function ForgotPassword() {
           loading={forgot.isPending}
           style={styles.submit}
         />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  intro: { marginTop: spacing.sm },
-  form: { gap: spacing.md, marginTop: spacing.md },
-  error: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.md },
+  intro: { marginTop: spacing.tight },
+  form: { gap: spacing.base, marginTop: spacing.base },
+  error: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.base },
 });

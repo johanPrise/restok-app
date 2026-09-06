@@ -25,19 +25,19 @@ const SECTIONS: {
   {
     key: 'to_restock',
     titleKey: 'stock.aRacheter',
-    color: 'rustClay',
+    color: 'out',
     matches: (s) => s === 'to_restock' || s === 'out_of_stock',
   },
   {
     key: 'low',
     titleKey: 'stock.stockBas',
-    color: 'mustard',
+    color: 'low',
     matches: (s) => s === 'low',
   },
   {
     key: 'available',
     titleKey: 'stock.disponible',
-    color: 'sage',
+    color: 'ok',
     matches: (s) => s === 'available',
   },
 ];

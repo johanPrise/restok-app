@@ -76,11 +76,7 @@ describe('groupByUrgency', () => {
       'fr',
     );
 
-    expect(sections.map((s) => s.color)).toEqual([
-      'rustClay',
-      'mustard',
-      'sage',
-    ]);
+    expect(sections.map((s) => s.color)).toEqual(['out', 'low', 'ok']);
   });
 });
 

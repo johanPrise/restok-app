@@ -13,6 +13,14 @@
  *
  * @see https://docs.expo.dev/eas/environment-variables/
  */
+const fs = require('fs');
+const path = require('path');
+
+const declared = process.env.GOOGLE_SERVICES_JSON ?? './google-services.json';
+const googleServices = fs.existsSync(path.resolve(__dirname, declared))
+  ? declared
+  : null;
+
 module.exports = {
   expo: {
     name: 'Restock',
@@ -39,8 +47,14 @@ module.exports = {
       },
       predictiveBackGestureEnabled: false,
       // Voir l'en-tête : le fichier vient d'EAS en build, du disque en local.
-      googleServicesFile:
-        process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+      //
+      // Déclaré seulement s'il existe. Sinon `expo prebuild` échoue sur son
+      // absence, ce qui rendait impossible de fabriquer un build de
+      // développement en local — or c'est le seul moyen de voir l'app sur un
+      // téléphone dès qu'Expo Go passe à un SDK plus récent que le projet.
+      // Sans lui, il n'y a pas de notifications push, et rien d'autre ne
+      // change.
+      ...(googleServices ? { googleServicesFile: googleServices } : {}),
     },
 
     web: {

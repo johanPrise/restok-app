@@ -8,7 +8,7 @@ import { useAddShoppingLine, useShoppingList } from '@/api/shopping';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { latestFailure } from '@/lib/api-error';
@@ -19,7 +19,7 @@ import { useGoBack } from '@/lib/useGoBack';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useLocale, useT } from '@/i18n/useT';
 import type { Item } from '@/types/api';
-import { border, radius, spacing, textOn, useTheme } from '@/theme';
+import { spacing } from '@/theme';
 
 export default function RecipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,7 +47,7 @@ export default function RecipeDetail() {
     return (
       <Screen>
         <BackLink onPress={goBack} />
-        <Text variant="tagName" color="inkSoft" style={styles.centered}>
+        <Text variant="title" color="inkSoft" style={styles.centered}>
           {t(recipes.isPending ? 'commun.chargement' : 'recettes.introuvable')}
         </Text>
       </Screen>
@@ -98,7 +98,7 @@ export default function RecipeDetail() {
         <Text variant="title">{recipe.name}</Text>
 
         {byline !== null && (
-          <Text variant="monoLabel" color="inkSoft">
+          <Text variant="dataLabel" color="inkSoft">
             {byline}
           </Text>
         )}
@@ -111,7 +111,7 @@ export default function RecipeDetail() {
           />
         )}
 
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('recettes.ingredients')}
         </Text>
 
@@ -141,7 +141,7 @@ export default function RecipeDetail() {
           />
         ))}
 
-        <Text variant="monoLabel" color="inkSoft" style={styles.section}>
+        <Text variant="dataLabel" color="inkSoft" style={styles.section}>
           {t('recettes.indications')}
         </Text>
 
@@ -162,7 +162,7 @@ export default function RecipeDetail() {
         )}
 
         {failure !== null && (
-          <Text variant="caption" color="rustClay">
+          <Text variant="caption" color="out">
             {failure}
           </Text>
         )}
@@ -220,17 +220,17 @@ function Steps({ text }: Readonly<{ text: string }>) {
 
   if (lines.length < 2) {
     return (
-      <TagCard>
+      <Card>
         <Text variant="body">{text}</Text>
-      </TagCard>
+      </Card>
     );
   }
 
   return (
-    <TagCard style={styles.steps}>
+    <Card style={styles.steps}>
       {lines.map((line, index) => (
         <View key={`${index}-${line}`} style={styles.step}>
-          <Text variant="mono" color="pantryTeal" style={styles.stepNumber}>
+          <Text variant="data" color="accent" style={styles.stepNumber}>
             {index + 1}
           </Text>
           <Text variant="body" style={styles.stepText}>
@@ -238,7 +238,7 @@ function Steps({ text }: Readonly<{ text: string }>) {
           </Text>
         </View>
       ))}
-    </TagCard>
+    </Card>
   );
 }
 
@@ -260,7 +260,6 @@ function IngredientRow({
   busy: boolean;
   onEmpty: (item: Item) => void;
 }>) {
-  const { colors } = useTheme();
   // Le hook est appelé sans condition : `item ? … useLocale() … : null` le
   // sautait quand l'item manquait, ce que React interdit et que le typage ne
   // voit pas.
@@ -272,7 +271,7 @@ function IngredientRow({
     item?.status === 'out_of_stock' || item?.status === 'to_restock';
 
   return (
-    <TagCard style={styles.ingredient}>
+    <Card style={styles.ingredient}>
       <View style={styles.ingredientText}>
         {/* Deux lignes plutôt qu'une troncature : « Pastilles lave-vaisselle
             c… » ne désigne plus rien sur une étagère. */}
@@ -296,35 +295,26 @@ function IngredientRow({
       )}
 
       {badge !== null && item && (
-        <View style={[styles.pill, { backgroundColor: colors[accent] }]}>
-          <Text variant="monoLabel" color={textOn(accent)}>
-            {badge}
-          </Text>
-        </View>
+        <Text variant="dataLabel" color={accent}>
+          {badge}
+        </Text>
       )}
-    </TagCard>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { paddingBottom: spacing.xl, gap: spacing.sm },
-  centered: { textAlign: 'center', marginTop: spacing.xl },
+  body: { paddingBottom: spacing.group, gap: spacing.tight },
+  centered: { textAlign: 'center', marginTop: spacing.group },
   ingredient: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.tight,
   },
   ingredientText: { flex: 1 },
-  section: { marginTop: spacing.sm },
-  steps: { gap: spacing.sm },
-  step: { flexDirection: 'row', gap: spacing.sm },
-  stepNumber: { minWidth: spacing.md },
+  section: { marginTop: spacing.tight },
+  steps: { gap: spacing.tight },
+  step: { flexDirection: 'row', gap: spacing.tight },
+  stepNumber: { minWidth: spacing.base },
   stepText: { flex: 1 },
-  pill: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
-    borderRadius: radius.button,
-    borderWidth: border.hairline,
-    borderColor: 'transparent',
-  },
 });

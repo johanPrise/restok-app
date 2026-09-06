@@ -66,17 +66,17 @@ export function InviteCodeCard({
     <View
       style={[
         styles.card,
-        { backgroundColor: colors.paperRaised, borderColor: colors.thread },
+        { backgroundColor: colors.raised, borderColor: colors.rule },
       ]}
     >
       <View
         style={[
           styles.perforation,
-          { backgroundColor: colors.paper, borderColor: colors.thread },
+          { backgroundColor: colors.paper, borderColor: colors.rule },
         ]}
       />
 
-      <Text variant="monoLabel" color="inkSoft" style={styles.label}>
+      <Text variant="dataLabel" color="inkSoft" style={styles.label}>
         {t('onboarding.codeInviteLabel')}
       </Text>
 
@@ -85,7 +85,7 @@ export function InviteCodeCard({
           style={[styles.code, { color: colors.ink }]}
           // Le code doit rester lisible caractère par caractère : une mise à
           // l'échelle système le casserait en deux lignes.
-          allowFontScaling={false}
+          maxFontSizeMultiplier={1.3}
           accessibilityLabel={`Code d'invitation ${code.split('').join(' ')}`}
         >
           {formatInviteCode(code)}
@@ -95,10 +95,10 @@ export function InviteCodeCard({
           accessibilityRole="button"
           accessibilityLabel={t('commun.copierLeCode')}
           onPress={() => void copy()}
-          hitSlop={spacing.xs}
+          hitSlop={spacing.tight}
           style={styles.copy}
         >
-          <Text variant="monoLabel" color={copied ? 'sage' : 'pantryTeal'}>
+          <Text variant="dataLabel" color={copied ? 'ok' : 'accent'}>
             {copied ? t('commun.copie') : t('commun.copier')}
           </Text>
         </Pressable>
@@ -113,17 +113,17 @@ const PERFORATION = 12;
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
+    padding: spacing.card,
+    paddingTop: spacing.group,
     borderWidth: border.hairline,
-    borderRadius: radius.tag,
-    borderBottomRightRadius: radius.tagFoldedCorner,
-    gap: spacing.md,
+    borderRadius: radius.base,
+    borderBottomRightRadius: radius.base,
+    gap: spacing.base,
   },
   perforation: {
     position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
+    top: spacing.tight,
+    left: spacing.tight,
     width: PERFORATION,
     height: PERFORATION,
     borderRadius: radius.full,
@@ -134,12 +134,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
+    gap: spacing.tight,
   },
   code: {
-    fontFamily: fontFamily.mono,
-    fontSize: fontSize.display,
-    lineHeight: fontSize.display * 1.1,
+    fontFamily: fontFamily.data,
+    fontSize: fontSize.xl,
+    lineHeight: fontSize.xl * 1.1,
     letterSpacing: 2,
   },
   copy: {

@@ -9,8 +9,8 @@ import { FAB_SIZE } from '@/components/Fab';
 import { RecipeCard } from '@/components/RecipeCard';
 import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
-import { TagCard } from '@/components/TagCard';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { Card } from '@/components/Card';
+import { ItemSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -52,7 +52,7 @@ export default function Recipes() {
     <Screen edges={['top']}>
       <View style={styles.header}>
         <Text variant="display">{t('onglets.recettes')}</Text>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {recipes.isError ? t('recettes.nonChargees') : summary(ready, t)}
         </Text>
       </View>
@@ -66,19 +66,19 @@ export default function Recipes() {
       <ScrollView
         contentContainerStyle={[
           styles.list,
-          { paddingBottom: FAB_SIZE + spacing.md },
+          { paddingBottom: FAB_SIZE + spacing.base },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={recipes.isRefetching}
             onRefresh={() => void recipes.refetch()}
-            tintColor={colors.pantryTeal}
+            tintColor={colors.accent}
           />
         }
       >
         {recipes.isPending &&
-          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
+          Array.from({ length: 3 }, (_, index) => <ItemSkeleton key={index} />)}
 
         {recipes.isError && (
           <ErrorState
@@ -136,8 +136,8 @@ function EmptyState({
   const t = useT();
 
   return (
-    <TagCard style={styles.empty}>
-      <Text variant="tagName" color="inkSoft" style={styles.centered}>
+    <Card style={styles.empty}>
+      <Text variant="title" color="inkSoft" style={styles.centered}>
         {t('recettes.aucuneRecette')}
       </Text>
       {/* La recherche d'abord : personne ne connaît par cœur les plats qu'il
@@ -157,7 +157,7 @@ function EmptyState({
         onPress={onWrite}
         style={styles.emptyAction}
       />
-    </TagCard>
+    </Card>
   );
 }
 
@@ -169,7 +169,7 @@ function ErrorState({
 
   return (
     <View style={styles.error}>
-      <Text variant="tagName" color="rustClay" style={styles.centered}>
+      <Text variant="title" color="out" style={styles.centered}>
         {t('recettes.indisponibles')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.centered}>
@@ -185,11 +185,15 @@ function ErrorState({
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingTop: spacing.sm, gap: 2 },
-  notice: { marginTop: spacing.xs },
-  list: { paddingTop: spacing.md, gap: spacing.md },
-  empty: { gap: spacing.xs, paddingVertical: spacing.lg },
-  emptyAction: { marginTop: spacing.sm, alignSelf: 'stretch' },
-  error: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },
+  header: { alignItems: 'center', paddingTop: spacing.base, gap: spacing.hair },
+  notice: { marginTop: spacing.tight },
+  list: { paddingTop: spacing.base, gap: spacing.base },
+  empty: { gap: spacing.tight, paddingVertical: spacing.card },
+  emptyAction: { marginTop: spacing.tight, alignSelf: 'stretch' },
+  error: {
+    alignItems: 'center',
+    paddingVertical: spacing.group,
+    gap: spacing.tight,
+  },
   centered: { textAlign: 'center' },
 });

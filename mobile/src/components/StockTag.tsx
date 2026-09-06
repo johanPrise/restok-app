@@ -10,15 +10,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { fillPercent, fillRatio } from '@/lib/stock';
 import { statusBadge, statusColor, tagMeta } from '@/lib/item-display';
-import {
-  border,
-  gauge,
-  motion,
-  radius,
-  spacing,
-  textOn,
-  useTheme,
-} from '@/theme';
+import { border, gauge, motion, radius, spacing, useTheme } from '@/theme';
 import type { Item } from '@/types/api';
 import { BasketIcon } from './icons';
 import { Text } from './Text';
@@ -50,7 +42,7 @@ interface StockTagProps extends Pick<
  *
  * Trois détails portent la métaphore :
  * - la **perforation** est un vrai trou : elle laisse voir `paper` à travers
- *   `paperRaised`, là où un cercle gris dessiné trahirait le procédé ;
+ *   `raised`, là où un cercle gris dessiné trahirait le procédé ;
  * - le **coin inférieur droit** a un rayon plus grand que les autres, comme
  *   une étiquette cornée ;
  * - un item en stock bas porte un **liseré** de sa couleur de statut sur le
@@ -108,11 +100,11 @@ export function StockTag({
       style={[
         styles.card,
         {
-          backgroundColor: colors.paperRaised,
-          borderColor: colors.thread,
-          borderLeftColor: item.status === 'available' ? colors.thread : accent,
+          backgroundColor: colors.raised,
+          borderColor: colors.rule,
+          borderLeftColor: item.status === 'available' ? colors.rule : accent,
           borderLeftWidth:
-            item.status === 'available' ? border.hairline : border.statusAccent,
+            item.status === 'available' ? border.hairline : border.accent,
           // §4 : un item épuisé s'efface légèrement, comme décroché de son fil.
           opacity: isEmpty ? 0.92 : 1,
         },
@@ -121,26 +113,26 @@ export function StockTag({
       <View
         style={[
           styles.perforation,
-          { backgroundColor: colors.paper, borderColor: colors.thread },
+          { backgroundColor: colors.paper, borderColor: colors.rule },
         ]}
       />
 
       <View style={styles.head}>
-        <Text variant="tagName" style={styles.name} numberOfLines={2}>
+        <Text variant="title" style={styles.name} numberOfLines={2}>
           {item.name}
         </Text>
         {/* Un panier discret plutôt qu'un second badge : le statut garde son
             emplacement, et « déjà sur la liste » n'est pas un statut de stock —
             il ne prend donc aucune couleur du §1. */}
         {onList && <BasketIcon color={colors.inkSoft} size={14} />}
+        {/* Un mot coloré, pas un texte posé sur un aplat : plus de table de
+            correspondance encre/fond à tenir juste, donc plus de « Stock bas »
+            à 1,61:1 en mode sombre. Chaque couleur de statut lit au-dessus de
+            4,5:1 sur `paper` comme sur `raised`. */}
         {badge !== null && (
-          <View style={[styles.badge, { backgroundColor: accent }]}>
-            {/* L'encre suit l'aplat : « Stock bas » s'écrivait en clair sur
-                mustard, à 2,16:1. */}
-            <Text variant="monoLabel" color={textOn(statusColor(item.status))}>
-              {badge}
-            </Text>
-          </View>
+          <Text variant="dataLabel" color={statusColor(item.status)}>
+            {badge}
+          </Text>
         )}
       </View>
 
@@ -155,18 +147,18 @@ export function StockTag({
         </Text>
       )}
 
-      <View style={[styles.rule, { backgroundColor: colors.thread }]} />
+      <View style={[styles.rule, { backgroundColor: colors.rule }]} />
 
       <View style={styles.gaugeRow}>
         <Text
-          variant="mono"
+          variant="data"
           style={[styles.percent, { color: accent }]}
           // Les chiffres restent alignés d'une ligne à l'autre.
-          allowFontScaling={false}
+          maxFontSizeMultiplier={1.3}
         >
           {percent}%
         </Text>
-        <View style={[styles.track, { backgroundColor: colors.thread }]}>
+        <View style={[styles.track, { backgroundColor: colors.rule }]}>
           <Animated.View
             style={[styles.fill, { backgroundColor: accent }, fillStyle]}
           />
@@ -181,17 +173,17 @@ const PERCENT_WIDTH = 44;
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.md,
-    paddingTop: spacing.lg,
+    padding: spacing.base,
+    paddingTop: spacing.card,
     borderWidth: border.hairline,
-    borderRadius: radius.tag,
-    borderBottomRightRadius: radius.tagFoldedCorner,
-    gap: spacing.xs,
+    borderRadius: radius.base,
+    borderBottomRightRadius: radius.base,
+    gap: spacing.tight,
   },
   perforation: {
     position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
+    top: spacing.tight,
+    left: spacing.tight,
     width: PERFORATION,
     height: PERFORATION,
     borderRadius: radius.full,
@@ -201,24 +193,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
+    gap: spacing.tight,
+    marginTop: spacing.tight,
   },
   name: { flex: 1 },
-  badge: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
-    borderRadius: radius.button,
-  },
-  meta: { marginTop: -spacing.xs },
-  rule: { height: border.hairline, marginVertical: spacing.xs },
-  gaugeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  meta: { marginTop: -spacing.tight },
+  rule: { height: border.hairline, marginVertical: spacing.tight },
+  gaugeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   percent: { width: PERCENT_WIDTH },
   track: {
     flex: 1,
     height: gauge.height,
-    borderRadius: gauge.radius,
+    borderRadius: radius.full,
     overflow: 'hidden',
   },
-  fill: { height: '100%', borderRadius: gauge.radius },
+  fill: { height: '100%', borderRadius: radius.full },
 });

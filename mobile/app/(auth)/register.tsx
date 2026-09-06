@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
@@ -55,8 +55,8 @@ export default function Register() {
     <FormScreen>
       <BackLink onPress={goBack} />
 
-      <TagCard>
-        <Text variant="tagName">{t('acces.creerUnCompte')}</Text>
+      <Card>
+        <Text variant="title">{t('acces.creerUnCompte')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {/* Trois portes suivent, pas deux : annoncer un groupe à qui vient
               ouvrir un inventaire pour lui seul, c'est lui dire que sa porte
@@ -100,7 +100,7 @@ export default function Register() {
         </View>
 
         {register.isError && (
-          <Text variant="caption" color="rustClay" style={styles.error}>
+          <Text variant="caption" color="out" style={styles.error}>
             {apiErrorMessage(register.error, locale)}
           </Text>
         )}
@@ -113,17 +113,17 @@ export default function Register() {
           style={styles.submit}
         />
 
-        <View style={[styles.rule, { backgroundColor: colors.thread }]} />
+        <View style={[styles.rule, { backgroundColor: colors.rule }]} />
         <SystemFooter left={t('acces.statutCreation')} />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  intro: { marginTop: spacing.sm },
-  form: { gap: spacing.md, marginTop: spacing.md },
-  error: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.md },
-  rule: { height: border.hairline, marginTop: spacing.md },
+  intro: { marginTop: spacing.tight },
+  form: { gap: spacing.base, marginTop: spacing.base },
+  error: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.base },
+  rule: { height: border.hairline, marginTop: spacing.base },
 });

@@ -4,8 +4,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useGroup, useRegisterPushToken } from '@/api/groups';
 import { Button } from '@/components/Button';
 import { BellBadgeIcon } from '@/components/icons';
+import { Dots } from '@/components/Dots';
 import { Screen } from '@/components/Screen';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useT } from '@/i18n/useT';
 import { registerForPush } from '@/lib/push';
@@ -95,28 +96,25 @@ export default function NotificationsStep() {
   return (
     <Screen>
       <View style={styles.body}>
-        <TagCard style={styles.card}>
+        <Card style={styles.card}>
           <View style={styles.badge}>
-            <BellBadgeIcon
-              color={colors.paperRaised}
-              discColor={colors.pantryTeal}
-            />
+            <BellBadgeIcon color={colors.raised} discColor={colors.accent} />
           </View>
-          <View style={[styles.rule, { backgroundColor: colors.thread }]} />
-          <Text variant="monoLabel" color="inkSoft" style={styles.cardLabel}>
+          <View style={[styles.rule, { backgroundColor: colors.rule }]} />
+          <Text variant="dataLabel" color="inkSoft" style={styles.cardLabel}>
             {t('onboarding.alerteActive')}
           </Text>
-        </TagCard>
+        </Card>
 
         <Text variant="title" style={styles.heading}>
           {t('onboarding.prevenir')}
         </Text>
-        <Text variant="monoBody" color="inkSoft" style={styles.pitch}>
+        <Text variant="dataBody" color="inkSoft" style={styles.pitch}>
           {t('onboarding.prevenirQuoi')}
         </Text>
 
         {notice !== null && (
-          <Text variant="caption" color="rustClay" style={styles.notice}>
+          <Text variant="caption" color="out" style={styles.notice}>
             {notice}
           </Text>
         )}
@@ -133,7 +131,7 @@ export default function NotificationsStep() {
           onPress={() => void finish()}
           style={styles.later}
         >
-          <Text variant="monoLabel" color="pantryTeal">
+          <Text variant="dataLabel" color="accent">
             {t(
               notice === null
                 ? 'onboarding.plusTard'
@@ -143,21 +141,11 @@ export default function NotificationsStep() {
         </Pressable>
       </View>
 
-      <View style={styles.dots}>
-        {Array.from({ length: STEPS }, (_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              index === STEPS - 1 && styles.dotActive,
-              {
-                backgroundColor:
-                  index === STEPS - 1 ? colors.pantryTeal : colors.thread,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      <Dots
+        count={STEPS}
+        active={STEPS - 1}
+        label={t('onboarding.etapeSur', { n: STEPS, total: STEPS })}
+      />
     </Screen>
   );
 }
@@ -167,26 +155,18 @@ const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.group,
   },
-  badge: { paddingVertical: spacing.sm },
+  badge: { paddingVertical: spacing.base },
   rule: {
     height: border.hairline,
     alignSelf: 'stretch',
-    marginTop: spacing.sm,
+    marginTop: spacing.tight,
   },
-  cardLabel: { marginTop: spacing.sm },
-  heading: { textAlign: 'center', marginTop: spacing.lg },
-  pitch: { textAlign: 'center', marginTop: spacing.xs },
-  notice: { textAlign: 'center', marginTop: spacing.md },
-  action: { marginTop: spacing.lg },
-  later: { alignItems: 'center', paddingVertical: spacing.md },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-  },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  dotActive: { width: 20 },
+  cardLabel: { marginTop: spacing.tight },
+  heading: { textAlign: 'center', marginTop: spacing.card },
+  pitch: { textAlign: 'center', marginTop: spacing.tight },
+  notice: { textAlign: 'center', marginTop: spacing.base },
+  action: { marginTop: spacing.card },
+  later: { alignItems: 'center', paddingVertical: spacing.base },
 });

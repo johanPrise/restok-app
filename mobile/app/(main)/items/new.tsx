@@ -100,7 +100,7 @@ export default function NewItem() {
 
       <View style={styles.header}>
         <Text variant="title">{t('etagere.nouvelItem')}</Text>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('etagere.sousTitreAjout')}
         </Text>
       </View>
@@ -179,7 +179,7 @@ export default function NewItem() {
       </View>
 
       {create.isError && (
-        <Text variant="caption" color="rustClay" style={styles.error}>
+        <Text variant="caption" color="out" style={styles.error}>
           {apiErrorMessage(create.error, locale)}
         </Text>
       )}
@@ -260,9 +260,9 @@ function isWhole(raw: string, min: number): boolean {
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 2, marginBottom: spacing.lg },
-  heading: { marginTop: spacing.md },
-  form: { gap: spacing.md },
-  error: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.lg },
+  header: { gap: spacing.hair, marginBottom: spacing.card },
+  heading: { marginTop: spacing.base },
+  form: { gap: spacing.base },
+  error: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.card },
 });

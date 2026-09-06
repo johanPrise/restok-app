@@ -59,5 +59,5 @@ export function LanguagePicker() {
 }
 
 const styles = StyleSheet.create({
-  group: { gap: spacing.xs },
+  group: { gap: spacing.tight },
 });

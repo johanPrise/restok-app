@@ -29,10 +29,10 @@ const daysAgo = (days: number): string =>
 
 describe('statusColor', () => {
   it.each([
-    ['available', 'sage'],
-    ['low', 'mustard'],
-    ['to_restock', 'rustClay'],
-    ['out_of_stock', 'rustClay'],
+    ['available', 'ok'],
+    ['low', 'low'],
+    ['to_restock', 'out'],
+    ['out_of_stock', 'out'],
   ])('%s → %s', (status, expected) => {
     expect(statusColor(status as ItemStatus)).toBe(expected);
   });

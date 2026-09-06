@@ -107,7 +107,7 @@ export default function NewRecipe() {
 
       <View style={styles.header}>
         <Text variant="title">{t('recettes.nouvelleRecette')}</Text>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('recettes.sousTitreAjout')}
         </Text>
       </View>
@@ -123,7 +123,7 @@ export default function NewRecipe() {
         />
 
         <View style={styles.group}>
-          <Text variant="monoLabel" color="inkSoft">
+          <Text variant="dataLabel" color="inkSoft">
             {t('recettes.ingredients')}
           </Text>
 
@@ -142,8 +142,8 @@ export default function NewRecipe() {
               style={[
                 styles.row,
                 {
-                  backgroundColor: colors.paperRaised,
-                  borderColor: colors.thread,
+                  backgroundColor: colors.raised,
+                  borderColor: colors.rule,
                 },
               ]}
             >
@@ -155,7 +155,7 @@ export default function NewRecipe() {
               <Text variant="body" style={styles.rowName} numberOfLines={1}>
                 {ingredient.name}
               </Text>
-              <Text variant="monoLabel" color="inkSoft">
+              <Text variant="dataLabel" color="inkSoft">
                 {t('commun.retirer')}
               </Text>
             </Pressable>
@@ -172,14 +172,14 @@ export default function NewRecipe() {
               style={[
                 styles.row,
                 styles.suggestion,
-                { borderColor: colors.pantryTeal },
+                { borderColor: colors.accent },
               ]}
             >
-              <BasketIcon color={colors.pantryTeal} size={14} />
+              <BasketIcon color={colors.accent} size={14} />
               <Text variant="body" style={styles.rowName} numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text variant="monoLabel" color="pantryTeal">
+              <Text variant="dataLabel" color="accent">
                 {t('recettes.depuisEtagere')}
               </Text>
             </Pressable>
@@ -200,8 +200,8 @@ export default function NewRecipe() {
               style={[
                 styles.addInput,
                 {
-                  backgroundColor: colors.paperRaised,
-                  borderColor: colors.thread,
+                  backgroundColor: colors.raised,
+                  borderColor: colors.rule,
                   color: colors.ink,
                 },
               ]}
@@ -248,7 +248,7 @@ export default function NewRecipe() {
       </View>
 
       {create.isError && (
-        <Text variant="caption" color="rustClay" style={styles.error}>
+        <Text variant="caption" color="out" style={styles.error}>
           {apiErrorMessage(create.error, locale)}
         </Text>
       )}
@@ -265,36 +265,36 @@ export default function NewRecipe() {
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 2, marginBottom: spacing.lg },
-  form: { gap: spacing.md },
+  header: { gap: spacing.hair, marginBottom: spacing.card },
+  form: { gap: spacing.base },
   // Les ingrédients sont une liste : leur rythme interne est plus serré que
   // celui qui sépare les champs, sinon le groupe se disloque.
-  group: { gap: spacing.xs },
+  group: { gap: spacing.tight },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.tight,
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
   },
   // La suggestion se distingue d'un ingrédient déjà retenu : bord teal, fond
   // transparent — elle est une proposition, pas un acquis.
   suggestion: { backgroundColor: 'transparent' },
   rowName: { flex: 1 },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   addInput: {
     flex: 1,
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
-    fontFamily: fontFamily.body,
-    fontSize: fontSize.body,
+    borderRadius: radius.base,
+    fontFamily: fontFamily.text,
+    fontSize: fontSize.md,
   },
-  steps: { minHeight: 132, paddingTop: spacing.sm },
-  hint: { marginTop: -spacing.xs },
-  error: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.lg },
+  steps: { minHeight: 132, paddingTop: spacing.base },
+  hint: { marginTop: -spacing.tight },
+  error: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.card },
 });

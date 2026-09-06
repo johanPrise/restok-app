@@ -4,17 +4,24 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { LogBox, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { trackNetwork } from '@/api/network';
 import { persistOptions } from '@/api/persist';
 import { queryClient } from '@/api/query-client';
+import '@/api/resumable-mutations';
 import { ToastProvider } from '@/components/Toast';
 import { useNotificationSync } from '@/lib/useNotificationSync';
 import { useLanguage } from '@/store/language';
 import { useSession } from '@/store/session';
 import { appFonts } from '@/theme/fonts';
+
+// Avertissement interne à Expo Router / React Navigation lors de la résolution
+// asynchrone du linking initial avant la fin du premier montage du layout.
+LogBox.ignoreLogs([
+  "Can't perform a React state update on a component that hasn't mounted yet",
+]);
 
 // Le splash reste visible tant que les polices ne sont pas prêtes : sans ça
 // l'app affiche un premier rendu en police système, puis saute.

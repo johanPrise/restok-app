@@ -30,11 +30,11 @@ export function Fab({ onPress, accessibilityLabel }: Readonly<FabProps>) {
       style={({ pressed }) => [
         styles.fab,
         {
-          backgroundColor: pressed ? colors.pantryTealDeep : colors.pantryTeal,
+          backgroundColor: pressed ? colors.accentPress : colors.accent,
         },
       ]}
     >
-      <PlusIcon color={colors.onPantryTeal} />
+      <PlusIcon color={colors.onAccent} />
     </Pressable>
   );
 }
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   fab: {
     width: FAB_SIZE,
     height: FAB_SIZE,
-    borderRadius: radius.tag,
+    borderRadius: radius.base,
     alignItems: 'center',
     justifyContent: 'center',
     ...chrome,

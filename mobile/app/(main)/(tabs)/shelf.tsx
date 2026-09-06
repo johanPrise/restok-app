@@ -21,7 +21,7 @@ import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { ItemSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -84,8 +84,7 @@ export default function Shelf() {
   const headerSummary = items.isError
     ? t('etagere.nonChargee')
     : summary(toRestock, items.data?.length ?? 0, t);
-  const headerSummaryColor =
-    items.isError || toRestock > 0 ? 'rustClay' : 'inkSoft';
+  const headerSummaryColor = items.isError || toRestock > 0 ? 'out' : 'inkSoft';
 
   // Prendre et racheter ne sont pas persistés : hors-ligne, le balayage se
   // mettait en pause sans que rien ne bouge à l'écran, et le geste disparaissait
@@ -111,7 +110,7 @@ export default function Shelf() {
           editable={isAdmin && group.data !== undefined}
         />
         <Text
-          variant="monoLabel"
+          variant="dataLabel"
           color={headerSummaryColor}
           style={styles.headerSummary}
         >
@@ -128,8 +127,8 @@ export default function Shelf() {
         style={[
           styles.search,
           {
-            backgroundColor: colors.paperRaised,
-            borderColor: colors.thread,
+            backgroundColor: colors.raised,
+            borderColor: colors.rule,
             color: colors.ink,
           },
         ]}
@@ -147,7 +146,7 @@ export default function Shelf() {
           // La barre d'onglets est ancrée, pas en survol — `TabSlot` s'arrête
           // déjà au-dessus d'elle. Seul le FAB flotte encore sur cette liste :
           // sans cette réserve, le dernier tag resterait caché dessous.
-          { paddingBottom: FAB_SIZE + spacing.md },
+          { paddingBottom: FAB_SIZE + spacing.base },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -155,7 +154,7 @@ export default function Shelf() {
           <RefreshControl
             refreshing={items.isRefetching}
             onRefresh={() => void items.refetch()}
-            tintColor={colors.pantryTeal}
+            tintColor={colors.accent}
           />
         }
       >
@@ -169,7 +168,7 @@ export default function Shelf() {
         />
 
         {items.isPending &&
-          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
+          Array.from({ length: 3 }, (_, index) => <ItemSkeleton key={index} />)}
 
         {/* Un stock vide et un serveur injoignable produisaient le même écran :
             `items.data ?? []` avale l'échec réseau, et « Étagère vide » se
@@ -241,7 +240,7 @@ function ErrorState({
     <View style={styles.empty}>
       {/* Le titre nomme ce que la personne voit — une étagère vide d'un coup —
           et non la panne technique qui l'a causée. */}
-      <Text variant="tagName" color="rustClay" style={styles.emptyTitle}>
+      <Text variant="title" color="out" style={styles.emptyTitle}>
         {t('etagere.indisponible')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.emptyBody}>
@@ -274,7 +273,7 @@ function EmptyState({
           accessibilityLabel={t('etagere.videAlt')}
         />
       )}
-      <Text variant="tagName" color="inkSoft" style={styles.emptyTitle}>
+      <Text variant="title" color="inkSoft" style={styles.emptyTitle}>
         {searching ? t('etagere.aucunResultat') : t('etagere.etagereVide')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.emptyBody}>
@@ -300,21 +299,25 @@ function EmptyState({
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingTop: spacing.sm, gap: 2 },
+  header: { alignItems: 'center', paddingTop: spacing.base, gap: spacing.hair },
   headerSummary: { textAlign: 'center' },
   search: {
     minHeight: MIN_TOUCH_TARGET,
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.sm,
+    marginTop: spacing.base,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
-    fontFamily: fontFamily.body,
-    fontSize: fontSize.body,
+    borderRadius: radius.base,
+    fontFamily: fontFamily.text,
+    fontSize: fontSize.md,
   },
-  notice: { marginTop: spacing.xs },
-  list: { paddingTop: spacing.md, gap: spacing.md },
-  section: { gap: spacing.xs },
-  empty: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },
+  notice: { marginTop: spacing.tight },
+  list: { paddingTop: spacing.base, gap: spacing.base },
+  section: { gap: spacing.tight },
+  empty: {
+    alignItems: 'center',
+    paddingVertical: spacing.group,
+    gap: spacing.tight,
+  },
   // En proportion de l'écran plutôt qu'une taille fixe : à 160 elle se
   // perdait dans l'espace vide. Plafonnée pour ne pas déborder sur un iPad.
   // Ratio de l'image source (342×326), quasi carrée.
@@ -322,9 +325,9 @@ const styles = StyleSheet.create({
     width: '72%',
     maxWidth: 280,
     aspectRatio: 342 / 326,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.tight,
   },
   emptyTitle: { textAlign: 'center' },
   emptyBody: { textAlign: 'center' },
-  emptyAdd: { marginTop: spacing.sm, alignSelf: 'stretch' },
+  emptyAdd: { marginTop: spacing.tight, alignSelf: 'stretch' },
 });

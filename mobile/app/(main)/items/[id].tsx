@@ -9,7 +9,7 @@ import { QuantityStepper } from '@/components/QuantityStepper';
 import { ReceiptHistory } from '@/components/ReceiptHistory';
 import { Screen } from '@/components/Screen';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { ItemSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
@@ -48,7 +48,7 @@ export default function ItemDetail() {
     <Screen>
       <BackLink onPress={goBack} />
 
-      {items.isPending && <TagSkeleton />}
+      {items.isPending && <ItemSkeleton />}
 
       {!items.isPending && item === undefined && (
         <View style={styles.missing}>
@@ -83,13 +83,13 @@ function Loaded({ item }: Readonly<{ item: Item }>) {
       <ItemActionsPanel item={item} actions={actions} />
 
       {actions.failed && (
-        <Text variant="caption" color="rustClay">
+        <Text variant="caption" color="out">
           {t('item.actionRatee')}
         </Text>
       )}
 
       <View style={styles.section}>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('item.historique')}
         </Text>
         <ReceiptHistory
@@ -214,7 +214,7 @@ function ItemActionsPanel({
       {/* Un compteur de lots est ambigu tant qu'on ne dit pas ce qu'il y a
           dedans. */}
       {packSummary(item, buyingPacks, locale) !== null && (
-        <Text variant="caption" color="pantryTeal">
+        <Text variant="caption" color="accent">
           {packSummary(item, buyingPacks, locale)}
         </Text>
       )}
@@ -287,11 +287,11 @@ function DeleteItem({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: spacing.xl, gap: spacing.md },
+  content: { paddingBottom: spacing.group, gap: spacing.base },
   missing: { flex: 1, justifyContent: 'center' },
-  panel: { gap: spacing.sm },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  panel: { gap: spacing.tight },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   action: { flex: 1 },
-  section: { marginTop: spacing.sm, gap: spacing.xs },
-  danger: { marginTop: spacing.lg, gap: spacing.xs },
+  section: { marginTop: spacing.tight, gap: spacing.tight },
+  danger: { marginTop: spacing.card, gap: spacing.tight },
 });

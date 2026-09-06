@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { CodeInput, INVITE_CODE_LENGTH } from '@/components/CodeInput';
 import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BackLink } from '@/components/BackLink';
@@ -32,7 +32,7 @@ export default function Join() {
       // La redirection est portée par l'aiguillage racine une fois le membre
       // rattaché — inutile de nommer la destination ici.
       onSuccess: (group) => {
-        toast(`Tu as rejoint « ${group.name} »`);
+        toast(t('onboarding.groupeRejoint', { nom: group.name }));
         router.replace('/');
       },
     });
@@ -42,19 +42,19 @@ export default function Join() {
     <FormScreen>
       <BackLink onPress={goBack} />
 
-      <TagCard>
-        <Text variant="tagName">{t('onboarding.rejoindreGroupe')}</Text>
+      <Card>
+        <Text variant="title">{t('onboarding.rejoindreGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {t('onboarding.codeInvite', { count: INVITE_CODE_LENGTH })}
         </Text>
 
-        <Text variant="monoLabel" color="inkSoft" style={styles.label}>
+        <Text variant="dataLabel" color="inkSoft" style={styles.label}>
           {t('onboarding.codeInviteLabel')}
         </Text>
         <CodeInput value={code} onChange={setCode} autoFocus />
 
         {join.isError && (
-          <Text variant="caption" color="rustClay" style={styles.error}>
+          <Text variant="caption" color="out" style={styles.error}>
             {apiErrorMessage(join.error, locale)}
           </Text>
         )}
@@ -73,22 +73,22 @@ export default function Join() {
           />
         </View>
 
-        <View style={[styles.rule, { backgroundColor: colors.thread }]} />
+        <View style={[styles.rule, { backgroundColor: colors.rule }]} />
         <SystemFooter
           left={t(
             isComplete ? 'onboarding.statutPret' : 'onboarding.statutAttente',
           )}
           right={`${code.length}/${INVITE_CODE_LENGTH}`}
         />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  intro: { marginTop: spacing.sm },
-  label: { marginTop: spacing.md, marginBottom: spacing.xs },
-  error: { marginTop: spacing.sm },
-  actions: { gap: spacing.sm, marginTop: spacing.md },
-  rule: { height: border.hairline, marginTop: spacing.md },
+  intro: { marginTop: spacing.tight },
+  label: { marginTop: spacing.base, marginBottom: spacing.tight },
+  error: { marginTop: spacing.tight },
+  actions: { gap: spacing.tight, marginTop: spacing.base },
+  rule: { height: border.hairline, marginTop: spacing.base },
 });

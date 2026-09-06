@@ -6,7 +6,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
+import { MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
+import type { Palette } from '@/theme';
 import { Text } from './Text';
 
 type Variant = 'primary' | 'secondary' | 'danger';
@@ -19,6 +20,21 @@ interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> {
   style?: ViewStyle;
 }
 
+/**
+ * Les trois boutons du système.
+ *
+ * Aucun n'a de bordure : le fond suffit à les distinguer, et l'ordre de
+ * `DESIGN.md` est espacement, puis fond teinté, puis trait. Le secondaire, qui
+ * portait un liseré, prend un aplat `sunken` — son libellé y lit 4,56:1 en
+ * clair et 4,77:1 en sombre.
+ *
+ * **L'inactif ne porte pas de fond du tout.** Il l'avait, en `sunken` avec un
+ * libellé `inkSoft` : 4,14:1 en clair, sous le seuil, et c'était le premier
+ * élément que l'app montrait — le bouton « Se connecter » est désactivé tant
+ * que les champs sont vides. Un contrôle inerte ne réclame pas de surface ; en
+ * `inkSoft` sur la page il lit 5,11:1 et 5,98:1, et il ne ressemble plus au
+ * secondaire.
+ */
 export function Button({
   label,
   variant = 'primary',
@@ -30,22 +46,20 @@ export function Button({
   const { colors } = useTheme();
   const isDisabled = disabled === true || loading;
 
-  const background = (pressed: boolean) => {
-    // Un primaire estompé par l'opacité tombe à peu près sur `sage`, la
-    // couleur du statut « disponible ». Le §1 réserve les couleurs de statut
-    // au statut : l'inactif passe donc par un gris de la palette, jamais par
-    // une teinte de marque atténuée.
-    if (isDisabled)
-      return variant === 'secondary' ? 'transparent' : colors.thread;
-    if (variant === 'secondary') return 'transparent';
-    if (variant === 'danger') return colors.rustClay;
-    // L'état pressed a sa propre couleur dans la palette (§1).
-    return pressed ? colors.pantryTealDeep : colors.pantryTeal;
+  const background = (pressed: boolean): string => {
+    if (isDisabled) return 'transparent';
+    if (variant === 'secondary') return colors.sunken;
+    if (variant === 'danger') return colors.out;
+
+    // L'état pressé augmente le contraste avec la page : il fonce en clair,
+    // il s'éclaircit en sombre. Une règle, pas deux couleurs séparées.
+    return pressed ? colors.accentPress : colors.accent;
   };
 
-  const labelColor = (): keyof typeof colors => {
+  const labelColor = (): keyof Palette => {
     if (isDisabled) return 'inkSoft';
-    return variant === 'secondary' ? 'pantryTeal' : 'paperRaised';
+
+    return variant === 'secondary' ? 'accent' : 'onAccent';
   };
 
   return (
@@ -56,10 +70,7 @@ export function Button({
       {...props}
       style={({ pressed }) => [
         styles.base,
-        {
-          backgroundColor: background(pressed),
-          borderColor: variant === 'secondary' ? colors.thread : 'transparent',
-        },
+        { backgroundColor: background(pressed) },
         style,
       ]}
     >
@@ -68,6 +79,10 @@ export function Button({
       <Text
         variant="bodyStrong"
         color={labelColor()}
+        // Le texte doit pouvoir grandir : le bloquer est un échec WCAG 1.4.4.
+        // Plafonné, parce qu'au-delà le libellé passe à la ligne dans un
+        // bouton dont la hauteur est contrainte.
+        maxFontSizeMultiplier={1.5}
         style={loading && styles.hidden}
       >
         {label}
@@ -87,10 +102,9 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.button,
-    borderWidth: border.hairline,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.tight,
+    borderRadius: radius.base,
     alignItems: 'center',
     justifyContent: 'center',
   },

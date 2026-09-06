@@ -18,10 +18,10 @@ export function BackLink({ onPress, label }: Readonly<BackLinkProps>) {
       onPress={onPress}
       // La flèche seule fait moins de 44pt : la zone tactile est élargie
       // autour, pas le glyphe.
-      hitSlop={spacing.sm}
+      hitSlop={spacing.tight}
       style={styles.pressable}
     >
-      <Text variant="title" color="pantryTeal">
+      <Text variant="title" color="accent">
         ←
       </Text>
     </Pressable>

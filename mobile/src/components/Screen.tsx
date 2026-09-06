@@ -34,5 +34,5 @@ export function Screen({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { flex: 1 },
-  padded: { paddingHorizontal: spacing.md },
+  padded: { paddingHorizontal: spacing.base },
 });

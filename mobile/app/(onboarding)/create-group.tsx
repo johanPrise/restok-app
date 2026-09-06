@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
@@ -39,8 +39,8 @@ export default function CreateGroup() {
     <FormScreen>
       <BackLink onPress={goBack} />
 
-      <TagCard>
-        <Text variant="tagName">{t('onboarding.creerGroupe')}</Text>
+      <Card>
+        <Text variant="title">{t('onboarding.creerGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {t('onboarding.tuDeviensAdmin')}
         </Text>
@@ -56,7 +56,7 @@ export default function CreateGroup() {
           />
 
           <View style={styles.group}>
-            <Text variant="monoLabel" color="inkSoft">
+            <Text variant="dataLabel" color="inkSoft">
               {t('onboarding.type')}
             </Text>
             <View style={styles.segmented}>
@@ -66,15 +66,15 @@ export default function CreateGroup() {
                   <Text
                     key={option.value}
                     variant="bodyStrong"
-                    color={selected ? 'paperRaised' : 'inkSoft'}
+                    color={selected ? 'raised' : 'inkSoft'}
                     onPress={() => setType(option.value)}
                     style={[
                       styles.segment,
                       {
                         backgroundColor: selected
-                          ? colors.pantryTeal
+                          ? colors.accent
                           : 'transparent',
-                        borderColor: colors.thread,
+                        borderColor: colors.rule,
                       },
                     ]}
                   >
@@ -87,7 +87,7 @@ export default function CreateGroup() {
         </View>
 
         {create.isError && (
-          <Text variant="caption" color="rustClay" style={styles.error}>
+          <Text variant="caption" color="out" style={styles.error}>
             {apiErrorMessage(create.error, locale)}
           </Text>
         )}
@@ -110,27 +110,27 @@ export default function CreateGroup() {
           style={styles.submit}
         />
 
-        <View style={[styles.rule, { backgroundColor: colors.thread }]} />
+        <View style={[styles.rule, { backgroundColor: colors.rule }]} />
         <SystemFooter left={t('onboarding.statutConfig')} />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  intro: { marginTop: spacing.sm },
-  form: { gap: spacing.md, marginTop: spacing.md },
-  group: { gap: spacing.xs },
-  segmented: { flexDirection: 'row', gap: spacing.xs },
+  intro: { marginTop: spacing.tight },
+  form: { gap: spacing.base, marginTop: spacing.base },
+  group: { gap: spacing.tight },
+  segmented: { flexDirection: 'row', gap: spacing.tight },
   segment: {
     flex: 1,
     textAlign: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
     overflow: 'hidden',
   },
-  error: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.md },
-  rule: { height: border.hairline, marginTop: spacing.md },
+  error: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.base },
+  rule: { height: border.hairline, marginTop: spacing.base },
 });

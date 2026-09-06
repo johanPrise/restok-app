@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { feasibilityLabel, type Feasibility } from '@/lib/recipes';
 import type { Palette } from '@/theme';
-import { radius, spacing, textOn, useTheme } from '@/theme';
+import { spacing, useTheme } from '@/theme';
 import type { Recipe } from '@/types/api';
-import { TagCard } from './TagCard';
+import { Card } from './Card';
 import { Text } from './Text';
 import { useLocale } from '@/i18n/useT';
 
@@ -18,8 +18,8 @@ import { useLocale } from '@/i18n/useT';
  * du stock.
  */
 function pillColor(state: Feasibility): keyof Palette {
-  if (state.kind === 'ready') return 'sage';
-  if (state.kind === 'missing') return 'rustClay';
+  if (state.kind === 'ready') return 'ok';
+  if (state.kind === 'missing') return 'out';
 
   return 'inkSoft';
 }
@@ -54,18 +54,14 @@ export function RecipeCard({
       accessibilityLabel={`${recipe.name}, ${label}`}
       onPress={onPress}
     >
-      <TagCard
-        accentColor={state.kind === 'missing' ? colors.rustClay : undefined}
-      >
+      <Card accentColor={state.kind === 'missing' ? colors.out : undefined}>
         <View style={styles.head}>
-          <Text variant="tagName" style={styles.name} numberOfLines={2}>
+          <Text variant="title" style={styles.name} numberOfLines={2}>
             {recipe.name}
           </Text>
-          <View style={[styles.pill, { backgroundColor: colors[accent] }]}>
-            <Text variant="monoLabel" color={textOn(accent)}>
-              {label}
-            </Text>
-          </View>
+          <Text variant="dataLabel" color={accent}>
+            {label}
+          </Text>
         </View>
 
         {state.kind === 'missing' && (
@@ -73,7 +69,7 @@ export function RecipeCard({
             {state.items.join(' · ')}
           </Text>
         )}
-      </TagCard>
+      </Card>
     </Pressable>
   );
 }
@@ -83,12 +79,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: spacing.xs,
+    gap: spacing.tight,
   },
   name: { flex: 1 },
-  pill: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
-    borderRadius: radius.button,
-  },
 });

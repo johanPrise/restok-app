@@ -15,11 +15,11 @@ interface SystemFooterProps {
 export function SystemFooter({ left, right }: Readonly<SystemFooterProps>) {
   return (
     <View style={styles.row}>
-      <Text variant="monoLabel" color="inkSoft">
+      <Text variant="dataLabel" color="inkSoft">
         {left}
       </Text>
       {right !== undefined && (
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {right}
         </Text>
       )}
@@ -31,6 +31,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.base,
   },
 });
