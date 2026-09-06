@@ -32,7 +32,7 @@ export default function Join() {
       // La redirection est portée par l'aiguillage racine une fois le membre
       // rattaché — inutile de nommer la destination ici.
       onSuccess: (group) => {
-        toast(`Tu as rejoint « ${group.name} »`);
+        toast(t('onboarding.groupeRejoint', { nom: group.name }));
         router.replace('/');
       },
     });
