@@ -72,7 +72,7 @@ export async function createE2EApp(): Promise<E2EContext> {
       // TRUNCATE plutôt que DELETE : ignore les contraintes et remet à zéro
       // sans se soucier de l'ordre des tables.
       await dataSource.query(
-        'TRUNCATE TABLE refresh_token, password_reset, recipe_ingredient, recipe, shopping_line, action_history, item, member, "group" CASCADE',
+        'TRUNCATE TABLE purchase, refresh_token, password_reset, recipe_ingredient, recipe, shopping_line, action_history, item, member, "group" CASCADE',
       );
       push.clear();
       push.succeedAlways();

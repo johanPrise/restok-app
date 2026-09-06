@@ -39,6 +39,14 @@ export const fr = {
       'Un admin ne peut pas se retirer lui-même du groupe.',
     bad_credentials: 'Email ou mot de passe incorrect.',
     email_taken: 'Un compte existe déjà avec cet email.',
+    export_requires_unlock:
+      'Le registre reste lisible par tout le monde. C’est son export en fichier qui demande la version complète.',
+    free_item_limit_reached:
+      'L’étagère gratuite s’arrête à %{max} articles. Les tiens restent tous là — c’est l’ajout qui attend.',
+    free_member_limit_reached:
+      'Ce groupe est complet : la version gratuite s’arrête à %{max} personnes.',
+    free_recipe_limit_reached:
+      'Le carnet gratuit garde %{max} recettes. Les tiennes restent toutes là.',
     export_too_large:
       'Ce registre est trop long pour un seul fichier — %{max} lignes au maximum. Restreins la période, ou choisis une personne.',
     ingredient_already_in_recipe: 'Cet item est déjà dans la recette.',

@@ -95,8 +95,8 @@ viser un autre serveur, poser `EXPO_PUBLIC_API_URL`.
 ## Les tests
 
 ```bash
-cd backend && pnpm test        # 276 unitaires
-cd backend && pnpm test:e2e    # 279 e2e, contre un vrai PostgreSQL
+cd backend && pnpm test        # 287 unitaires
+cd backend && pnpm test:e2e    # 294 e2e, contre un vrai PostgreSQL
 cd mobile  && pnpm test        # 247
 ```
 
@@ -299,8 +299,16 @@ Le compte part en **soft-delete**, et c'est ce qui rend le journal anonyme sans
 le trouer. Les lignes restent, le nom disparaît : effacer les lignes aurait
 crevé le registre des autres, qui s'en servent pour savoir qui a pris quoi, et
 les garder nommées aurait conservé une donnée personnelle après suppression.
-L'email, lui, est brouillé — il est unique en base, et le laisser tel quel
-aurait transformé une suppression en bannissement de l'adresse.
+
+La ligne du membre doit donc survivre — `action_history` s'y accroche — mais
+elle est **vidée** de ce qu'elle contenait : nom, email, empreinte du mot de
+passe, jeton de notification. Sans ce nettoyage, « supprimer » n'aurait été
+qu'une mise à l'écart, avec le nom conservé indéfiniment. L'email est brouillé
+plutôt qu'effacé, parce qu'il porte une contrainte d'unicité : le laisser tel
+quel aurait transformé une suppression en bannissement de l'adresse.
+
+Ce que l'app garde, pour qui, et pour combien de temps est écrit en toutes
+lettres dans la [politique de confidentialité](docs/confidentialite.md).
 
 ## Ce qui manque
 
@@ -309,7 +317,11 @@ aurait transformé une suppression en bannissement de l'adresse.
 - **Aucun test de rendu.** Les tests du mobile sont tous de la logique pure ;
   aucun composant ni écran n'est monté.
 - **Aucune supervision en production.** Un plantage chez quelqu'un est invisible.
-- **Pas de politique de confidentialité**, que les stores exigent.
+- **La politique de confidentialité n'est pas encore en ligne.** Elle est
+  écrite ([fr](docs/confidentialite.md), [en](docs/privacy.md)) et fondée sur ce
+  que le code fait vraiment, mais il lui manque l'identité du responsable de
+  traitement, une adresse de contact, une URL publique — que les stores
+  réclament — et un lien depuis l'app.
 - **Les notifications push n'ont jamais été vérifiées de bout en bout.** Le
   circuit est complet des deux côtés, mais l'essayer exige un build EAS : Expo
   Go ne reçoit pas de notifications.

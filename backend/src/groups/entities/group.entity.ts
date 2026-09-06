@@ -54,6 +54,17 @@ export class Group {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
+  /**
+   * L'achat qui a débloqué ce groupe, ou `null` s'il est sur le palier gratuit.
+   *
+   * Porté par le **groupe** et non par l'acheteur : c'est le groupe qui a payé.
+   * Un acheteur qui s'en va — ou qui supprime son compte — ne remporte pas le
+   * déblocage avec lui, et le successeur promu automatiquement n'a rien à
+   * racheter.
+   */
+  @Column({ name: 'unlocked_by_purchase_id', type: 'uuid', nullable: true })
+  unlockedByPurchaseId: string | null;
+
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt: Date | null;
 }

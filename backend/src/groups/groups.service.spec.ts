@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { DataSource, EntityManager, Repository } from 'typeorm';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { Item } from '../items/entities/item.entity';
 import { Member, MemberRole } from '../members/entities/member.entity';
 import { Group, GroupType } from './entities/group.entity';
@@ -22,8 +23,10 @@ describe('GroupsService', () => {
     findOne: jest.Mock<Promise<Member | null>, [unknown]>;
     save: jest.Mock<Promise<Member>, [Member]>;
     update: jest.Mock;
+    count: jest.Mock;
   };
   let txItemRepo: { softDelete: jest.Mock };
+  let entitlements: { isUnlocked: jest.Mock };
 
   const buildMember = (overrides: Partial<Member> = {}): Member =>
     ({
@@ -47,6 +50,7 @@ describe('GroupsService', () => {
     };
     txMemberRepo = {
       findOne: jest.fn<Promise<Member | null>, [unknown]>(),
+      count: jest.fn().mockResolvedValue(0),
       save: jest.fn((m: Member) => Promise.resolve(m)),
       update: jest.fn(),
     };
@@ -80,10 +84,17 @@ describe('GroupsService', () => {
           provide: getRepositoryToken(Member),
           useValue: { countBy: jest.fn() },
         },
+        {
+          // Débloqué par défaut : ces tests portent sur la vie du groupe, pas
+          // sur le palier. Le plafond de membres a ses propres cas plus bas.
+          provide: EntitlementsService,
+          useValue: { isUnlocked: jest.fn().mockResolvedValue(true) },
+        },
       ],
     }).compile();
 
     service = moduleRef.get(GroupsService);
+    entitlements = moduleRef.get(EntitlementsService);
   });
 
   describe('create', () => {
@@ -199,6 +210,43 @@ describe('GroupsService', () => {
       await expect(
         service.join({ inviteCode: 'AB2CD3EF' }, 'member-1'),
       ).resolves.toMatchObject({ id: 'group-1' });
+    });
+  });
+
+  describe('le plafond de membres', () => {
+    beforeEach(() => {
+      entitlements.isUnlocked.mockResolvedValue(false);
+      txMemberRepo.findOne.mockResolvedValue(buildMember());
+      txGroupRepo.findOne.mockResolvedValue({
+        id: 'group-1',
+        type: GroupType.ROOMMATES,
+      } as Group);
+    });
+
+    it('laisse entrer tant qu’on est moins de six', async () => {
+      txMemberRepo.count.mockResolvedValue(5);
+
+      await expect(
+        service.join({ inviteCode: 'ABCD2345' }, 'member-1'),
+      ).resolves.toBeDefined();
+    });
+
+    it('refuse le septième', async () => {
+      txMemberRepo.count.mockResolvedValue(6);
+
+      await expect(
+        service.join({ inviteCode: 'ABCD2345' }, 'member-1'),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(txMemberRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('ne s’applique pas à un groupe qui a payé', async () => {
+      entitlements.isUnlocked.mockResolvedValue(true);
+      txMemberRepo.count.mockResolvedValue(50);
+
+      await expect(
+        service.join({ inviteCode: 'ABCD2345' }, 'member-1'),
+      ).resolves.toBeDefined();
     });
   });
 

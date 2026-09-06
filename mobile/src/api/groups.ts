@@ -85,6 +85,9 @@ export function useCreateGroup() {
       queryClient.setQueryData<GroupDetail>(queryKeys.group, {
         ...group,
         memberCount: 1,
+        // Un groupe qu'on vient d'ouvrir n'a rien payé : c'est un fait, au même
+        // titre qu'on y est seul.
+        isUnlocked: false,
       });
       onJoined(group, 'admin');
     },

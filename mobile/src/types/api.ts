@@ -35,6 +35,15 @@ export interface Group {
 
 export interface GroupDetail extends Group {
   memberCount: number;
+  /**
+   * Le groupe a payé.
+   *
+   * Il voyage avec le groupe plutôt que dans une route à part : c'est déjà le
+   * payload que le cache persiste, donc le drapeau hérite gratuitement de sa
+   * fraîcheur. Une route dédiée aurait eu son propre cache, et les deux
+   * auraient fini par se contredire.
+   */
+  isUnlocked: boolean;
 }
 
 export interface MemberSummary {

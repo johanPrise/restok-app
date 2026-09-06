@@ -1,12 +1,15 @@
+import { ConflictException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { EntityManager, Repository } from 'typeorm';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { ActionHistoryService } from './action-history.service';
 import { ActionHistory, ActionType } from './entities/action-history.entity';
 
 describe('ActionHistoryService', () => {
   let service: ActionHistoryService;
   let historyRepo: jest.Mocked<Repository<ActionHistory>>;
+  let entitlements: { isUnlocked: jest.Mock };
 
   const buildEntry = (overrides: Partial<ActionHistory> = {}): ActionHistory =>
     ({
@@ -31,11 +34,32 @@ describe('ActionHistoryService', () => {
             save: jest.fn((entry: ActionHistory) => Promise.resolve(entry)),
           },
         },
+        {
+          // Débloqué par défaut : ces tests portent sur le registre, pas sur
+          // le palier. L'export verrouillé a ses propres cas plus bas.
+          provide: EntitlementsService,
+          useValue: { isUnlocked: jest.fn().mockResolvedValue(true) },
+        },
       ],
     }).compile();
 
     service = moduleRef.get(ActionHistoryService);
     historyRepo = moduleRef.get(getRepositoryToken(ActionHistory));
+    entitlements = moduleRef.get(EntitlementsService);
+  });
+
+  describe("l'export du registre", () => {
+    it('est refusé au palier gratuit', async () => {
+      entitlements.isUnlocked.mockResolvedValue(false);
+
+      await expect(service.exportByGroup('group-1', {})).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
+    // Que la **lecture** reste gratuite se vérifie en e2e, contre une vraie
+    // base : `findByGroup` passe par un query builder brut, qu'un faux ne
+    // reproduirait qu'en apparence.
   });
 
   describe('record', () => {

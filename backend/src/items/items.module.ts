@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BillingModule } from '../billing/billing.module';
 import { ActionHistoryModule } from '../action-history/action-history.module';
 import { AuthModule } from '../auth/auth.module';
 import { Item } from './entities/item.entity';
@@ -15,7 +16,12 @@ import { TrackingStrategyFactory } from './strategies/tracking-strategy.factory'
  * l'EventEmitter global (§4). Retirer les notifications ne casserait rien ici.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Item]), AuthModule, ActionHistoryModule],
+  imports: [
+    TypeOrmModule.forFeature([Item]),
+    AuthModule,
+    ActionHistoryModule,
+    BillingModule,
+  ],
   controllers: [ItemsController],
   providers: [
     ItemsService,

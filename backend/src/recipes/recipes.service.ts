@@ -9,6 +9,8 @@ import { matchItem } from './catalogue/match-items';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
+import { EntitlementsService } from '../billing/entitlements.service';
+import { FREE_RECIPES } from '../billing/limits';
 import { Recipe } from './entities/recipe.entity';
 import { BUSINESS_CODES, badRequest, conflict } from '../common/business-error';
 
@@ -76,6 +78,7 @@ export class RecipesService {
     private readonly dataSource: DataSource,
     @Inject(CATALOGUE)
     private readonly catalogue: Catalogue,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -178,6 +181,10 @@ export class RecipesService {
     }
     await this.assertItemsBelongToGroup(dto.ingredients ?? [], groupId);
     this.assertNoDuplicateItem(dto.ingredients ?? []);
+
+    // Passe aussi par ici la sauvegarde depuis le catalogue, qui délègue à
+    // cette méthode : un seul plafond couvre les deux chemins.
+    await this.assertRoomForRecipe(groupId);
 
     const recipe = await this.dataSource.transaction(async (manager) => {
       const saved = await manager.getRepository(Recipe).save(
@@ -288,6 +295,27 @@ export class RecipesService {
    * Un ingrédient est soit lié, soit libre. Les deux à la fois laisserait deux
    * noms concurrents sur la même ligne ; aucun des deux ne désignerait rien.
    */
+  /**
+   * Le plafond des recettes gardées.
+   *
+   * Pas de verrou de ligne ici, contrairement aux items : la course entre deux
+   * sauvegardes simultanées ferait au pire une recette de trop sur dix, ce qui
+   * ne vaut pas de sérialiser un chemin où l'on écrit déjà dans une
+   * transaction plus loin.
+   */
+  private async assertRoomForRecipe(groupId: string): Promise<void> {
+    if (await this.entitlements.isUnlocked(groupId)) return;
+
+    const kept = await this.recipeRepo.count({ where: { groupId } });
+    if (kept < FREE_RECIPES) return;
+
+    throw conflict(
+      BUSINESS_CODES.FREE_RECIPE_LIMIT_REACHED,
+      `Le carnet gratuit garde ${FREE_RECIPES} recettes. Les tiennes restent toutes là.`,
+      { max: FREE_RECIPES },
+    );
+  }
+
   private assertOneNature(dto: AddIngredientDto): void {
     const hasItem = dto.itemId !== undefined;
     const hasLabel = dto.label !== undefined && dto.label.trim().length > 0;
