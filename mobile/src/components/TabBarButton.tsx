@@ -31,7 +31,7 @@ interface TabBarButtonProps extends TabTriggerSlotProps {
  *
  * L'onglet actif ne se distingue que par la couleur : pas de pastille, pas de
  * fond, pas de halo. Le Figma exporté du produit ne montre aucune de ces trois
- * choses sur l'onglet actif — juste l'icône et le libellé en `pantryTeal` au
+ * choses sur l'onglet actif — juste l'icône et le libellé en `accent` au
  * lieu d'`ink`. Une version antérieure de ce composant avait inventé une
  * pastille remplie ; elle ne correspond à rien dans la maquette.
  *
@@ -51,9 +51,9 @@ export function TabBarButton({
   const { colors } = useTheme();
   const reduced = useReducedMotion();
 
-  const tint = isFocused ? 'pantryTeal' : 'ink';
+  const tint = isFocused ? 'accent' : 'ink';
 
-  // Retour d'appui immédiat, sur le thread d'animation : il ne dépend donc pas
+  // Retour d'appui immédiat, sur le rule d'animation : il ne dépend donc pas
   // du temps que met l'écran à basculer.
   //
   // Un fondu, pas une échelle : un ressort sur un `scale` reste sous-amorti à
@@ -124,11 +124,11 @@ const styles = StyleSheet.create({
   },
   content: {
     maxWidth: '100%',
-    paddingHorizontal: 6,
+    paddingHorizontal: spacing.hair,
     alignItems: 'center',
     justifyContent: 'center',
     // 4px entre icône et libellé, comme le « Margin » du Figma.
-    gap: spacing.xs / 2,
+    gap: spacing.hair,
   },
-  contentCompact: { paddingHorizontal: 2 },
+  contentCompact: { paddingHorizontal: spacing.hair },
 });

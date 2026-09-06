@@ -27,7 +27,7 @@ export function Segmented<T extends string>({
 
   return (
     <View style={styles.group}>
-      <Text variant="monoLabel" color="inkSoft">
+      <Text variant="dataLabel" color="inkSoft">
         {label}
       </Text>
 
@@ -35,7 +35,7 @@ export function Segmented<T extends string>({
         accessibilityRole="radiogroup"
         style={[
           styles.track,
-          { backgroundColor: colors.paperRaised, borderColor: colors.thread },
+          { backgroundColor: colors.raised, borderColor: colors.rule },
         ]}
       >
         {options.map((option) => {
@@ -54,12 +54,12 @@ export function Segmented<T extends string>({
               onPress={() => onChange(option.value)}
               style={[
                 styles.segment,
-                selected && { backgroundColor: colors.pantryTeal },
+                selected && { backgroundColor: colors.accent },
               ]}
             >
               <Text
                 variant="bodyStrong"
-                color={selected ? 'onPantryTeal' : 'inkSoft'}
+                color={selected ? 'onAccent' : 'inkSoft'}
               >
                 {option.label}
               </Text>
@@ -78,11 +78,11 @@ export function Segmented<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  group: { gap: spacing.xs },
+  group: { gap: spacing.tight },
   track: {
     flexDirection: 'row',
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
     // Sans ça les coins des segments dépassent du cadre.
     overflow: 'hidden',
   },
@@ -91,6 +91,6 @@ const styles = StyleSheet.create({
     minHeight: MIN_TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.tight,
   },
 });

@@ -85,7 +85,7 @@ export default function Journal() {
     <Screen edges={['top']}>
       <View style={styles.header}>
         <Text variant="display">{t('onglets.journal')}</Text>
-        <Text variant="monoLabel" color="inkSoft" numberOfLines={1}>
+        <Text variant="dataLabel" color="inkSoft" numberOfLines={1}>
           {history.isError
             ? t('journal.nonCharge')
             : `${group.data?.name ?? ''} · ${journalSummary(entries, locale)}`}
@@ -115,7 +115,7 @@ export default function Journal() {
           <RefreshControl
             refreshing={history.isRefetching}
             onRefresh={() => void history.refetch()}
-            tintColor={colors.pantryTeal}
+            tintColor={colors.accent}
           />
         }
       >
@@ -162,7 +162,7 @@ export default function Journal() {
         )}
 
         {(history.isError || exporter.isError) && (
-          <Text variant="caption" color="rustClay">
+          <Text variant="caption" color="out">
             {apiErrorMessage(history.error ?? exporter.error, locale)}
           </Text>
         )}
@@ -172,7 +172,7 @@ export default function Journal() {
 
         {!history.isPending && entries.length === 0 && (
           <TagCard style={styles.empty}>
-            <Text variant="tagName" color="inkSoft">
+            <Text variant="title" color="inkSoft">
               {t('journal.rienSurPeriode')}
             </Text>
             <Text variant="body" color="inkSoft">
@@ -185,10 +185,10 @@ export default function Journal() {
 
         {days.map((day) => (
           <View key={day.key} style={styles.day}>
-            <Text variant="monoLabel" color="inkSoft">
+            <Text variant="dataLabel" color="inkSoft">
               {day.label}
             </Text>
-            <View style={[styles.rows, { borderColor: colors.thread }]}>
+            <View style={[styles.rows, { borderColor: colors.rule }]}>
               {day.entries.map((entry) => (
                 <Row key={entry.id} entry={entry} />
               ))}
@@ -227,21 +227,21 @@ function Row({ entry }: Readonly<{ entry: GroupHistoryEntry }>) {
         .filter(Boolean)
         .join(' ')}
     >
-      <Text variant="mono" style={styles.who} numberOfLines={1}>
+      <Text variant="data" style={styles.who} numberOfLines={1}>
         {(entry.memberName ?? t('item.quelquun')).toUpperCase()}
       </Text>
       <Text
-        variant="mono"
+        variant="data"
         color="inkSoft"
         style={styles.item}
         numberOfLines={1}
       >
         {entry.itemName}
       </Text>
-      <Text variant="mono" style={styles.count}>
+      <Text variant="data" style={styles.count}>
         {entry.quantity === null ? '' : `×${entry.quantity}`}
       </Text>
-      <Text variant="mono" color="inkSoft" style={styles.action}>
+      <Text variant="data" color="inkSoft" style={styles.action}>
         {t(entry.actionType === 'taken' ? 'commun.pris' : 'commun.rachete')}
       </Text>
     </View>
@@ -273,7 +273,7 @@ function WhoFilter({
 
   return (
     <View style={styles.group}>
-      <Text variant="monoLabel" color="inkSoft">
+      <Text variant="dataLabel" color="inkSoft">
         {t('journal.qui')}
       </Text>
       <ScrollView
@@ -295,16 +295,14 @@ function WhoFilter({
               style={[
                 styles.chip,
                 {
-                  backgroundColor: selected
-                    ? colors.pantryTeal
-                    : colors.paperRaised,
-                  borderColor: selected ? colors.pantryTeal : colors.thread,
+                  backgroundColor: selected ? colors.accent : colors.raised,
+                  borderColor: selected ? colors.accent : colors.rule,
                 },
               ]}
             >
               <Text
-                variant="monoLabel"
-                color={selected ? 'paperRaised' : 'ink'}
+                variant="dataLabel"
+                color={selected ? 'raised' : 'ink'}
                 numberOfLines={1}
               >
                 {choice.name}
@@ -318,28 +316,32 @@ function WhoFilter({
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.sm, gap: 2 },
-  body: { paddingTop: spacing.md, gap: spacing.lg, paddingBottom: spacing.lg },
-  group: { gap: spacing.xs },
-  chips: { gap: spacing.xs, paddingRight: spacing.md },
+  header: { paddingTop: spacing.base, gap: spacing.hair },
+  body: {
+    paddingTop: spacing.base,
+    gap: spacing.card,
+    paddingBottom: spacing.card,
+  },
+  group: { gap: spacing.tight },
+  chips: { gap: spacing.tight, paddingRight: spacing.base },
   chip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.tight,
     borderRadius: radius.full,
     borderWidth: border.hairline,
     maxWidth: 180,
   },
-  day: { gap: spacing.xs },
+  day: { gap: spacing.tight },
   rows: {
-    gap: spacing.xs,
+    gap: spacing.tight,
     borderTopWidth: border.hairline,
-    paddingTop: spacing.xs,
+    paddingTop: spacing.tight,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   who: { width: 76 },
   item: { flex: 1 },
   count: { width: 34, textAlign: 'right' },
   action: { width: 62, textAlign: 'right' },
-  empty: { gap: spacing.xs },
+  empty: { gap: spacing.tight },
   truncation: { textAlign: 'center' },
 });

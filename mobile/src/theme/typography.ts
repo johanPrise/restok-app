@@ -1,115 +1,104 @@
 import { TextStyle } from 'react-native';
 
-/** §2 du design system : trois polices, trois rôles distincts. */
+/**
+ * Deux familles, trois graisses (`DESIGN.md`).
+ *
+ * Archivo Black a disparu : il portait `display`, `title` et `tagName` — trois
+ * rôles qu'une graisse 600 dans une taille plus grande distingue aussi bien. Il
+ * coûtait deux fichiers de fonte au démarrage, et sur `tagName` il imposait des
+ * capitales à ce qui se lit le plus dans l'app, le nom d'un item.
+ *
+ * La monospace reste pour une raison fonctionnelle et une seule : le journal et
+ * l'historique se lisent en colonnes, et une colonne n'existe que si les
+ * chiffres ont la même avance. Sans chasse fixe, `×12` et `×3` ne s'alignent
+ * plus et le registre cesse de prouver quoi que ce soit.
+ */
 export const fontFamily = {
-  /** Nom d'item sur les tags, titres d'écran. Allure tamponnée. */
-  display: 'ArchivoBlack_400Regular',
-  body: 'WorkSans_400Regular',
-  bodySemibold: 'WorkSans_600SemiBold',
-  /**
-   * Archivo Bold — moins gras et plus étroit qu'Archivo Black. Employé sur les
-   * titres des cartes de choix, où la maquette ne veut pas du poids du Black.
-   */
-  displayBold: 'Archivo_700Bold',
-  /** Quantités, dates, codes d'invitation, historique. */
-  mono: 'IBMPlexMono_500Medium',
-  /** Libellés d'onglets — la maquette y passe le Bold, pas le Medium. */
-  monoBold: 'IBMPlexMono_700Bold',
+  /** Tout ce qui se lit en phrase. */
+  text: 'WorkSans_400Regular',
+  /** Ce sur quoi on peut agir, et les titres. */
+  emphasis: 'WorkSans_600SemiBold',
+  /** Quantités, dates, compteurs, codes, colonnes. */
+  data: 'IBMPlexMono_500Medium',
 } as const;
 
-/** Échelle 32 / 24 / 18 / 16 / 13. */
+/** Cinq tailles. Chaque cran est un écart qu'on voit. */
 export const fontSize = {
-  display: 32,
-  title: 24,
-  subtitle: 18,
-  body: 16,
-  caption: 13,
-  /**
-   * Hors échelle du §2, et volontairement : à 13px les quatre libellés
-   * d'onglets ne tiennent plus côte à côte sur 390px. La maquette descend à 11,
-   * ce format ne sert nulle part ailleurs.
-   */
-  tabLabel: 11,
+  xl: 28,
+  lg: 20,
+  md: 16,
+  sm: 13,
+  xs: 11,
 } as const;
 
-const DISPLAY_LINE_HEIGHT = 1.1;
-const BODY_LINE_HEIGHT = 1.4;
+/**
+ * Les titres se resserrent, le texte respire. En dessous de 20px un interligne
+ * de 1,1 colle les lignes ; au-dessus, 1,5 les disperse.
+ */
+const TIGHT = 1.1;
+const SNUG = 1.2;
+const LOOSE = 1.5;
 
 export const textStyles = {
+  /** Un seul par écran, jamais deux. */
   display: {
-    fontFamily: fontFamily.display,
-    fontSize: fontSize.display,
-    lineHeight: fontSize.display * DISPLAY_LINE_HEIGHT,
+    fontFamily: fontFamily.emphasis,
+    fontSize: fontSize.xl,
+    lineHeight: Math.round(fontSize.xl * TIGHT),
   },
+  /** Nom d'item, en-tête de groupe. */
   title: {
-    fontFamily: fontFamily.display,
-    fontSize: fontSize.title,
-    lineHeight: fontSize.title * DISPLAY_LINE_HEIGHT,
-  },
-  /**
-   * Nom d'item sur un tag : capitales et léger interlettrage, comme tamponné
-   * sur une étiquette. Nulle part ailleurs dans l'app.
-   */
-  tagName: {
-    fontFamily: fontFamily.display,
-    fontSize: fontSize.subtitle,
-    lineHeight: fontSize.subtitle * DISPLAY_LINE_HEIGHT,
-    letterSpacing: fontSize.subtitle * 0.04,
-    textTransform: 'uppercase',
-  },
-  /** Titre d'une carte de choix : capitales, interlettrage large. */
-  choiceTitle: {
-    fontFamily: fontFamily.displayBold,
-    fontSize: fontSize.subtitle,
-    lineHeight: fontSize.subtitle * DISPLAY_LINE_HEIGHT,
-    letterSpacing: fontSize.subtitle * 0.03,
-    textTransform: 'uppercase',
+    fontFamily: fontFamily.emphasis,
+    fontSize: fontSize.lg,
+    lineHeight: Math.round(fontSize.lg * SNUG),
   },
   body: {
-    fontFamily: fontFamily.body,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * BODY_LINE_HEIGHT,
+    fontFamily: fontFamily.text,
+    fontSize: fontSize.md,
+    lineHeight: Math.round(fontSize.md * LOOSE),
   },
+  /** Le corps de ce sur quoi on peut agir. La graisse dit l'action, pas la teinte. */
   bodyStrong: {
-    fontFamily: fontFamily.bodySemibold,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * BODY_LINE_HEIGHT,
+    fontFamily: fontFamily.emphasis,
+    fontSize: fontSize.md,
+    lineHeight: Math.round(fontSize.md * LOOSE),
   },
   caption: {
-    fontFamily: fontFamily.body,
-    fontSize: fontSize.caption,
-    lineHeight: fontSize.caption * BODY_LINE_HEIGHT,
+    fontFamily: fontFamily.text,
+    fontSize: fontSize.sm,
+    lineHeight: Math.round(fontSize.sm * LOOSE),
   },
-  /** Corps en monospace — la maquette y passe les descriptions de carte. */
-  monoBody: {
-    fontFamily: fontFamily.mono,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * BODY_LINE_HEIGHT,
+  /** Une donnée dans une phrase — une quantité au milieu d'un texte. */
+  dataBody: {
+    fontFamily: fontFamily.data,
+    fontSize: fontSize.md,
+    lineHeight: Math.round(fontSize.md * LOOSE),
   },
-  mono: {
-    fontFamily: fontFamily.mono,
-    fontSize: fontSize.caption,
-    lineHeight: fontSize.caption * BODY_LINE_HEIGHT,
+  /** Une donnée dans une colonne : dates, compteurs, montants. */
+  data: {
+    fontFamily: fontFamily.data,
+    fontSize: fontSize.sm,
+    lineHeight: Math.round(fontSize.sm * LOOSE),
+  },
+  /** En-tête de section et libellé technique : mono capitales. */
+  dataLabel: {
+    fontFamily: fontFamily.data,
+    fontSize: fontSize.sm,
+    lineHeight: Math.round(fontSize.sm * LOOSE),
+    letterSpacing: fontSize.sm * 0.06,
+    textTransform: 'uppercase',
   },
   /**
-   * Libellé d'onglet. Contrairement à `monoLabel`, il garde sa casse : la
-   * maquette écrit « Inventaire », pas « INVENTAIRE ».
+   * Libellé d'onglet, et rien d'autre. Il garde sa casse : la barre écrit
+   * « Inventaire », pas « INVENTAIRE ». L'interlettrage est à 0,02 et non 0,06
+   * comme ailleurs — en mono il coûte trois pixels sur « Inventaire », et
+   * c'est cette place qui sépare les quatre onglets.
    */
   tabLabel: {
-    fontFamily: fontFamily.monoBold,
-    fontSize: fontSize.tabLabel,
-    lineHeight: 12,
-    // 0.02 et non 0.05 comme ailleurs : en mono, l'interlettrage coûte trois
-    // pixels sur « Inventaire », et c'est cette place qui sépare les pastilles.
-    letterSpacing: fontSize.tabLabel * 0.02,
-  },
-  /** En-têtes de section et libellés techniques : mono capitales. */
-  monoLabel: {
-    fontFamily: fontFamily.mono,
-    fontSize: fontSize.caption,
-    lineHeight: fontSize.caption * BODY_LINE_HEIGHT,
-    letterSpacing: fontSize.caption * 0.06,
-    textTransform: 'uppercase',
+    fontFamily: fontFamily.data,
+    fontSize: fontSize.xs,
+    lineHeight: Math.round(fontSize.xs * LOOSE),
+    letterSpacing: fontSize.xs * 0.02,
   },
 } satisfies Record<string, TextStyle>;
 

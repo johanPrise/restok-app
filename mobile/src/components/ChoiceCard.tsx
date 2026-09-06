@@ -53,11 +53,11 @@ export function ChoiceCard({
         <Svg width={w} height={h} style={StyleSheet.absoluteFill}>
           <Path
             d={outline}
-            fill={colors.choiceSurface}
-            stroke={colors.choiceBorder}
+            fill={colors.raised}
+            stroke={colors.rule}
             strokeWidth={border.hairline}
           />
-          <Path d={flap} fill={colors.choiceFold} />
+          <Path d={flap} fill={colors.sunken} />
         </Svg>
       )}
 
@@ -70,24 +70,22 @@ export function ChoiceCard({
       <View style={styles.content}>
         <View style={styles.topRow}>
           {icon}
-          <View
-            style={[styles.badge, { backgroundColor: colors.choiceBorder }]}
-          >
-            <Text variant="monoLabel" color="choiceSurface">
+          <View style={[styles.badge, { backgroundColor: colors.rule }]}>
+            <Text variant="dataLabel" color="raised">
               {badge}
             </Text>
           </View>
         </View>
 
-        <Text variant="choiceTitle" color="choiceTitle" style={styles.title}>
+        <Text variant="title" color="accent" style={styles.title}>
           {title}
         </Text>
-        {/* `thread` serait invisible : la carte est déjà remplie de cette teinte. */}
-        <View style={[styles.rule, { backgroundColor: colors.choiceFold }]} />
-        <Text variant="monoBody" color="ink">
+        {/* `rule` serait invisible : la carte est déjà remplie de cette teinte. */}
+        <View style={[styles.rule, { backgroundColor: colors.sunken }]} />
+        <Text variant="dataBody" color="ink">
           {description}
         </Text>
-        <Text variant="monoLabel" color="inkSoft" style={styles.action}>
+        <Text variant="dataLabel" color="inkSoft" style={styles.action}>
           Action: {action} →
         </Text>
       </View>
@@ -98,20 +96,20 @@ export function ChoiceCard({
 const PERFORATION = 12;
 
 const styles = StyleSheet.create({
-  perforationRow: { alignItems: 'center', paddingTop: spacing.sm },
+  perforationRow: { alignItems: 'center', paddingTop: spacing.base },
   perforation: {
     width: PERFORATION,
     height: PERFORATION,
     borderRadius: PERFORATION / 2,
   },
-  content: { padding: spacing.lg, paddingTop: spacing.md },
+  content: { padding: spacing.card, paddingTop: spacing.base },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  badge: { paddingHorizontal: spacing.xs, paddingVertical: 4 },
-  title: { marginTop: spacing.lg },
-  rule: { height: border.hairline, marginVertical: spacing.sm },
-  action: { marginTop: spacing.md },
+  badge: { paddingHorizontal: spacing.tight, paddingVertical: spacing.hair },
+  title: { marginTop: spacing.card },
+  rule: { height: border.hairline, marginVertical: spacing.tight },
+  action: { marginTop: spacing.base },
 });

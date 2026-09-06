@@ -73,7 +73,9 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
   // Au-dessus de la barre d'onglets là où elle existe : elle est ancrée dans le
   // flux, la recouvrir masquerait la navigation le temps de la lecture.
   const bottom =
-    insets.bottom + spacing.md + (TABS.includes(pathname) ? tabBar.height : 0);
+    insets.bottom +
+    spacing.base +
+    (TABS.includes(pathname) ? tabBar.height : 0);
 
   return (
     <ToastContext.Provider value={value}>
@@ -97,8 +99,8 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
               styles.toast,
               chrome,
               {
-                backgroundColor: colors.paperRaised,
-                borderColor: colors.thread,
+                backgroundColor: colors.raised,
+                borderColor: colors.rule,
               },
             ]}
           >
@@ -115,17 +117,17 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
 const styles = StyleSheet.create({
   slot: {
     position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
+    left: spacing.base,
+    right: spacing.base,
     // Le toast est **frère** de la navigation, pas son enfant : sans rang
     // explicite, l'écran se peint par-dessus et le message existe sans se voir.
     zIndex: 100,
     elevation: 100,
   },
   toast: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.chrome,
-    borderWidth: border.rim,
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.base,
+    borderRadius: radius.base,
+    borderWidth: border.hairline,
   },
 });

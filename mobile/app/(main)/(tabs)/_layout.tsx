@@ -18,7 +18,7 @@ import { border, spacing, tabBar, useTheme } from '@/theme';
 
 /**
  * Barre du bas, d'après le Figma exporté du produit : ancrée dans le flux
- * normal, pas en survol — un aplat `paperRaised`, un fil `thread` en haut,
+ * normal, pas en survol — un aplat `raised`, un fil `rule` en haut,
  * aucun rayon, aucune ombre. L'onglet actif ne se distingue que par la couleur
  * de son icône et de son libellé, rien d'autre : pas de pastille, pas de fond,
  * pas de halo.
@@ -96,8 +96,8 @@ export default function TabsLayout() {
         style={[
           styles.bar,
           {
-            backgroundColor: colors.paperRaised,
-            borderTopColor: colors.thread,
+            backgroundColor: colors.raised,
+            borderTopColor: colors.rule,
             // La zone de gestes / l'encoche du bas fait partie de la barre,
             // pas du contenu au-dessus — elle n'a donc pas à être réservée
             // ailleurs.
@@ -170,14 +170,14 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   body: { flex: 1 },
   slot: { flexGrow: 1, flexShrink: 1, flexBasis: 0 },
-  fabSlot: { position: 'absolute', right: spacing.lg, bottom: spacing.lg },
+  fabSlot: { position: 'absolute', right: spacing.card, bottom: spacing.card },
   // `TabList` doit être rendu pour que les routes existent, pas affiché.
   hidden: { display: 'none' },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
     height: tabBar.height,
-    paddingHorizontal: 6,
+    paddingHorizontal: spacing.hair,
     borderTopWidth: border.hairline,
   },
 });

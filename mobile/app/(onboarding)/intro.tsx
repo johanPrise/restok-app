@@ -20,10 +20,10 @@ export default function Intro() {
       <View style={styles.header}>
         <Text variant="title">{t('onboarding.promesse')}</Text>
         <View style={styles.rule}>
-          <Text variant="monoLabel" color="inkSoft">
+          <Text variant="dataLabel" color="inkSoft">
             {t('onboarding.ordre', { n: '001' })}
           </Text>
-          <View style={[styles.line, { backgroundColor: colors.thread }]} />
+          <View style={[styles.line, { backgroundColor: colors.rule }]} />
         </View>
       </View>
 
@@ -44,8 +44,7 @@ export default function Intro() {
               styles.dot,
               index === 0 && styles.dotActive,
               {
-                backgroundColor:
-                  index === 0 ? colors.pantryTeal : colors.thread,
+                backgroundColor: index === 0 ? colors.accent : colors.rule,
               },
             ]}
           />
@@ -62,8 +61,8 @@ export default function Intro() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.xl, gap: spacing.md },
-  rule: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  header: { paddingTop: spacing.group, gap: spacing.base },
+  rule: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   line: { flex: 1, height: border.hairline },
   illustrationSlot: { flex: 1, justifyContent: 'center' },
   // Ratio de l'illustration (320×175). Son fond clair est cuit dans l'image et
@@ -73,9 +72,13 @@ const styles = StyleSheet.create({
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
+    gap: spacing.tight,
+    paddingVertical: spacing.base,
   },
-  dot: { width: 6, height: 6, borderRadius: radius.full },
-  dotActive: { width: 20 },
+  dot: {
+    width: spacing.tight,
+    height: spacing.tight,
+    borderRadius: radius.full,
+  },
+  dotActive: { width: spacing.card },
 });

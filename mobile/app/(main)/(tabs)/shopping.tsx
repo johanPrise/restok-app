@@ -200,7 +200,7 @@ export default function Shopping() {
     <Screen edges={['top']}>
       <View style={styles.header}>
         <Text variant="display">{t('onglets.courses')}</Text>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {shopping.isError
             ? t('courses.nonChargee')
             : checkedSummary(lines, locale)}
@@ -227,7 +227,7 @@ export default function Shopping() {
           <RefreshControl
             refreshing={shopping.isRefetching}
             onRefresh={() => void shopping.refetch()}
-            tintColor={colors.pantryTeal}
+            tintColor={colors.accent}
           />
         }
       >
@@ -281,7 +281,7 @@ export default function Shopping() {
 
       {/* Les deux actions restent sous le pouce quelle que soit la longueur de
           la liste : au magasin, on ne fait pas défiler pour valider. */}
-      <View style={[styles.footer, { borderTopColor: colors.thread }]}>
+      <View style={[styles.footer, { borderTopColor: colors.rule }]}>
         {/* Le hors-ligne passe avant l'erreur : un geste qui échoue parce que
             le réseau est coupé n'a pas à se raconter deux fois. */}
         {notice !== null && (
@@ -291,7 +291,7 @@ export default function Shopping() {
         )}
 
         {notice === null && failure !== null && (
-          <Text variant="caption" color="rustClay">
+          <Text variant="caption" color="out">
             {failure}
           </Text>
         )}
@@ -321,8 +321,8 @@ export default function Shopping() {
             style={[
               styles.input,
               {
-                backgroundColor: colors.paperRaised,
-                borderColor: colors.thread,
+                backgroundColor: colors.raised,
+                borderColor: colors.rule,
                 color: colors.ink,
               },
             ]}
@@ -392,7 +392,7 @@ function Suggestion({
       onPress={onPress}
       style={[
         styles.suggestion,
-        { backgroundColor: colors.paperRaised, borderColor: colors.thread },
+        { backgroundColor: colors.raised, borderColor: colors.rule },
       ]}
     >
       <BasketIcon color={colors.inkSoft} size={14} />
@@ -400,7 +400,7 @@ function Suggestion({
         {item.name}
       </Text>
       {units !== undefined && (
-        <Text variant="mono" color="inkSoft">
+        <Text variant="data" color="inkSoft">
           {withUnit(item, units)}
         </Text>
       )}
@@ -422,7 +422,7 @@ function EmptyState({
   const t = useT();
   return (
     <TagCard style={styles.empty}>
-      <Text variant="tagName" color="inkSoft" style={styles.centered}>
+      <Text variant="title" color="inkSoft" style={styles.centered}>
         {t('courses.rienAAcheter')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.centered}>
@@ -455,7 +455,7 @@ function ErrorState({
   const t = useT();
   return (
     <View style={styles.error}>
-      <Text variant="tagName" color="rustClay" style={styles.centered}>
+      <Text variant="title" color="out" style={styles.centered}>
         {t('courses.indisponible')}
       </Text>
       <Text variant="body" color="inkSoft" style={styles.centered}>
@@ -471,39 +471,47 @@ function ErrorState({
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingTop: spacing.sm, gap: 2 },
-  manage: { marginTop: spacing.xs, paddingHorizontal: spacing.md },
-  list: { paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.md },
-  section: { gap: spacing.xs },
-  empty: { gap: spacing.xs, paddingVertical: spacing.lg },
-  emptyAction: { marginTop: spacing.sm, alignSelf: 'stretch' },
-  error: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs },
+  header: { alignItems: 'center', paddingTop: spacing.base, gap: spacing.hair },
+  manage: { marginTop: spacing.tight, paddingHorizontal: spacing.base },
+  list: {
+    paddingTop: spacing.base,
+    paddingBottom: spacing.base,
+    gap: spacing.base,
+  },
+  section: { gap: spacing.tight },
+  empty: { gap: spacing.tight, paddingVertical: spacing.card },
+  emptyAction: { marginTop: spacing.tight, alignSelf: 'stretch' },
+  error: {
+    alignItems: 'center',
+    paddingVertical: spacing.group,
+    gap: spacing.tight,
+  },
   centered: { textAlign: 'center' },
   footer: {
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.base,
     borderTopWidth: border.hairline,
-    gap: spacing.sm,
+    gap: spacing.tight,
   },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  suggestions: { gap: spacing.xs },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
+  suggestions: { gap: spacing.tight },
   suggestion: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.tight,
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
   },
   suggestionName: { flex: 1 },
   input: {
     flex: 1,
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
-    fontFamily: fontFamily.body,
-    fontSize: fontSize.body,
+    borderRadius: radius.base,
+    fontFamily: fontFamily.text,
+    fontSize: fontSize.md,
   },
 });

@@ -50,7 +50,7 @@ export default function Settings() {
     <Screen edges={['top']}>
       <View style={styles.header}>
         <Text variant="title">{t('onglets.parametres')}</Text>
-        <Text variant="monoLabel" color="inkSoft" numberOfLines={1}>
+        <Text variant="dataLabel" color="inkSoft" numberOfLines={1}>
           {group.data?.name ?? ' '}
         </Text>
       </View>
@@ -60,7 +60,7 @@ export default function Settings() {
           styles.content,
           // La barre d'onglets est ancrée, pas en survol : `TabSlot` s'arrête
           // déjà au-dessus d'elle, il reste juste un peu d'air en bas de liste.
-          { paddingBottom: spacing.lg },
+          { paddingBottom: spacing.card },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -94,11 +94,11 @@ export default function Settings() {
           {!solo && <LeaveGroup />}
 
           <View style={styles.account}>
-            <Text variant="monoLabel" color="inkSoft">
+            <Text variant="dataLabel" color="inkSoft">
               {t('parametres.compte')}
             </Text>
             <Text variant="bodyStrong">{member?.name ?? '—'}</Text>
-            <Text variant="mono" color="inkSoft">
+            <Text variant="data" color="inkSoft">
               {member?.email ?? ''}
             </Text>
           </View>
@@ -173,7 +173,7 @@ function Members({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHead}>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('parametres.membres')}{' '}
           {loading ? '' : `[${String(members.length).padStart(2, '0')}]`}
         </Text>
@@ -220,7 +220,7 @@ function Members({
       ))}
 
       {(setRole.isError || remove.isError) && (
-        <Text variant="caption" color="rustClay">
+        <Text variant="caption" color="out">
           {apiErrorMessage(setRole.error ?? remove.error, locale)}
         </Text>
       )}
@@ -296,7 +296,7 @@ function DeleteGroup({
       />
 
       {remove.isError && (
-        <Text variant="caption" color="rustClay">
+        <Text variant="caption" color="out">
           {apiErrorMessage(remove.error, locale)}
         </Text>
       )}
@@ -361,7 +361,7 @@ function LeaveGroup() {
       </Text>
 
       {leave.isError && (
-        <Text variant="caption" color="rustClay">
+        <Text variant="caption" color="out">
           {apiErrorMessage(leave.error, locale)}
         </Text>
       )}
@@ -390,19 +390,19 @@ function LeaveGroup() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.sm, gap: 2 },
-  content: { paddingTop: spacing.md, gap: spacing.lg },
-  section: { gap: spacing.sm },
+  header: { paddingTop: spacing.base, gap: spacing.hair },
+  content: { paddingTop: spacing.base, gap: spacing.card },
+  section: { gap: spacing.tight },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: MIN_TOUCH_TARGET,
   },
-  manage: { paddingHorizontal: spacing.sm },
-  footer: { gap: spacing.sm, paddingTop: spacing.md },
-  account: { gap: 2 },
-  confirm: { gap: spacing.xs },
-  actions: { flexDirection: 'row', gap: spacing.xs },
+  manage: { paddingHorizontal: spacing.base },
+  footer: { gap: spacing.tight, paddingTop: spacing.base },
+  account: { gap: spacing.hair },
+  confirm: { gap: spacing.tight },
+  actions: { flexDirection: 'row', gap: spacing.tight },
   action: { flex: 1 },
 });

@@ -88,7 +88,7 @@ export function EditableGroupName({
         </Pressable>
 
         {rename.isError && (
-          <Text variant="caption" color="rustClay" style={styles.text}>
+          <Text variant="caption" color="out" style={styles.text}>
             {apiErrorMessage(rename.error, locale)}
           </Text>
         )}
@@ -113,7 +113,7 @@ export function EditableGroupName({
       style={[
         styles.input,
         textStyles.title,
-        { color: colors.ink, borderColor: colors.pantryTeal },
+        { color: colors.ink, borderColor: colors.accent },
       ]}
     />
   );
@@ -127,10 +127,10 @@ const styles = StyleSheet.create({
     // Le champ garde exactement la place du titre : la page ne saute pas quand
     // on passe de l'un à l'autre.
     padding: 0,
-    paddingHorizontal: spacing.xs,
-    marginHorizontal: -spacing.xs,
+    paddingHorizontal: spacing.tight,
+    marginHorizontal: -spacing.tight,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
     textAlign: 'center',
   },
 });

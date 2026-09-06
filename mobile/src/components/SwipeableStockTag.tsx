@@ -94,9 +94,9 @@ export function SwipeableStockTag({
   /**
    * Tout ce dont le geste a besoin, en tableaux de nombres bruts.
    *
-   * Un worklet tourne sur le thread d'animation et ne peut pas appeler une
+   * Un worklet tourne sur le rule d'animation et ne peut pas appeler une
    * fonction JS ordinaire : le faire marche sur le web, où tout partage le même
-   * thread, et lève en natif. On calcule donc les paliers **avant**, et le
+   * rule, et lève en natif. On calcule donc les paliers **avant**, et le
    * geste ne fait plus qu'indexer.
    *
    * Un cran de rachat vaut un paquet quand l'item s'achète par lot — c'est
@@ -304,14 +304,10 @@ export function SwipeableStockTag({
           {/* Rien du tout hors geste : un « −0 » invisible resterait lu par les
               lecteurs d'écran. */}
           {units > 0 && (
-            <Counter label={`−${units}`} color={colors.rustClay} align="left" />
+            <Counter label={`−${units}`} color={colors.out} align="left" />
           )}
           {units < 0 && (
-            <Counter
-              label={`+${-units}`}
-              color={colors.pantryTeal}
-              align="right"
-            />
+            <Counter label={`+${-units}`} color={colors.accent} align="right" />
           )}
         </Animated.View>
 
@@ -352,7 +348,7 @@ function Counter({
 }: Readonly<{ label: string; color: string; align: 'left' | 'right' }>) {
   return (
     <View style={align === 'left' ? styles.left : styles.right}>
-      <Text variant="tagName" style={{ color }} allowFontScaling={false}>
+      <Text variant="title" style={{ color }} allowFontScaling={false}>
         {label}
       </Text>
     </View>
@@ -378,8 +374,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.tag,
+    paddingHorizontal: spacing.base,
+    borderRadius: radius.base,
   },
   // `auto` pousse le compteur du côté opposé à celui d'où vient le tag.
   left: { marginRight: 'auto' },

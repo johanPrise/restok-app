@@ -31,21 +31,21 @@ export function Button({
   const isDisabled = disabled === true || loading;
 
   const background = (pressed: boolean) => {
-    // Un primaire estompé par l'opacité tombe à peu près sur `sage`, la
+    // Un primaire estompé par l'opacité tombe à peu près sur `ok`, la
     // couleur du statut « disponible ». Le §1 réserve les couleurs de statut
     // au statut : l'inactif passe donc par un gris de la palette, jamais par
     // une teinte de marque atténuée.
     if (isDisabled)
-      return variant === 'secondary' ? 'transparent' : colors.thread;
+      return variant === 'secondary' ? 'transparent' : colors.rule;
     if (variant === 'secondary') return 'transparent';
-    if (variant === 'danger') return colors.rustClay;
+    if (variant === 'danger') return colors.out;
     // L'état pressed a sa propre couleur dans la palette (§1).
-    return pressed ? colors.pantryTealDeep : colors.pantryTeal;
+    return pressed ? colors.accentPress : colors.accent;
   };
 
   const labelColor = (): keyof typeof colors => {
     if (isDisabled) return 'inkSoft';
-    return variant === 'secondary' ? 'pantryTeal' : 'paperRaised';
+    return variant === 'secondary' ? 'accent' : 'raised';
   };
 
   return (
@@ -58,7 +58,7 @@ export function Button({
         styles.base,
         {
           backgroundColor: background(pressed),
-          borderColor: variant === 'secondary' ? colors.thread : 'transparent',
+          borderColor: variant === 'secondary' ? colors.rule : 'transparent',
         },
         style,
       ]}
@@ -87,9 +87,9 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.button,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
+    borderRadius: radius.base,
     borderWidth: border.hairline,
     alignItems: 'center',
     justifyContent: 'center',

@@ -31,20 +31,20 @@ export function TagSkeleton() {
     <View
       style={[
         styles.card,
-        { backgroundColor: colors.paperRaised, borderColor: colors.thread },
+        { backgroundColor: colors.raised, borderColor: colors.rule },
       ]}
     >
       <View
         style={[
           styles.perforation,
-          { backgroundColor: colors.paper, borderColor: colors.thread },
+          { backgroundColor: colors.paper, borderColor: colors.rule },
         ]}
       />
       <Animated.View style={shimmer}>
-        <View style={[styles.name, { backgroundColor: colors.thread }]} />
-        <View style={[styles.meta, { backgroundColor: colors.thread }]} />
-        <View style={[styles.rule, { backgroundColor: colors.thread }]} />
-        <View style={[styles.track, { backgroundColor: colors.thread }]} />
+        <View style={[styles.name, { backgroundColor: colors.rule }]} />
+        <View style={[styles.meta, { backgroundColor: colors.rule }]} />
+        <View style={[styles.rule, { backgroundColor: colors.rule }]} />
+        <View style={[styles.track, { backgroundColor: colors.rule }]} />
       </Animated.View>
     </View>
   );
@@ -54,23 +54,33 @@ const PERFORATION = 14;
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.md,
-    paddingTop: spacing.lg,
+    padding: spacing.base,
+    paddingTop: spacing.card,
     borderWidth: border.hairline,
-    borderRadius: radius.tag,
-    borderBottomRightRadius: radius.tagFoldedCorner,
+    borderRadius: radius.base,
+    borderBottomRightRadius: radius.base,
   },
   perforation: {
     position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
+    top: spacing.tight,
+    left: spacing.tight,
     width: PERFORATION,
     height: PERFORATION,
     borderRadius: radius.full,
     borderWidth: border.hairline,
   },
-  name: { height: 18, width: '55%', borderRadius: 4, marginTop: spacing.xs },
-  meta: { height: 12, width: '35%', borderRadius: 4, marginTop: spacing.sm },
-  rule: { height: border.hairline, marginVertical: spacing.sm },
-  track: { height: gauge.height, borderRadius: gauge.radius },
+  name: {
+    height: 18,
+    width: '55%',
+    borderRadius: radius.base,
+    marginTop: spacing.tight,
+  },
+  meta: {
+    height: 12,
+    width: '35%',
+    borderRadius: radius.base,
+    marginTop: spacing.tight,
+  },
+  rule: { height: border.hairline, marginVertical: spacing.tight },
+  track: { height: gauge.height, borderRadius: radius.full },
 });

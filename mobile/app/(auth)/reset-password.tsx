@@ -69,12 +69,12 @@ export default function ResetPassword() {
       <BackLink onPress={goBack} />
 
       <TagCard>
-        <Text variant="tagName">{t('acces.nouveauTitre')}</Text>
+        <Text variant="title">{t('acces.nouveauTitre')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {t('acces.oubliEnvoye')}
         </Text>
 
-        <Text variant="monoLabel" color="inkSoft" style={styles.label}>
+        <Text variant="dataLabel" color="inkSoft" style={styles.label}>
           {t('acces.codeRecu')}
         </Text>
         <CodeInput value={code} onChange={setCode} autoFocus />
@@ -101,7 +101,7 @@ export default function ResetPassword() {
         </View>
 
         {reset.isError && (
-          <Text variant="caption" color="rustClay" style={styles.error}>
+          <Text variant="caption" color="out" style={styles.error}>
             {apiErrorMessage(reset.error, locale)}
           </Text>
         )}
@@ -128,9 +128,9 @@ export default function ResetPassword() {
 }
 
 const styles = StyleSheet.create({
-  intro: { marginTop: spacing.sm },
-  label: { marginTop: spacing.md, marginBottom: spacing.xs },
-  form: { gap: spacing.md, marginTop: spacing.md },
-  error: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.md, marginBottom: spacing.xs },
+  intro: { marginTop: spacing.tight },
+  label: { marginTop: spacing.base, marginBottom: spacing.tight },
+  form: { gap: spacing.base, marginTop: spacing.base },
+  error: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.base, marginBottom: spacing.tight },
 });

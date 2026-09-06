@@ -20,7 +20,7 @@ export default function Choose() {
   return (
     <Screen>
       <View style={styles.header}>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('onboarding.etape02')}
         </Text>
         <Text variant="title">{t('onboarding.votreEspace')}</Text>
@@ -39,7 +39,7 @@ export default function Choose() {
           title={t('onboarding.creerGroupe')}
           description={t('onboarding.creerGroupeQuoi')}
           action="start_new"
-          icon={<CreateGroupIcon color={colors.choiceBorder} />}
+          icon={<CreateGroupIcon color={colors.rule} />}
           onPress={() => router.push('/create-group')}
         />
         <ChoiceCard
@@ -47,7 +47,7 @@ export default function Choose() {
           title={t('onboarding.rejoindreGroupe')}
           description={t('onboarding.rejoindreQuoi')}
           action="connect_existing"
-          icon={<JoinGroupIcon color={colors.choiceBorder} />}
+          icon={<JoinGroupIcon color={colors.rule} />}
           onPress={() => router.push('/join')}
         />
         {/* Aucun formulaire : quelqu'un qui vit seul n'a pas de groupe à
@@ -57,7 +57,7 @@ export default function Choose() {
           title={t('onboarding.justeMoi')}
           description={t('onboarding.justeMoiQuoi')}
           action="start_solo"
-          icon={<ShelfIcon color={colors.choiceBorder} size={30} />}
+          icon={<ShelfIcon color={colors.rule} size={30} />}
           onPress={() =>
             create.mutate(
               { name: 'Chez moi', type: 'solo' },
@@ -83,11 +83,15 @@ export default function Choose() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.xl, gap: spacing.xs, alignItems: 'center' },
+  header: {
+    paddingTop: spacing.group,
+    gap: spacing.tight,
+    alignItems: 'center',
+  },
   choices: {
     flexGrow: 1,
     justifyContent: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
+    gap: spacing.base,
+    paddingVertical: spacing.base,
   },
 });

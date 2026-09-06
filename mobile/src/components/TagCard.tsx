@@ -4,7 +4,7 @@ import { border, radius, spacing, useTheme } from '@/theme';
 
 interface TagCardProps {
   children: ReactNode;
-  /** Liseré latéral de statut — mustard pour un stock bas, par exemple. */
+  /** Liseré latéral de statut — low pour un stock bas, par exemple. */
   accentColor?: string;
   style?: ViewStyle;
 }
@@ -13,11 +13,11 @@ interface TagCardProps {
  * L'étiquette d'inventaire, élément signature du design (§4).
  *
  * Deux détails portent toute la métaphore : la perforation est un **vrai trou**
- * — elle laisse voir `paper` à travers `paperRaised`, ce qu'un cercle gris
+ * — elle laisse voir `paper` à travers `raised`, ce qu'un cercle gris
  * dessiné ne ferait pas — et le coin inférieur droit a un rayon plus grand,
  * comme une étiquette cornée.
  *
- * La profondeur vient de l'écart `paper` / `paperRaised` plus le fil, jamais
+ * La profondeur vient de l'écart `paper` / `raised` plus le fil, jamais
  * d'une ombre portée.
  */
 export function TagCard({
@@ -32,10 +32,10 @@ export function TagCard({
       style={[
         styles.card,
         {
-          backgroundColor: colors.paperRaised,
-          borderColor: colors.thread,
-          borderLeftColor: accentColor ?? colors.thread,
-          borderLeftWidth: accentColor ? border.statusAccent : border.hairline,
+          backgroundColor: colors.raised,
+          borderColor: colors.rule,
+          borderLeftColor: accentColor ?? colors.rule,
+          borderLeftWidth: accentColor ? border.accent : border.hairline,
         },
         style,
       ]}
@@ -50,16 +50,16 @@ const PERFORATION_SIZE = 10;
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.md,
-    paddingTop: spacing.lg,
+    padding: spacing.base,
+    paddingTop: spacing.card,
     borderWidth: border.hairline,
-    borderRadius: radius.tag,
-    borderBottomRightRadius: radius.tagFoldedCorner,
+    borderRadius: radius.base,
+    borderBottomRightRadius: radius.base,
   },
   perforation: {
     position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
+    top: spacing.tight,
+    left: spacing.tight,
     width: PERFORATION_SIZE,
     height: PERFORATION_SIZE,
     borderRadius: radius.full,

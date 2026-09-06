@@ -68,7 +68,7 @@ export default function BrowseRecipes() {
 
       <View style={styles.header}>
         <Text variant="title">{t('recettes.chercher')}</Text>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('recettes.sousTitreCatalogue')}
         </Text>
       </View>
@@ -87,8 +87,8 @@ export default function BrowseRecipes() {
           style={[
             styles.search,
             {
-              backgroundColor: colors.paperRaised,
-              borderColor: colors.thread,
+              backgroundColor: colors.raised,
+              borderColor: colors.rule,
               color: colors.ink,
             },
           ]}
@@ -109,7 +109,7 @@ export default function BrowseRecipes() {
           <RefreshControl
             refreshing={results.isRefetching}
             onRefresh={() => void results.refetch()}
-            tintColor={colors.pantryTeal}
+            tintColor={colors.accent}
           />
         }
       >
@@ -124,7 +124,7 @@ export default function BrowseRecipes() {
           Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
 
         {results.isError && (
-          <Text variant="body" color="rustClay" style={styles.hint}>
+          <Text variant="body" color="out" style={styles.hint}>
             {apiErrorMessage(results.error, locale)}
           </Text>
         )}
@@ -136,7 +136,7 @@ export default function BrowseRecipes() {
         )}
 
         {save.isError && (
-          <Text variant="caption" color="rustClay">
+          <Text variant="caption" color="out">
             {apiErrorMessage(save.error, locale)}
           </Text>
         )}
@@ -179,16 +179,16 @@ function Suggestion({
       disabled={busy}
     >
       <TagCard
-        accentColor={missing === 0 ? colors.sage : undefined}
+        accentColor={missing === 0 ? colors.ok : undefined}
         style={styles.card}
       >
-        <Text variant="tagName" numberOfLines={2}>
+        <Text variant="title" numberOfLines={2}>
           {suggestion.name}
         </Text>
 
         {/* Le compte d'abord, les noms ensuite : on décide sur le nombre, on
             vérifie sur la liste. */}
-        <Text variant="monoLabel" color={missing === 0 ? 'sage' : 'inkSoft'}>
+        <Text variant="dataLabel" color={missing === 0 ? 'ok' : 'inkSoft'}>
           {missing === 0
             ? t('recettes.toutEstLaAvec', { count: total })
             : t('recettes.compteEtManquants', {
@@ -208,18 +208,22 @@ function Suggestion({
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 2, marginBottom: spacing.md },
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  header: { gap: spacing.hair, marginBottom: spacing.base },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   search: {
     flex: 1,
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
-    fontFamily: fontFamily.body,
-    fontSize: fontSize.body,
+    borderRadius: radius.base,
+    fontFamily: fontFamily.text,
+    fontSize: fontSize.md,
   },
-  list: { paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
-  card: { gap: spacing.xs },
-  hint: { paddingVertical: spacing.md },
+  list: {
+    paddingTop: spacing.base,
+    paddingBottom: spacing.group,
+    gap: spacing.tight,
+  },
+  card: { gap: spacing.tight },
+  hint: { paddingVertical: spacing.base },
 });

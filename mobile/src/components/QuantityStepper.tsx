@@ -32,7 +32,7 @@ export function QuantityStepper({
   return (
     <View
       accessibilityLabel={`${label} : ${value}`}
-      style={[styles.row, { borderColor: colors.thread }]}
+      style={[styles.row, { borderColor: colors.rule }]}
     >
       <Step
         symbol="−"
@@ -41,7 +41,7 @@ export function QuantityStepper({
         onPress={() => onChange(value - 1)}
       />
       <Text
-        variant="tagName"
+        variant="title"
         style={styles.value}
         allowFontScaling={false}
         numberOfLines={1}
@@ -79,8 +79,8 @@ function Step({
       style={styles.step}
     >
       <Text
-        variant="tagName"
-        color={disabled ? 'thread' : 'pantryTeal'}
+        variant="title"
+        color={disabled ? 'rule' : 'accent'}
         allowFontScaling={false}
       >
         {symbol}
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
   },
   step: {
     width: STEP,
@@ -104,5 +104,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  value: { minWidth: spacing.lg, textAlign: 'center' },
+  value: { minWidth: spacing.card, textAlign: 'center' },
 });

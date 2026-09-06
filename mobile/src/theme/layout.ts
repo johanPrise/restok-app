@@ -1,66 +1,72 @@
-/** §3 du design system : grille de base 4px. */
-const UNIT = 4;
-
+/**
+ * L'échelle d'espacement de `DESIGN.md` : 4, 8, 16, 24, 32, 48, 64.
+ *
+ * Les noms disent le **rôle**, pas la taille, parce que c'est le rôle qui doit
+ * décider. L'ancienne échelle avait cinq crans dont deux séparés par 4px —
+ * `xs` à 8 et `sm` à 12 — et personne ne pouvait dire lequel choisir : `sm`
+ * servait 77 fois, à tous les niveaux d'imbrication à la fois.
+ *
+ * **L'écart entre groupes dépasse strictement l'écart interne, à chaque
+ * niveau.** 8 entre les lignes d'une étiquette, 24 entre étiquettes, 48 entre
+ * sections. Une carte à 24 de padding se sépare de la suivante par 32, jamais
+ * par 24 : sinon le blanc du dedans et le blanc du dehors se valent, et le
+ * groupe cesse d'être un groupe.
+ */
 export const spacing = {
-  xs: UNIT * 2, // 8
-  sm: UNIT * 3, // 12
-  md: UNIT * 4, // 16
-  lg: UNIT * 6, // 24
-  xl: UNIT * 8, // 32
+  /** Une étiquette et sa valeur, sur la même ligne. */
+  hair: 4,
+  /** Entre les éléments d'un même composant. */
+  tight: 8,
+  /** Padding d'un composant ; entre deux composants d'un groupe. */
+  base: 16,
+  /** Padding d'une carte ; entre deux étiquettes d'une liste. */
+  card: 24,
+  /** Entre deux cartes ; entre deux groupes. */
+  group: 32,
+  /** Entre deux sections ; au-dessus de l'action terminale d'un écran. */
+  section: 48,
+  /** Respiration d'un état vide. */
+  vast: 64,
 } as const;
 
+/**
+ * Un seul rayon.
+ *
+ * `none` n'est pas un rayon concurrent, c'est son absence : à 24px, un arrondi
+ * de 8 fait lire la case à cocher comme une pastille, et une pastille se coche
+ * mal. `full` non plus : un cercle est une forme, pas un traitement de coin.
+ */
 export const radius = {
-  tag: 12,
-  button: 8,
-  /** Le « coin plié » — asymétrique, sur les tags uniquement. */
-  tagFoldedCorner: 20,
-  /** Chrome flottante : barre d'onglets, FAB. Voir `chrome` plus bas. */
-  chrome: 24,
-  /** Un élément **dans** la chrome — une pastille d'onglet. */
-  chromeItem: 16,
-  /**
-   * La case à cocher des courses. Plus carrée que `button` : à 24px, le rayon
-   * des boutons la fait lire comme une pastille, et une pastille se coche mal.
-   */
-  checkbox: 4,
+  base: 8,
+  none: 0,
   full: 999,
 } as const;
 
 export const border = {
-  /** Le « fil » du tag. La profondeur vient de là, pas d'une ombre portée. */
+  /** Le bord d'un champ de saisie — le seul trait qui subsiste. */
   hairline: 1,
-  /** L'arête de la chrome flottante — un liseré `thread`, pas un trait d'encre. */
-  rim: 1,
-  /** Liseré latéral d'un item en stock bas. */
-  statusAccent: 3,
+  /**
+   * Le marqueur de statut. C'est un canal d'**épaisseur**, pas de teinte : il
+   * est là ou il n'y est pas, ce qui survit aux niveaux de gris là où trois
+   * couleurs à contraste égal ne le peuvent pas.
+   */
+  accent: 3,
 } as const;
 
+/** La jauge. Son arrondi vient de `radius.full` : à 6px de haut, c'est une pilule. */
 export const gauge = {
   height: 6,
-  radius: 3,
 } as const;
 
-/** Cible tactile minimale (§8). */
+/** Cible tactile minimale. Sans exception — pas même sur une puce de filtre. */
 export const MIN_TOUCH_TARGET = 44;
 
 /**
- * **Extension assumée du §3.**
- *
- * Le §3 interdit l'ombre portée : la profondeur vient de l'écart `paper` /
- * `paperRaised` et d'un fil de 1px. Cette règle parle du **contenu** — les tags
- * sont des étiquettes posées sur une étagère, et une étiquette ne lévite pas.
- *
- * Le FAB, lui, ne repose sur rien : il passe **au-dessus** de l'étagère, et le
- * contenu défile dessous. Lui donner le même traitement plat qu'un tag le
- * collerait au fond et effacerait la couche qu'il occupe.
- *
- * La barre d'onglets n'est **pas** dans ce cas — le Figma la montre ancrée
- * dans le flux, pas en survol : elle suit donc le traitement du contenu (fil
- * `thread`, aplat, aucune ombre), pas celui-ci. `chrome` ne reste donc utile
- * qu'au FAB, seul élément qui flotte réellement.
+ * Ce qui flotte réellement au-dessus du contenu : le FAB et le toast. Le
+ * contenu, lui, ne lévite pas — il se sépare par le blanc.
  *
  * L'ombre reste au niveau 3 de l'échelle Material, celui des composants de
- * navigation. Au-delà, il pèserait plus qu'une feuille modale.
+ * navigation. Au-delà, elle pèserait plus qu'une feuille modale.
  */
 export const chrome = {
   shadowColor: '#000',
@@ -71,20 +77,20 @@ export const chrome = {
 } as const;
 
 /**
- * La barre d'onglets, d'après le Figma : ancrée en bas dans le flux normal
- * (pas de `position: absolute`, pas de rayon, pas d'ombre), un simple fil en
- * haut. Elle ne flotte pas — donc rien à réserver dans les écrans en dessous.
+ * La barre d'onglets est ancrée en bas dans le flux normal : pas de
+ * `position: absolute`, pas de rayon, pas d'ombre. Elle ne flotte pas — donc
+ * rien à réserver dans les écrans en dessous.
  */
 export const tabBar = {
   height: 80,
 } as const;
 
-/** §7 : les timestamps passent en date absolue au-delà d'une semaine. */
+/** Les timestamps passent en date absolue au-delà d'une semaine. */
 export const RELATIVE_DATE_MAX_DAYS = 7;
 
 /**
- * §4 : tout est en fade/slide 150ms, sauf le décrochage d'un item épuisé —
- * seul moment orchestré de l'app, sous 600ms au total.
+ * Tout est en fade/slide 150ms, sauf le décrochage d'un item épuisé — seul
+ * moment orchestré de l'app, sous 600ms au total.
  *
  * Les trois temps s'enchaînent : la jauge se vide, *puis* le tag pivote comme
  * décroché de son fil, *puis* il glisse vers « À racheter ». D'où les délais

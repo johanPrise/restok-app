@@ -34,7 +34,7 @@ export function ReceiptHistory({
 
   if (loading) {
     return (
-      <Text variant="mono" color="inkSoft">
+      <Text variant="data" color="inkSoft">
         {t('commun.chargementHistorique')}
       </Text>
     );
@@ -62,23 +62,23 @@ export function ReceiptHistory({
         return (
           <View key={entry.id} style={styles.row}>
             <Text
-              variant="mono"
+              variant="data"
               color="inkSoft"
               style={[styles.date, solo && styles.dateAlone]}
             >
               {repeated ? '' : day}
             </Text>
             {!solo && (
-              <Text variant="mono" style={styles.who} numberOfLines={1}>
+              <Text variant="data" style={styles.who} numberOfLines={1}>
                 {(entry.member?.name ?? t('item.quelquun')).toUpperCase()}
               </Text>
             )}
             {/* Vide en suivi binaire : la colonne reste, pour que les lignes
                 s'alignent comme sur un vrai relevé. */}
-            <Text variant="mono" style={styles.count}>
+            <Text variant="data" style={styles.count}>
               {entry.quantity === null ? '' : `×${entry.quantity}`}
             </Text>
-            <Text variant="mono" color="inkSoft" style={styles.action}>
+            <Text variant="data" color="inkSoft" style={styles.action}>
               {actionLabel(entry.actionType, t)}
             </Text>
           </View>
@@ -97,7 +97,7 @@ export function ReceiptHistory({
  */
 function TearLine() {
   return (
-    <Text variant="mono" color="thread" numberOfLines={1}>
+    <Text variant="data" color="rule" numberOfLines={1}>
       {'─ '.repeat(60)}
     </Text>
   );
@@ -124,8 +124,8 @@ const COUNT_WIDTH = 34;
 const ACTION_WIDTH = 62;
 
 const styles = StyleSheet.create({
-  receipt: { gap: spacing.xs },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  receipt: { gap: spacing.tight },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   date: { width: DATE_WIDTH },
   // Sans la colonne « qui », c'est la date qui prend l'espace restant : sinon
   // le compte et l'action se recolleraient à elle au lieu de rester alignés à

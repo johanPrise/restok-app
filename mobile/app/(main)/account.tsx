@@ -82,7 +82,7 @@ export default function Account() {
 
       <View style={styles.header}>
         <Text variant="title">{t('compte.titre')}</Text>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('compte.sousTitre')}
         </Text>
       </View>
@@ -135,13 +135,13 @@ export default function Account() {
       </View>
 
       {update.isError && (
-        <Text variant="caption" color="rustClay" style={styles.feedback}>
+        <Text variant="caption" color="out" style={styles.feedback}>
           {apiErrorMessage(update.error, locale)}
         </Text>
       )}
 
       {saved && !update.isError && (
-        <Text variant="caption" color="sage" style={styles.feedback}>
+        <Text variant="caption" color="ok" style={styles.feedback}>
           {t('commun.enregistre')}
         </Text>
       )}
@@ -154,7 +154,7 @@ export default function Account() {
         style={styles.submit}
       />
 
-      <View style={[styles.danger, { borderTopColor: colors.thread }]}>
+      <View style={[styles.danger, { borderTopColor: colors.rule }]}>
         <DeleteAccount />
       </View>
     </FormScreen>
@@ -219,7 +219,7 @@ function DeleteAccount() {
       )}
 
       {remove.isError && (
-        <Text variant="caption" color="rustClay">
+        <Text variant="caption" color="out">
           {apiErrorMessage(remove.error, locale)}
         </Text>
       )}
@@ -276,18 +276,18 @@ function validate(
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 2, marginBottom: spacing.lg },
-  form: { gap: spacing.md },
-  feedback: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.lg },
+  header: { gap: spacing.hair, marginBottom: spacing.card },
+  form: { gap: spacing.base },
+  feedback: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.card },
   // Séparé du formulaire par un trait : ce qui suit ne s'enregistre pas, il
   // s'exécute. Les deux boutons ne doivent pas se ressembler de loin.
   danger: {
-    marginTop: spacing.xl,
-    paddingTop: spacing.lg,
+    marginTop: spacing.group,
+    paddingTop: spacing.card,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  confirm: { gap: spacing.sm },
-  actions: { flexDirection: 'row', gap: spacing.sm },
+  confirm: { gap: spacing.tight },
+  actions: { flexDirection: 'row', gap: spacing.tight },
   action: { flex: 1 },
 });

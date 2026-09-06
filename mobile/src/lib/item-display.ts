@@ -13,11 +13,11 @@ import { isCritical } from './stock';
 export function statusColor(status: ItemStatus): keyof Palette {
   switch (status) {
     case 'available':
-      return 'sage';
+      return 'ok';
     case 'low':
-      return 'mustard';
+      return 'low';
     default:
-      return 'rustClay';
+      return 'out';
   }
 }
 

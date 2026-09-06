@@ -26,21 +26,19 @@ export function MemberRow({
   onToggleRole,
   onRemove,
 }: Readonly<MemberRowProps>) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const t = useT();
   const isAdmin = member.role === 'admin';
 
   return (
     <View style={styles.row}>
       <View style={styles.identity}>
-        {/* Pastille sage (§5). La lettre reste sombre dans les deux thèmes :
-            `sage` s'éclaircit en mode sombre, une encre claire y disparaîtrait. */}
-        <View style={[styles.avatar, { backgroundColor: colors.sage }]}>
-          <Text
-            variant="tagName"
-            style={{ color: isDark ? colors.paper : colors.ink }}
-            allowFontScaling={false}
-          >
+        {/* Fond neutre, pas `ok` : une couleur de statut ne décore jamais.
+            Une pastille verte à côté d'un nom laissait entendre un état du
+            membre qui n'existe pas. `sunken` porte l'encre à 11,41:1 en clair
+            et 10,02:1 en sombre — plus de couleur choisie selon le thème. */}
+        <View style={[styles.avatar, { backgroundColor: colors.sunken }]}>
+          <Text variant="title" maxFontSizeMultiplier={1.3}>
             {initial(member.name)}
           </Text>
         </View>
@@ -50,7 +48,7 @@ export function MemberRow({
             {member.name}
             {isSelf ? t('commun.toi') : ''}
           </Text>
-          <Text variant="mono" color="inkSoft" numberOfLines={1}>
+          <Text variant="data" color="inkSoft" numberOfLines={1}>
             {member.email}
           </Text>
         </View>
@@ -58,10 +56,10 @@ export function MemberRow({
         <View
           style={[
             styles.badge,
-            { borderColor: isAdmin ? colors.pantryTeal : colors.thread },
+            { borderColor: isAdmin ? colors.accent : colors.rule },
           ]}
         >
-          <Text variant="monoLabel" color={isAdmin ? 'pantryTeal' : 'inkSoft'}>
+          <Text variant="dataLabel" color={isAdmin ? 'accent' : 'inkSoft'}>
             {t(isAdmin ? 'commun.admin' : 'commun.membre')}
           </Text>
         </View>
@@ -71,14 +69,10 @@ export function MemberRow({
         <View style={styles.actions}>
           <Action
             label={t(isAdmin ? 'commun.retrograder' : 'commun.nommerAdmin')}
-            color="pantryTeal"
+            color="accent"
             onPress={onToggleRole}
           />
-          <Action
-            label={t('commun.retirer')}
-            color="rustClay"
-            onPress={onRemove}
-          />
+          <Action label={t('commun.retirer')} color="out" onPress={onRemove} />
         </View>
       )}
     </View>
@@ -91,17 +85,17 @@ function Action({
   onPress,
 }: Readonly<{
   label: string;
-  color: 'pantryTeal' | 'rustClay';
+  color: 'accent' | 'out';
   onPress: () => void;
 }>) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      hitSlop={spacing.xs}
+      hitSlop={spacing.tight}
       style={styles.action}
     >
-      <Text variant="monoLabel" color={color}>
+      <Text variant="dataLabel" color={color}>
         {label}
       </Text>
     </Pressable>
@@ -111,8 +105,8 @@ function Action({
 const AVATAR = 40;
 
 const styles = StyleSheet.create({
-  row: { gap: spacing.xs },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  row: { gap: spacing.tight },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
   avatar: {
     width: AVATAR,
     height: AVATAR,
@@ -120,18 +114,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  names: { flex: 1, gap: 1 },
+  names: { flex: 1, gap: spacing.hair },
   badge: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
+    paddingHorizontal: spacing.tight,
+    paddingVertical: spacing.hair,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
   },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: spacing.md,
-    paddingLeft: AVATAR + spacing.sm,
+    gap: spacing.base,
+    paddingLeft: AVATAR + spacing.tight,
   },
   action: { minHeight: MIN_TOUCH_TARGET, justifyContent: 'center' },
 });

@@ -66,7 +66,7 @@ export function CodeInput({
           ]}
         >
           {index === GROUP_SIZE && (
-            <Text variant="mono" color="inkSoft" style={styles.separator}>
+            <Text variant="data" color="inkSoft" style={styles.separator}>
               –
             </Text>
           )}
@@ -74,13 +74,13 @@ export function CodeInput({
             style={[
               styles.cell,
               {
-                backgroundColor: colors.paperRaised,
+                backgroundColor: colors.raised,
                 borderColor:
-                  index === focusedIndex ? colors.pantryTeal : colors.thread,
+                  index === focusedIndex ? colors.accent : colors.rule,
               },
             ]}
           >
-            <Text variant="mono" style={styles.character}>
+            <Text variant="data" style={styles.character}>
               {character.trim()}
             </Text>
           </View>
@@ -111,19 +111,19 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   cellWrapper: { flexDirection: 'row', alignItems: 'center' },
   afterSeparator: {},
-  separator: { paddingHorizontal: spacing.xs },
+  separator: { paddingHorizontal: spacing.tight },
   cell: {
     width: CELL_WIDTH,
     height: CELL_HEIGHT,
-    marginRight: 4,
+    marginRight: spacing.hair,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
     alignItems: 'center',
     justifyContent: 'center',
   },
   character: {
-    fontFamily: fontFamily.mono,
-    fontSize: fontSize.subtitle,
+    fontFamily: fontFamily.data,
+    fontSize: fontSize.lg,
   },
   // Invisible mais présent : c'est lui qui reçoit réellement la frappe.
   hiddenInput: {

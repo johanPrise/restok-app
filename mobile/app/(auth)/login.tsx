@@ -43,13 +43,13 @@ export default function Login() {
     <FormScreen>
       <View style={styles.header}>
         <Text variant="display">Restock</Text>
-        <Text variant="monoLabel" color="inkSoft">
+        <Text variant="dataLabel" color="inkSoft">
           {t('acces.statutEtape')}
         </Text>
       </View>
 
       <TagCard>
-        <Text variant="tagName">{t('acces.seConnecter')}</Text>
+        <Text variant="title">{t('acces.seConnecter')}</Text>
 
         <View style={styles.form}>
           <Field
@@ -76,7 +76,7 @@ export default function Login() {
         {login.isError && (
           // Le backend renvoie le même message pour un email inconnu et un
           // mauvais mot de passe — on ne le désambiguïse pas ici non plus.
-          <Text variant="caption" color="rustClay" style={styles.error}>
+          <Text variant="caption" color="out" style={styles.error}>
             {apiErrorMessage(login.error, locale)}
           </Text>
         )}
@@ -100,15 +100,15 @@ export default function Login() {
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/forgot-password')}
-          hitSlop={spacing.xs}
+          hitSlop={spacing.tight}
           style={styles.forgot}
         >
-          <Text variant="monoLabel" color="pantryTeal">
+          <Text variant="dataLabel" color="accent">
             {t('acces.motDePasseOublie')}
           </Text>
         </Pressable>
 
-        <View style={[styles.rule, { backgroundColor: colors.thread }]} />
+        <View style={[styles.rule, { backgroundColor: colors.rule }]} />
         <SystemFooter left={t('acces.statutIdentifiants')} />
       </TagCard>
     </FormScreen>
@@ -116,16 +116,16 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.xl, gap: spacing.xs },
-  form: { gap: spacing.md, marginTop: spacing.md },
-  error: { marginTop: spacing.sm },
-  submit: { marginTop: spacing.md },
-  secondary: { marginTop: spacing.sm },
+  header: { paddingTop: spacing.group, gap: spacing.tight },
+  form: { gap: spacing.base, marginTop: spacing.base },
+  error: { marginTop: spacing.tight },
+  submit: { marginTop: spacing.base },
+  secondary: { marginTop: spacing.tight },
   forgot: {
-    marginTop: spacing.md,
+    marginTop: spacing.base,
     minHeight: MIN_TOUCH_TARGET,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  rule: { height: border.hairline, marginTop: spacing.md },
+  rule: { height: border.hairline, marginTop: spacing.base },
 });

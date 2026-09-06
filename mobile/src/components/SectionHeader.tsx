@@ -35,10 +35,10 @@ export function SectionHeader({
       onPress={onToggle}
       style={styles.row}
     >
-      <Text variant="monoLabel" color={color}>
+      <Text variant="dataLabel" color={color}>
         {title} [{String(count).padStart(2, '0')}]
       </Text>
-      <View style={[styles.line, { backgroundColor: colors.thread }]} />
+      <View style={[styles.line, { backgroundColor: colors.rule }]} />
       <Text variant="body" color="inkSoft" style={styles.chevron}>
         {collapsed ? '›' : '⌄'}
       </Text>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.tight,
     minHeight: MIN_TOUCH_TARGET,
   },
   line: { flex: 1, height: border.hairline },

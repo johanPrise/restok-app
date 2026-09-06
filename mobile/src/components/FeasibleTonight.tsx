@@ -29,7 +29,7 @@ export function FeasibleTonight({
 
   return (
     <View style={styles.block}>
-      <Text variant="monoLabel" color="inkSoft">
+      <Text variant="dataLabel" color="inkSoft">
         {t('recettes.faisableCeSoir')}
       </Text>
 
@@ -51,8 +51,8 @@ export function FeasibleTonight({
             style={[
               styles.chip,
               {
-                backgroundColor: colors.paperRaised,
-                borderColor: colors.thread,
+                backgroundColor: colors.raised,
+                borderColor: colors.rule,
               },
             ]}
           >
@@ -68,15 +68,15 @@ export function FeasibleTonight({
 }
 
 const styles = StyleSheet.create({
-  block: { gap: spacing.xs },
-  row: { gap: spacing.xs, paddingRight: spacing.md },
+  block: { gap: spacing.tight },
+  row: { gap: spacing.tight, paddingRight: spacing.base },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.tight,
     minHeight: MIN_TOUCH_TARGET,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: border.hairline,
-    borderRadius: radius.button,
+    borderRadius: radius.base,
   },
 });
