@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n/useT';
-import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
+import { MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
 import type { MemberSummary } from '@/types/api';
 import { Text } from './Text';
 
@@ -53,16 +53,12 @@ export function MemberRow({
           </Text>
         </View>
 
-        <View
-          style={[
-            styles.badge,
-            { borderColor: isAdmin ? colors.accent : colors.rule },
-          ]}
-        >
-          <Text variant="dataLabel" color={isAdmin ? 'accent' : 'inkSoft'}>
-            {t(isAdmin ? 'commun.admin' : 'commun.membre')}
-          </Text>
-        </View>
+        {/* Même traitement que le badge de statut : un mot, pas un cadre.
+            Le rôle se lit à la couleur et à l'écart, le trait n'ajoutait rien
+            qu'une huitième forme à retenir. */}
+        <Text variant="dataLabel" color={isAdmin ? 'accent' : 'inkSoft'}>
+          {t(isAdmin ? 'commun.admin' : 'commun.membre')}
+        </Text>
       </View>
 
       {managing && !isSelf && (
@@ -115,12 +111,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   names: { flex: 1, gap: spacing.hair },
-  badge: {
-    paddingHorizontal: spacing.tight,
-    paddingVertical: spacing.hair,
-    borderWidth: border.hairline,
-    borderRadius: radius.base,
-  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

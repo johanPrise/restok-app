@@ -21,7 +21,7 @@ import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { ItemSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -168,7 +168,7 @@ export default function Shelf() {
         />
 
         {items.isPending &&
-          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
+          Array.from({ length: 3 }, (_, index) => <ItemSkeleton key={index} />)}
 
         {/* Un stock vide et un serveur injoignable produisaient le même écran :
             `items.data ?? []` avale l'échec réseau, et « Étagère vide » se

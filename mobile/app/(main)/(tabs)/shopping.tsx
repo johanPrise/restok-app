@@ -24,8 +24,8 @@ import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ShoppingRow } from '@/components/ShoppingRow';
-import { TagCard } from '@/components/TagCard';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { Card } from '@/components/Card';
+import { RowSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BasketIcon } from '@/components/icons';
@@ -232,7 +232,7 @@ export default function Shopping() {
         }
       >
         {shopping.isPending &&
-          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
+          Array.from({ length: 3 }, (_, index) => <RowSkeleton key={index} />)}
 
         {/* Une liste vide et un serveur injoignable ne demandent pas la même
             chose : la première propose de la remplir, le second de réessayer. */}
@@ -421,7 +421,7 @@ function EmptyState({
 }>) {
   const t = useT();
   return (
-    <TagCard style={styles.empty}>
+    <Card style={styles.empty}>
       <Text variant="title" color="inkSoft" style={styles.centered}>
         {t('courses.rienAAcheter')}
       </Text>
@@ -444,7 +444,7 @@ function EmptyState({
           style={styles.emptyAction}
         />
       )}
-    </TagCard>
+    </Card>
   );
 }
 

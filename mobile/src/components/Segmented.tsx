@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
+import { MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
 import { Text } from './Text';
 
 interface SegmentedProps<T extends string> {
@@ -57,10 +57,10 @@ export function Segmented<T extends string>({
                 selected && { backgroundColor: colors.accent },
               ]}
             >
-              <Text
-                variant="bodyStrong"
-                color={selected ? 'onAccent' : 'inkSoft'}
-              >
+              {/* `ink` et non `inkSoft` sur le rail : `inkSoft` sur `sunken`
+                  lit 4,14:1. La sélection se voit à l'aplat, pas à un texte
+                  affaibli — sinon l'option non retenue devient illisible. */}
+              <Text variant="bodyStrong" color={selected ? 'onAccent' : 'ink'}>
                 {option.label}
               </Text>
             </Pressable>
@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
   group: { gap: spacing.tight },
   track: {
     flexDirection: 'row',
-    borderWidth: border.hairline,
     borderRadius: radius.base,
     // Sans ça les coins des segments dépassent du cadre.
     overflow: 'hidden',

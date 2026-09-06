@@ -12,8 +12,8 @@ import { useRecipeSearch, useSaveFromCatalogue } from '@/api/recipes';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { TagCard } from '@/components/TagCard';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { Card } from '@/components/Card';
+import { ItemSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
@@ -121,7 +121,7 @@ export default function BrowseRecipes() {
 
         {results.isPending &&
           query.trim().length >= 2 &&
-          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
+          Array.from({ length: 3 }, (_, index) => <ItemSkeleton key={index} />)}
 
         {results.isError && (
           <Text variant="body" color="out" style={styles.hint}>
@@ -178,7 +178,7 @@ function Suggestion({
       onPress={onKeep}
       disabled={busy}
     >
-      <TagCard
+      <Card
         accentColor={missing === 0 ? colors.ok : undefined}
         style={styles.card}
       >
@@ -202,7 +202,7 @@ function Suggestion({
             {suggestion.missing.join(' · ')}
           </Text>
         )}
-      </TagCard>
+      </Card>
     </Pressable>
   );
 }

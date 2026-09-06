@@ -2,11 +2,12 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Button } from '@/components/Button';
+import { Dots } from '@/components/Dots';
 import { Screen } from '@/components/Screen';
 import { SystemFooter } from '@/components/SystemFooter';
 import { Text } from '@/components/Text';
 import { useT } from '@/i18n/useT';
-import { border, radius, spacing, useTheme } from '@/theme';
+import { border, spacing, useTheme } from '@/theme';
 
 const STEPS = 3;
 
@@ -36,20 +37,11 @@ export default function Intro() {
         />
       </View>
 
-      <View style={styles.dots}>
-        {Array.from({ length: STEPS }, (_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              index === 0 && styles.dotActive,
-              {
-                backgroundColor: index === 0 ? colors.accent : colors.rule,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      <Dots
+        count={STEPS}
+        active={0}
+        label={t('onboarding.etapeSur', { n: 1, total: STEPS })}
+      />
 
       <Button
         label={t('onboarding.continuer')}
@@ -69,16 +61,4 @@ const styles = StyleSheet.create({
   // c'est voulu : la maquette sombre garde ce panneau clair sur fond noir, le
   // dessin s'y lit comme une planche imprimée.
   illustration: { width: '100%', aspectRatio: 320 / 175 },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.tight,
-    paddingVertical: spacing.base,
-  },
-  dot: {
-    width: spacing.tight,
-    height: spacing.tight,
-    borderRadius: radius.full,
-  },
-  dotActive: { width: spacing.card },
 });

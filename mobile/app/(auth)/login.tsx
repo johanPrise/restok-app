@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
@@ -48,7 +48,7 @@ export default function Login() {
         </Text>
       </View>
 
-      <TagCard>
+      <Card>
         <Text variant="title">{t('acces.seConnecter')}</Text>
 
         <View style={styles.form}>
@@ -110,7 +110,7 @@ export default function Login() {
 
         <View style={[styles.rule, { backgroundColor: colors.rule }]} />
         <SystemFooter left={t('acces.statutIdentifiants')} />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }

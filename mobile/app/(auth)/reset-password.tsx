@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { CodeInput, INVITE_CODE_LENGTH } from '@/components/CodeInput';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
@@ -68,7 +68,7 @@ export default function ResetPassword() {
     <FormScreen>
       <BackLink onPress={goBack} />
 
-      <TagCard>
+      <Card>
         <Text variant="title">{t('acces.nouveauTitre')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {t('acces.oubliEnvoye')}
@@ -122,7 +122,7 @@ export default function ResetPassword() {
           label={t('acces.renvoyer')}
           onPress={() => router.replace('/forgot-password')}
         />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }

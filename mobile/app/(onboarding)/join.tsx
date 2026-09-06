@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { CodeInput, INVITE_CODE_LENGTH } from '@/components/CodeInput';
 import { FormScreen } from '@/components/FormScreen';
 import { SystemFooter } from '@/components/SystemFooter';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { BackLink } from '@/components/BackLink';
@@ -42,7 +42,7 @@ export default function Join() {
     <FormScreen>
       <BackLink onPress={goBack} />
 
-      <TagCard>
+      <Card>
         <Text variant="title">{t('onboarding.rejoindreGroupe')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {t('onboarding.codeInvite', { count: INVITE_CODE_LENGTH })}
@@ -80,7 +80,7 @@ export default function Join() {
           )}
           right={`${code.length}/${INVITE_CODE_LENGTH}`}
         />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }

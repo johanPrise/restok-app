@@ -223,6 +223,7 @@ export const fr = {
 
   onboarding: {
     ordre: 'Ordre %{n}',
+    etapeSur: 'Étape %{n} sur %{total}',
     promesse: 'Le dernier rouleau ne sera plus jamais une surprise.',
     etagereAlt: 'Une étagère d’inventaire vue de face, ses rayons étiquetés',
     continuer: 'Continuer →',

@@ -9,8 +9,8 @@ import { FAB_SIZE } from '@/components/Fab';
 import { RecipeCard } from '@/components/RecipeCard';
 import { Hint } from '@/components/Hint';
 import { Screen } from '@/components/Screen';
-import { TagCard } from '@/components/TagCard';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { Card } from '@/components/Card';
+import { ItemSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useT, useLocale } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -78,7 +78,7 @@ export default function Recipes() {
         }
       >
         {recipes.isPending &&
-          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
+          Array.from({ length: 3 }, (_, index) => <ItemSkeleton key={index} />)}
 
         {recipes.isError && (
           <ErrorState
@@ -136,7 +136,7 @@ function EmptyState({
   const t = useT();
 
   return (
-    <TagCard style={styles.empty}>
+    <Card style={styles.empty}>
       <Text variant="title" color="inkSoft" style={styles.centered}>
         {t('recettes.aucuneRecette')}
       </Text>
@@ -157,7 +157,7 @@ function EmptyState({
         onPress={onWrite}
         style={styles.emptyAction}
       />
-    </TagCard>
+    </Card>
   );
 }
 

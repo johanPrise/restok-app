@@ -154,7 +154,7 @@ export function StockTag({
           variant="data"
           style={[styles.percent, { color: accent }]}
           // Les chiffres restent alignés d'une ligne à l'autre.
-          allowFontScaling={false}
+          maxFontSizeMultiplier={1.3}
         >
           {percent}%
         </Text>

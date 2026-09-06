@@ -192,6 +192,7 @@ export const en = {
 
   onboarding: {
     ordre: 'Order %{n}',
+    etapeSur: 'Step %{n} of %{total}',
     promesse: 'The last roll will never be a surprise again.',
     etagereAlt: 'A storage shelf seen head-on, its rows labelled',
     continuer: 'Continue →',

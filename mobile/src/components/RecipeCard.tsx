@@ -3,7 +3,7 @@ import { feasibilityLabel, type Feasibility } from '@/lib/recipes';
 import type { Palette } from '@/theme';
 import { spacing, useTheme } from '@/theme';
 import type { Recipe } from '@/types/api';
-import { TagCard } from './TagCard';
+import { Card } from './Card';
 import { Text } from './Text';
 import { useLocale } from '@/i18n/useT';
 
@@ -54,7 +54,7 @@ export function RecipeCard({
       accessibilityLabel={`${recipe.name}, ${label}`}
       onPress={onPress}
     >
-      <TagCard accentColor={state.kind === 'missing' ? colors.out : undefined}>
+      <Card accentColor={state.kind === 'missing' ? colors.out : undefined}>
         <View style={styles.head}>
           <Text variant="title" style={styles.name} numberOfLines={2}>
             {recipe.name}
@@ -69,7 +69,7 @@ export function RecipeCard({
             {state.items.join(' · ')}
           </Text>
         )}
-      </TagCard>
+      </Card>
     </Pressable>
   );
 }

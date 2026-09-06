@@ -8,7 +8,7 @@ import type { ShoppingLine } from '@/types/api';
 import { Button } from './Button';
 import { CheckIcon } from './icons';
 import { QuantityStepper } from './QuantityStepper';
-import { TagCard } from './TagCard';
+import { Card } from './Card';
 import { Text } from './Text';
 
 /** Au-delà, ce n'est plus une course, c'est une livraison. */
@@ -107,7 +107,7 @@ export function ShoppingRow({
       onPress={onToggle}
       onLongPress={onRemove}
     >
-      <TagCard style={styles.card}>
+      <Card style={styles.card}>
         <View style={styles.text}>
           <Text
             variant="title"
@@ -204,7 +204,7 @@ export function ShoppingRow({
             {line.checked && <CheckIcon color={colors.raised} />}
           </View>
         </View>
-      </TagCard>
+      </Card>
     </Pressable>
   );
 }
@@ -234,7 +234,7 @@ function QuantityEditor({
   const units = unitsInPacks(line, packs);
 
   return (
-    <TagCard style={styles.editor}>
+    <Card style={styles.editor}>
       <View style={styles.editorHead}>
         <Text variant="title" style={styles.name} numberOfLines={1}>
           {line.name}
@@ -270,7 +270,7 @@ function QuantityEditor({
           style={styles.editorAction}
         />
       </View>
-    </TagCard>
+    </Card>
   );
 }
 

@@ -9,7 +9,7 @@ import { QuantityStepper } from '@/components/QuantityStepper';
 import { ReceiptHistory } from '@/components/ReceiptHistory';
 import { Screen } from '@/components/Screen';
 import { SwipeableStockTag } from '@/components/SwipeableStockTag';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { ItemSkeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { useLocale, useT } from '@/i18n/useT';
@@ -48,7 +48,7 @@ export default function ItemDetail() {
     <Screen>
       <BackLink onPress={goBack} />
 
-      {items.isPending && <TagSkeleton />}
+      {items.isPending && <ItemSkeleton />}
 
       {!items.isPending && item === undefined && (
         <View style={styles.missing}>

@@ -85,7 +85,7 @@ export function InviteCodeCard({
           style={[styles.code, { color: colors.ink }]}
           // Le code doit rester lisible caractère par caractère : une mise à
           // l'échelle système le casserait en deux lignes.
-          allowFontScaling={false}
+          maxFontSizeMultiplier={1.3}
           accessibilityLabel={`Code d'invitation ${code.split('').join(' ')}`}
         >
           {formatInviteCode(code)}

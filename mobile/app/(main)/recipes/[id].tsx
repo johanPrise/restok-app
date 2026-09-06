@@ -8,7 +8,7 @@ import { useAddShoppingLine, useShoppingList } from '@/api/shopping';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useToast } from '@/components/Toast';
 import { latestFailure } from '@/lib/api-error';
@@ -220,14 +220,14 @@ function Steps({ text }: Readonly<{ text: string }>) {
 
   if (lines.length < 2) {
     return (
-      <TagCard>
+      <Card>
         <Text variant="body">{text}</Text>
-      </TagCard>
+      </Card>
     );
   }
 
   return (
-    <TagCard style={styles.steps}>
+    <Card style={styles.steps}>
       {lines.map((line, index) => (
         <View key={`${index}-${line}`} style={styles.step}>
           <Text variant="data" color="accent" style={styles.stepNumber}>
@@ -238,7 +238,7 @@ function Steps({ text }: Readonly<{ text: string }>) {
           </Text>
         </View>
       ))}
-    </TagCard>
+    </Card>
   );
 }
 
@@ -271,7 +271,7 @@ function IngredientRow({
     item?.status === 'out_of_stock' || item?.status === 'to_restock';
 
   return (
-    <TagCard style={styles.ingredient}>
+    <Card style={styles.ingredient}>
       <View style={styles.ingredientText}>
         {/* Deux lignes plutôt qu'une troncature : « Pastilles lave-vaisselle
             c… » ne désigne plus rien sur une étagère. */}
@@ -299,7 +299,7 @@ function IngredientRow({
           {badge}
         </Text>
       )}
-    </TagCard>
+    </Card>
   );
 }
 

@@ -43,7 +43,7 @@ export function QuantityStepper({
       <Text
         variant="title"
         style={styles.value}
-        allowFontScaling={false}
+        maxFontSizeMultiplier={1.3}
         numberOfLines={1}
       >
         {value}
@@ -81,7 +81,7 @@ function Step({
       <Text
         variant="title"
         color={disabled ? 'rule' : 'accent'}
-        allowFontScaling={false}
+        maxFontSizeMultiplier={1.3}
       >
         {symbol}
       </Text>

@@ -13,7 +13,7 @@ import { apiErrorMessage } from '@/lib/api-error';
 import { useGoBack } from '@/lib/useGoBack';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
-import { spacing, useTheme } from '@/theme';
+import { border, spacing, useTheme } from '@/theme';
 
 /** Alignés sur UpdateProfileDto côté backend. */
 const MIN_NAME_LENGTH = 2;
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   danger: {
     marginTop: spacing.group,
     paddingTop: spacing.card,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: border.hairline,
   },
   confirm: { gap: spacing.tight },
   actions: { flexDirection: 'row', gap: spacing.tight },

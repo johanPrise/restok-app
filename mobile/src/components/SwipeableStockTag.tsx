@@ -348,7 +348,7 @@ function Counter({
 }: Readonly<{ label: string; color: string; align: 'left' | 'right' }>) {
   return (
     <View style={align === 'left' ? styles.left : styles.right}>
-      <Text variant="title" style={{ color }} allowFontScaling={false}>
+      <Text variant="title" style={{ color }} maxFontSizeMultiplier={1.3}>
         {label}
       </Text>
     </View>

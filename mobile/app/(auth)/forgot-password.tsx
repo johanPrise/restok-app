@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { INVITE_CODE_LENGTH } from '@/components/CodeInput';
 import { Field } from '@/components/Field';
 import { FormScreen } from '@/components/FormScreen';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useLocale, useT } from '@/i18n/useT';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -50,7 +50,7 @@ export default function ForgotPassword() {
     <FormScreen>
       <BackLink onPress={goBack} />
 
-      <TagCard>
+      <Card>
         <Text variant="title">{t('acces.oubliTitre')}</Text>
         <Text variant="body" color="inkSoft" style={styles.intro}>
           {t('acces.oubliQuoi', { count: INVITE_CODE_LENGTH })}
@@ -86,7 +86,7 @@ export default function ForgotPassword() {
           loading={forgot.isPending}
           style={styles.submit}
         />
-      </TagCard>
+      </Card>
     </FormScreen>
   );
 }

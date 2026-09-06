@@ -4,14 +4,15 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useGroup, useRegisterPushToken } from '@/api/groups';
 import { Button } from '@/components/Button';
 import { BellBadgeIcon } from '@/components/icons';
+import { Dots } from '@/components/Dots';
 import { Screen } from '@/components/Screen';
-import { TagCard } from '@/components/TagCard';
+import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { useT } from '@/i18n/useT';
 import { registerForPush } from '@/lib/push';
 import { useIsSolo } from '@/lib/useIsSolo';
 import { useSession } from '@/store/session';
-import { border, radius, spacing, useTheme } from '@/theme';
+import { border, spacing, useTheme } from '@/theme';
 
 const STEPS = 3;
 
@@ -95,7 +96,7 @@ export default function NotificationsStep() {
   return (
     <Screen>
       <View style={styles.body}>
-        <TagCard style={styles.card}>
+        <Card style={styles.card}>
           <View style={styles.badge}>
             <BellBadgeIcon color={colors.raised} discColor={colors.accent} />
           </View>
@@ -103,7 +104,7 @@ export default function NotificationsStep() {
           <Text variant="dataLabel" color="inkSoft" style={styles.cardLabel}>
             {t('onboarding.alerteActive')}
           </Text>
-        </TagCard>
+        </Card>
 
         <Text variant="title" style={styles.heading}>
           {t('onboarding.prevenir')}
@@ -140,21 +141,11 @@ export default function NotificationsStep() {
         </Pressable>
       </View>
 
-      <View style={styles.dots}>
-        {Array.from({ length: STEPS }, (_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              index === STEPS - 1 && styles.dotActive,
-              {
-                backgroundColor:
-                  index === STEPS - 1 ? colors.accent : colors.rule,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      <Dots
+        count={STEPS}
+        active={STEPS - 1}
+        label={t('onboarding.etapeSur', { n: STEPS, total: STEPS })}
+      />
     </Screen>
   );
 }
@@ -178,16 +169,4 @@ const styles = StyleSheet.create({
   notice: { textAlign: 'center', marginTop: spacing.base },
   action: { marginTop: spacing.card },
   later: { alignItems: 'center', paddingVertical: spacing.base },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.tight,
-    paddingVertical: spacing.base,
-  },
-  dot: {
-    width: spacing.tight,
-    height: spacing.tight,
-    borderRadius: radius.full,
-  },
-  dotActive: { width: spacing.card },
 });

@@ -11,8 +11,8 @@ import { useExportHistory, useGroupHistory } from '@/api/history';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
-import { TagCard } from '@/components/TagCard';
-import { TagSkeleton } from '@/components/TagSkeleton';
+import { Card } from '@/components/Card';
+import { RowSkeleton } from '@/components/Skeleton';
 import { useToast } from '@/components/Toast';
 import { Text } from '@/components/Text';
 import { useT, useLocale } from '@/i18n/useT';
@@ -24,7 +24,7 @@ import {
   since,
   type Period,
 } from '@/lib/journal';
-import { border, radius, spacing, useTheme } from '@/theme';
+import { border, MIN_TOUCH_TARGET, radius, spacing, useTheme } from '@/theme';
 import type { GroupHistoryEntry } from '@/types/api';
 
 /** Tout le monde, c'est-à-dire aucun filtre sur la personne. */
@@ -168,10 +168,10 @@ export default function Journal() {
         )}
 
         {history.isPending &&
-          Array.from({ length: 3 }, (_, index) => <TagSkeleton key={index} />)}
+          Array.from({ length: 3 }, (_, index) => <RowSkeleton key={index} />)}
 
         {!history.isPending && entries.length === 0 && (
-          <TagCard style={styles.empty}>
+          <Card style={styles.empty}>
             <Text variant="title" color="inkSoft">
               {t('journal.rienSurPeriode')}
             </Text>
@@ -180,7 +180,7 @@ export default function Journal() {
                 who === EVERYONE ? 'journal.videTous' : 'journal.videPersonne',
               )}
             </Text>
-          </TagCard>
+          </Card>
         )}
 
         {days.map((day) => (
@@ -199,7 +199,7 @@ export default function Journal() {
         {/* Le registre ne s'arrête plus en silence : il descend jusqu'au bout.
             Reste à dire qu'on va chercher la suite, sinon la liste paraît
             finie une demi-seconde de trop. */}
-        {history.isFetchingNextPage && <TagSkeleton />}
+        {history.isFetchingNextPage && <RowSkeleton />}
       </ScrollView>
     </Screen>
   );
@@ -325,6 +325,11 @@ const styles = StyleSheet.create({
   group: { gap: spacing.tight },
   chips: { gap: spacing.tight, paddingRight: spacing.base },
   chip: {
+    // 34pt auparavant : `paddingVertical` de 8 plus un interligne de 18. La
+    // hauteur minimale que le projet se fixe lui-même est 44, et ces puces
+    // sont les seuls contrôles de l'écran.
+    minHeight: MIN_TOUCH_TARGET,
+    justifyContent: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.tight,
     borderRadius: radius.full,
