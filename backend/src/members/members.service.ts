@@ -8,6 +8,15 @@ import { Member, MemberRole } from './entities/member.entity';
 import { pickSuccessor } from './succession';
 import { BUSINESS_CODES, badRequest, conflict } from '../common/business-error';
 
+/**
+ * Ce qui remplace le nom d'un compte supprimé.
+ *
+ * Jamais affiché : le journal rend `null` pour l'auteur d'une action dont le
+ * compte a disparu. C'est un marqueur pour qui ouvre la base, pas une phrase
+ * d'interface — d'où l'absence de traduction.
+ */
+const DELETED_NAME = 'compte supprimé';
+
 export interface MemberSummary {
   id: string;
   name: string;
@@ -126,12 +135,28 @@ export class MembersService {
         await this.departFrom(manager, member);
       }
 
-      // L'email est unique en base : le laisser tel quel interdirait de se
-      // réinscrire avec la même adresse, ce qui ferait d'une suppression un
-      // bannissement. Il est donc brouillé, en gardant la ligne lisible pour
-      // qui débogue.
+      // La ligne doit **survivre** : `action_history.member_id` ne peut pas
+      // être nul, et c'est ce lien qui garde le registre des autres entier. On
+      // ne peut donc pas effacer la ligne — on efface ce qu'elle contient.
+      //
+      // Le nom d'abord : rien ne le lit après coup, toutes les lectures du
+      // registre filtrent sur `deleted_at`, mais le laisser en base ferait
+      // d'une « suppression » une mise à l'écart. C'est la donnée la plus
+      // identifiante après l'email.
+      //
+      // L'email est brouillé plutôt qu'effacé, parce qu'il porte une contrainte
+      // d'unicité : le laisser tel quel interdirait de se réinscrire avec la
+      // même adresse, ce qui ferait d'une suppression un bannissement. Le
+      // préfixe garde la ligne lisible pour qui débogue.
+      //
+      // Le mot de passe enfin : la connexion est déjà impossible — `findOne`
+      // ignore les membres supprimés — mais un hash reste un hash, et une base
+      // qui fuite ne doit pas livrer de quoi essayer le même mot de passe
+      // ailleurs.
       await repo.update(member.id, {
+        name: DELETED_NAME,
         email: `supprime+${member.id}@restock.invalid`,
+        password: '',
         pushToken: null,
       });
       await repo.softDelete(member.id);

@@ -74,6 +74,22 @@ describe('Suppression de compte (e2e)', () => {
         .expect(201);
     });
 
+    it('ne garde plus rien d’identifiant en base', async () => {
+      await deleteAccount(alice).expect(204);
+
+      // La ligne doit survivre — `action_history` s'y accroche — donc c'est son
+      // contenu qu'on vérifie. Sans ce nettoyage, « supprimer » n'aurait été
+      // qu'une mise à l'écart : le nom serait resté indéfiniment.
+      const [row] = await dataSource.query(
+        'SELECT name, email, password FROM member WHERE id = $1',
+        [alice.id],
+      );
+
+      expect(row.name).not.toBe('Alice');
+      expect(row.email).not.toBe(alice.email);
+      expect(row.password).toBe('');
+    });
+
     it('coupe les sessions longues', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
