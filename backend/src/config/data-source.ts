@@ -8,6 +8,7 @@ import { Recipe } from '../recipes/entities/recipe.entity';
 import { RecipeIngredient } from '../recipes/entities/recipe-ingredient.entity';
 import { ShoppingLine } from '../shopping/entities/shopping-line.entity';
 import { PasswordReset } from '../auth/entities/password-reset.entity';
+import { Purchase } from '../billing/entities/purchase.entity';
 import { RefreshToken } from '../auth/entities/refresh-token.entity';
 import { MIGRATIONS_TABLE } from './migrations';
 
@@ -38,6 +39,7 @@ export default new DataSource({
     Member,
     PasswordReset,
     RefreshToken,
+    Purchase,
     Item,
     ActionHistory,
     ShoppingLine,

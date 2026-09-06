@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
+import { EntitlementsService } from '../billing/entitlements.service';
+import { FREE_MEMBERS } from '../billing/limits';
 import { Item } from '../items/entities/item.entity';
 import { Member, MemberRole } from '../members/entities/member.entity';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -24,6 +26,7 @@ export class GroupsService {
     @InjectRepository(Member)
     private readonly memberRepo: Repository<Member>,
     private readonly dataSource: DataSource,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   // Pas de token à réémettre : les droits sont relus en base à chaque requête
@@ -64,6 +67,23 @@ export class GroupsService {
         throw new NotFoundException('Ce code ne correspond à aucun groupe');
       }
 
+      // Le plafond se compte ici et pas à l'invitation : un code d'invitation
+      // circule, il n'est pas nominatif, et refuser au moment où quelqu'un le
+      // saisit est le seul instant où l'on sait combien ils sont vraiment.
+      if (!(await this.entitlements.isUnlocked(group.id, manager))) {
+        const present = await manager
+          .getRepository(Member)
+          .count({ where: { groupId: group.id } });
+
+        if (present >= FREE_MEMBERS) {
+          throw conflict(
+            BUSINESS_CODES.FREE_MEMBER_LIMIT_REACHED,
+            `Ce groupe est complet : la version gratuite s'arrête à ${FREE_MEMBERS} personnes.`,
+            { max: FREE_MEMBERS },
+          );
+        }
+      }
+
       member.groupId = group.id;
       member.role = MemberRole.MEMBER;
       member.joinedAt = new Date();
@@ -81,14 +101,32 @@ export class GroupsService {
     });
   }
 
-  async findMine(groupId: string): Promise<Group & { memberCount: number }> {
+  /**
+   * Le groupe, tel que l'app le lit à chaque ouverture.
+   *
+   * `isUnlocked` y voyage plutôt que dans une route à part : c'est déjà le
+   * payload que le mobile garde en cache persisté, donc le drapeau hérite
+   * gratuitement de sa fraîcheur et de sa durée de vie. Une route dédiée aurait
+   * eu son propre cache, et les deux auraient fini par se contredire.
+   *
+   * L'identifiant de l'achat, lui, ne sort pas : le client n'a rien à faire
+   * d'une clé étrangère, et il ne doit pas pouvoir déduire *qui* a payé.
+   */
+  async findMine(groupId: string): Promise<
+    Omit<Group, 'unlockedByPurchaseId'> & {
+      memberCount: number;
+      isUnlocked: boolean;
+    }
+  > {
     const group = await this.groupRepo.findOne({ where: { id: groupId } });
     if (!group) {
       throw new NotFoundException('Groupe introuvable');
     }
 
     const memberCount = await this.memberRepo.countBy({ groupId });
-    return { ...group, memberCount };
+    const { unlockedByPurchaseId, ...rest } = group;
+
+    return { ...rest, memberCount, isUnlocked: unlockedByPurchaseId !== null };
   }
 
   async rename(groupId: string, dto: UpdateGroupDto): Promise<Group> {

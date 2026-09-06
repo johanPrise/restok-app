@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BillingModule } from '../billing/billing.module';
 import { AuthModule } from '../auth/auth.module';
 import { Item } from '../items/entities/item.entity';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
@@ -19,6 +20,7 @@ import { RecipesService } from './recipes.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Recipe, RecipeIngredient, Item]),
+    BillingModule,
     AuthModule,
   ],
   controllers: [RecipesController],

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { badRequest, BUSINESS_CODES } from '../common/business-error';
+import { EntitlementsService } from '../billing/entitlements.service';
+import { badRequest, BUSINESS_CODES, conflict } from '../common/business-error';
 import { decodeCursor, encodeCursor } from './cursor';
 import { ActionHistory, ActionType } from './entities/action-history.entity';
 
@@ -73,6 +74,7 @@ export class ActionHistoryService {
   constructor(
     @InjectRepository(ActionHistory)
     private readonly historyRepo: Repository<ActionHistory>,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -237,6 +239,18 @@ export class ActionHistoryService {
     groupId: string,
     filters: { memberId?: string; since?: Date },
   ): Promise<GroupHistoryEntry[]> {
+    // **Lire n'est pas exporter.** Le registre reste ouvert à tous les membres,
+    // sans plafond ni condition : c'est la fonction de preuve, et un registre
+    // que seul le payeur pourrait lire ne prouverait rien à ceux qui doivent
+    // s'y fier. Le fichier, lui, est un geste de trésorier — c'est la seule
+    // découpe qui laisse quelque chose à vendre sans toucher à la promesse.
+    if (!(await this.entitlements.isUnlocked(groupId))) {
+      throw conflict(
+        BUSINESS_CODES.EXPORT_REQUIRES_UNLOCK,
+        'Le registre reste lisible par tout le monde. C’est son export en fichier qui demande la version complète.',
+      );
+    }
+
     const { entries } = await this.findByGroup(groupId, {
       ...filters,
       limit: EXPORT_LIMIT,

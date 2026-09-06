@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend — 276 unitaires, 279 e2e
+    name: Backend — 287 unitaires, 294 e2e
     runs-on: ubuntu-latest
 
     # Les e2e parlent à un vrai PostgreSQL : ils vérifient des contraintes

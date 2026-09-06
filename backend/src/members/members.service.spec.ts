@@ -227,6 +227,10 @@ describe('MembersService', () => {
   });
 
   describe('deleteAccount', () => {
+    /** L'écriture qui vide la ligne, avant le soft-delete. */
+    const scrub = () =>
+      memberRepo.update.mock.calls.at(-1) as [string, Partial<Member>];
+
     it('soft-delete le compte', async () => {
       memberRepo.findOne.mockResolvedValue(buildMember({ groupId: null }));
 
@@ -242,14 +246,34 @@ describe('MembersService', () => {
 
       await service.deleteAccount('member-2');
 
-      const [, patch] = memberRepo.update.mock.calls[0] as [
-        string,
-        Partial<Member>,
-      ];
+      const [, patch] = scrub();
       // L'email est unique en base : le laisser interdirait de se réinscrire
       // avec la même adresse.
       expect(patch.email).not.toBe('ada@test.dev');
       expect(patch.pushToken).toBeNull();
+    });
+
+    it('efface le nom, que rien ne relit mais que la base garderait', async () => {
+      memberRepo.findOne.mockResolvedValue(buildMember({ groupId: null }));
+
+      await service.deleteAccount('member-2');
+
+      const [, patch] = scrub();
+      // La ligne doit survivre — `action_history` s'y accroche — donc on
+      // efface ce qu'elle contient plutôt que la ligne. Sans ça, « supprimer »
+      // n'aurait été qu'une mise à l'écart.
+      expect(patch.name).not.toBe('Ada');
+    });
+
+    it('efface le hash du mot de passe', async () => {
+      memberRepo.findOne.mockResolvedValue(buildMember({ groupId: null }));
+
+      await service.deleteAccount('member-2');
+
+      const [, patch] = scrub();
+      // La connexion est déjà impossible, mais une base qui fuite ne doit pas
+      // livrer de quoi essayer le même mot de passe ailleurs.
+      expect(patch.password).toBe('');
     });
 
     it('coupe les sessions longues', async () => {

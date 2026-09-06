@@ -27,6 +27,14 @@ export const en = {
       'An admin cannot remove themselves from the group.',
     bad_credentials: 'Wrong email or password.',
     email_taken: 'An account already exists with that email.',
+    export_requires_unlock:
+      'The log stays readable by everyone. It is exporting it as a file that needs the full version.',
+    free_item_limit_reached:
+      'The free shelf stops at %{max} items. Yours all stay put — it is adding that waits.',
+    free_member_limit_reached:
+      'This group is full: the free version stops at %{max} people.',
+    free_recipe_limit_reached:
+      'The free book keeps %{max} recipes. Yours all stay put.',
     export_too_large:
       'That ledger is too long for one file — %{max} rows at most. Narrow the period, or pick a person.',
     ingredient_already_in_recipe: 'That item is already in the recipe.',

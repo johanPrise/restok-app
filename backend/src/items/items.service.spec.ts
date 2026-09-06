@@ -1,9 +1,14 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ActionHistoryService } from '../action-history/action-history.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { ActionType } from '../action-history/entities/action-history.entity';
 import { Item, ItemStatus, TrackingType } from './entities/item.entity';
 import { ItemsService } from './items.service';
@@ -12,6 +17,9 @@ describe('ItemsService', () => {
   let service: ItemsService;
   let itemRepo: jest.Mocked<Repository<Item>>;
   let historyService: { findLastActionByItem: jest.Mock };
+  let entitlements: { isUnlocked: jest.Mock };
+  /** Le `SELECT … FOR UPDATE` posé sur le groupe avant chaque comptage. */
+  let lockQuery: jest.Mock;
 
   const buildItem = (overrides: Partial<Item> = {}): Item =>
     ({
@@ -26,6 +34,8 @@ describe('ItemsService', () => {
     }) as Item;
 
   beforeEach(async () => {
+    lockQuery = jest.fn().mockResolvedValue([]);
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         ItemsService,
@@ -37,6 +47,7 @@ describe('ItemsService', () => {
             create: jest.fn((dto: Partial<Item>) => dto as Item),
             save: jest.fn((item: Item) => Promise.resolve(item)),
             softRemove: jest.fn(),
+            count: jest.fn().mockResolvedValue(0),
           },
         },
         {
@@ -54,12 +65,90 @@ describe('ItemsService', () => {
             emitAsync: jest.fn().mockResolvedValue([]),
           },
         },
+        {
+          // Débloqué par défaut : ces tests portent sur la création d'items,
+          // pas sur le palier. Le plafond a ses propres cas plus bas.
+          provide: EntitlementsService,
+          useValue: { isUnlocked: jest.fn().mockResolvedValue(true) },
+        },
+        {
+          // `create` travaille en transaction pour verrouiller le groupe avant
+          // de compter. Le faux manager rend le même dépôt d'items, ce qui
+          // laisse les assertions inchangées.
+          provide: DataSource,
+          useValue: {
+            transaction: (run: (m: EntityManager) => Promise<unknown>) =>
+              run({
+                query: lockQuery,
+                getRepository: () => itemRepo,
+              } as unknown as EntityManager),
+          },
+        },
       ],
     }).compile();
 
     service = moduleRef.get(ItemsService);
     itemRepo = moduleRef.get(getRepositoryToken(Item));
     historyService = moduleRef.get(ActionHistoryService);
+    entitlements = moduleRef.get(EntitlementsService);
+  });
+
+  describe('le plafond du palier gratuit', () => {
+    beforeEach(() => entitlements.isUnlocked.mockResolvedValue(false));
+
+    it('laisse créer tant qu’il reste de la place', async () => {
+      itemRepo.count.mockResolvedValue(24);
+
+      await expect(
+        service.create({ name: 'Café' }, 'group-1'),
+      ).resolves.toBeDefined();
+    });
+
+    it('refuse le vingt-sixième', async () => {
+      itemRepo.count.mockResolvedValue(25);
+
+      await expect(
+        service.create({ name: 'Café' }, 'group-1'),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(itemRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('ne s’applique pas à un groupe qui a payé', async () => {
+      entitlements.isUnlocked.mockResolvedValue(true);
+      itemRepo.count.mockResolvedValue(9999);
+
+      await expect(
+        service.create({ name: 'Café' }, 'group-1'),
+      ).resolves.toBeDefined();
+    });
+
+    it('ne compte pas ce qui a été retiré de l’étagère', async () => {
+      itemRepo.count.mockResolvedValue(25);
+
+      await service.create({ name: 'Café' }, 'group-1').catch(() => undefined);
+
+      // Sans filtre explicite : le `count` de TypeORM exclut déjà les
+      // soft-deletés. Un `withDeleted` ajouté un jour casserait le plafond en
+      // silence, d'où ce test.
+      const [criteria] = itemRepo.count.mock.calls[0] as [
+        Record<string, unknown>,
+      ];
+      expect(criteria).not.toHaveProperty('withDeleted');
+    });
+
+    it('verrouille le groupe avant de compter', async () => {
+      itemRepo.count.mockResolvedValue(0);
+
+      await service.create({ name: 'Café' }, 'group-1');
+
+      // Compter des lignes ne verrouille pas celles qui n'existent pas encore :
+      // deux admins simultanés liraient tous deux « 24 » et écriraient tous
+      // deux. C'est le groupe qu'on verrouille.
+      expect(lockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('FOR UPDATE'),
+        ['group-1'],
+      );
+    });
   });
 
   describe('create', () => {
