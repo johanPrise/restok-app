@@ -471,10 +471,18 @@ function ErrorState({
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingTop: spacing.base, gap: spacing.hair },
-  manage: { marginTop: spacing.tight, paddingHorizontal: spacing.base },
-  list: {
+  header: {
+    alignItems: 'center',
     paddingTop: spacing.base,
+    paddingBottom: spacing.card,
+    gap: spacing.tight,
+  },
+  manage: {
+    marginTop: spacing.tight,
+    paddingHorizontal: spacing.card,
+  },
+  list: {
+    paddingTop: spacing.tight,
     paddingBottom: spacing.base,
     gap: spacing.base,
   },

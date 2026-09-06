@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { motion, spacing, tabBar, useTheme } from '@/theme';
+import { motion, spacing, useTheme } from '@/theme';
 import { Text } from './Text';
 
 interface TabBarButtonProps extends TabTriggerSlotProps {
@@ -113,12 +113,8 @@ const styles = StyleSheet.create({
   // dont trois seraient sinon sous les 44px du §8.
   trigger: {
     flex: 1,
-    // Une hauteur à soi, égale à celle de la barre, plutôt que de dépendre du
-    // `alignItems` du conteneur : centré par son propre `justifyContent`, il
-    // reste centré même si la barre ne le centre pas elle-même. Sans ça
-    // l'icône se retrouvait collée au fil du haut — le plafond de la maison
-    // touchait la tête du joueur.
-    height: tabBar.height,
+    // Remplit la hauteur utile de la barre sans déborder sur l'encoche système.
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },

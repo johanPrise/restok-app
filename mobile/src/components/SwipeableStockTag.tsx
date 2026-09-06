@@ -94,9 +94,9 @@ export function SwipeableStockTag({
   /**
    * Tout ce dont le geste a besoin, en tableaux de nombres bruts.
    *
-   * Un worklet tourne sur le rule d'animation et ne peut pas appeler une
+   * Un worklet tourne sur le thread d’animation et ne peut pas appeler une
    * fonction JS ordinaire : le faire marche sur le web, où tout partage le même
-   * rule, et lève en natif. On calcule donc les paliers **avant**, et le
+   * thread, et lève en natif. On calcule donc les paliers **avant**, et le
    * geste ne fait plus qu'indexer.
    *
    * Un cran de rachat vaut un paquet quand l'item s'achète par lot — c'est
@@ -370,7 +370,7 @@ async function feedback(action: SwipeAction): Promise<void> {
 
 const styles = StyleSheet.create({
   counters: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

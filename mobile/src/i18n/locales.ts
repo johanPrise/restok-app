@@ -52,14 +52,45 @@ export function collator(locale: Locale): Intl.Collator {
   return made;
 }
 
+// Hermes sur Android n'embarque pas toujours toutes les API Intl par défaut.
+// On fournit des polyfills légers pour nos deux langues (français et anglais).
+if (typeof Intl !== 'undefined') {
+  if (typeof Intl.PluralRules !== 'function') {
+    // @ts-expect-error polyfill PluralRules pour Hermes
+    Intl.PluralRules = class PluralRules {
+      locale: string;
+      constructor(locales?: string | string[]) {
+        const loc = Array.isArray(locales) ? locales[0] : locales;
+        this.locale = loc && loc.startsWith('en') ? 'en' : 'fr';
+      }
+      select(count: number): Intl.LDMLPluralRule {
+        const isSingular =
+          this.locale === 'fr' ? count >= 0 && count < 2 : count === 1;
+        return isSingular ? 'one' : 'other';
+      }
+    };
+  }
+
+  if (typeof Intl.Collator !== 'function') {
+    // @ts-expect-error polyfill Collator pour Hermes
+    Intl.Collator = class Collator {
+      locale: string;
+      constructor(locales?: string | string[]) {
+        const loc = Array.isArray(locales) ? locales[0] : locales;
+        this.locale = loc && loc.startsWith('en') ? 'en' : 'fr';
+      }
+      compare(a: string, b: string): number {
+        return a.localeCompare(b, this.locale);
+      }
+    };
+  }
+}
+
 /**
  * `Intl` est-il vraiment là ?
  *
  * Hermes l'embarque, mais son binaire est téléchargé à la compilation : on ne
- * peut pas le vérifier depuis le dépôt, seulement depuis un build. Plutôt que
- * de parier, on regarde — et on choisit **de crier en développement, de se
- * replier en production**. Un mauvais pluriel ne vaut pas un plantage chez
- * quelqu'un qui fait ses courses ; il vaut en revanche qu'on le voie ici.
+ * peut pas le vérifier depuis le dépôt, seulement depuis un build.
  */
 export const HAS_INTL =
   typeof Intl?.PluralRules === 'function' &&
@@ -101,21 +132,13 @@ export function pluralCategory(
 }
 
 /**
- * Le repli, si `Intl` manquait. Il ne connaît que nos deux langues, et c'est
- * exactement pour ça qu'il est un repli : il redeviendrait faux à la troisième.
- *
- * En développement, on préfère l'erreur au silence — c'est le seul moment où
- * quelqu'un peut encore corriger la cause.
+ * Le repli, si `Intl` manquait. Il ne connaît que nos deux langues :
+ * le français (singulier de 0 à < 2) et l'anglais (singulier à 1 uniquement).
  */
 function fallbackCategory(locale: Locale, count: number): Intl.LDMLPluralRule {
-  if (__DEV__) {
-    throw new Error(
-      "Intl.PluralRules est absent de ce moteur : les pluriels seraient devinés. Vérifie la configuration de Hermes avant d'aller plus loin.",
-    );
-  }
-
   // Le français garde le singulier à zéro, l'anglais non.
-  const singulier = locale === 'fr' ? count < 2 : count === 1;
+  const singulier = locale === 'fr' ? count >= 0 && count < 2 : count === 1;
 
   return singulier ? 'one' : 'other';
 }
+

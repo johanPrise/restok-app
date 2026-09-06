@@ -36,7 +36,7 @@ describe('renewSession', () => {
 
   beforeEach(async () => {
     fetchMock = jest.fn();
-    global.fetch = fetchMock as unknown as typeof fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     await useSession
       .getState()
@@ -143,7 +143,7 @@ describe('revokeSession', () => {
         text: () => Promise.resolve(''),
       } as Response),
     );
-    global.fetch = fetchMock as unknown as typeof fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
   });
 
   it('ferme la session longue côté serveur', () => {

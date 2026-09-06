@@ -98,9 +98,9 @@ export default function TabsLayout() {
           {
             backgroundColor: colors.raised,
             borderTopColor: colors.rule,
-            // La zone de gestes / l'encoche du bas fait partie de la barre,
-            // pas du contenu au-dessus — elle n'a donc pas à être réservée
-            // ailleurs.
+            // La hauteur totale cumule la hauteur utile des onglets et l'encoche
+            // système / barre de navigation de l'appareil.
+            height: tabBar.height + insets.bottom,
             paddingBottom: insets.bottom,
           },
         ]}
@@ -176,7 +176,6 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: tabBar.height,
     paddingHorizontal: spacing.hair,
     borderTopWidth: border.hairline,
   },
