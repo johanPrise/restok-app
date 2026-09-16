@@ -1,23 +1,28 @@
 import { INestApplication } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { auth, createGroupWith, signUp, TestMember } from './utils/api';
 import { createE2EApp, E2EContext } from './utils/e2e-app';
 
 describe('Journal du groupe (e2e)', () => {
   let ctx: E2EContext;
   let app: INestApplication;
+  let dataSource: DataSource;
   let alice: TestMember; // admin
   let bob: TestMember; // membre
+  let groupId: string;
 
   beforeAll(async () => {
     ctx = await createE2EApp();
     app = ctx.app;
+    dataSource = app.get(DataSource);
   });
 
   beforeEach(async () => {
     await ctx.reset();
     alice = await signUp(app, 'Alice');
     bob = await signUp(app, 'Bob');
-    await createGroupWith(app, alice, [bob]);
+    const group = await createGroupWith(app, alice, [bob]);
+    groupId = group.id;
   });
 
   afterAll(() => ctx.close());
@@ -233,6 +238,19 @@ describe('Journal du groupe (e2e)', () => {
   describe('l’export', () => {
     const csv = (member: TestMember, query = '') =>
       auth(app, member).get(`/history/export${query}`);
+
+    beforeEach(async () => {
+      const [purchase] = await dataSource.query(
+        `INSERT INTO purchase (member_id, product_id, store, store_transaction_id, purchased_at)
+         VALUES ($1, 'restock_lifetime', 'test_store', $2, now())
+         RETURNING id`,
+        [alice.id, `tx-${Date.now()}-${Math.random()}`],
+      );
+      await dataSource.query(
+        'UPDATE "group" SET unlocked_by_purchase_id = $1 WHERE id = $2',
+        [purchase.id, groupId],
+      );
+    });
 
     it('rend un fichier CSV, pas du JSON', async () => {
       const cafe = await createItem({ name: 'Café' });
