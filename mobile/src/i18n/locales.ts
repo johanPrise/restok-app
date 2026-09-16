@@ -141,4 +141,3 @@ function fallbackCategory(locale: Locale, count: number): Intl.LDMLPluralRule {
 
   return singulier ? 'one' : 'other';
 }
-

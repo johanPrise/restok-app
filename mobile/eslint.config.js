@@ -22,6 +22,25 @@ module.exports = defineConfig([
   expoConfig,
   eslintPluginPrettierRecommended,
   {
+    rules: {
+      // Faux positifs fréquents avec les SharedValues Reanimated et certaines
+      // closures de gestes ; ces règles ne reflètent pas le modèle RN ici.
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
+    },
+  },
+  {
+    files: ['app.config.js', 'eslint.config.js'],
+    languageOptions: {
+      globals: {
+        __dirname: 'readonly',
+        module: 'readonly',
+        process: 'readonly',
+        require: 'readonly',
+      },
+    },
+  },
+  {
     // Rien à dire sur ce qu'on ne versionne pas.
     ignores: ['dist/*', '.expo/*', 'node_modules/*'],
   },
