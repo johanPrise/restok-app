@@ -1,6 +1,5 @@
 import { config as loadEnv } from 'dotenv';
 import * as bcrypt from 'bcrypt';
-// @ts-expect-error pg types not installed
 import { Client } from 'pg';
 
 loadEnv();
@@ -420,12 +419,7 @@ async function seed() {
       `INSERT INTO "recipe" (id, group_id, name, source, description, servings, created_by_id, created_at, updated_at)
        VALUES
        ($1, $2, 'Riz sauté aux légumes & beurre', NULL, 'Cuire le riz puis le faire sauter avec les carottes et une noisette de beurre.', 1, $3, $4, $4)`,
-      [
-        IDS.soloRecipes.rizSaute,
-        IDS.soloGroup,
-        IDS.soloMember,
-        oneMonthAgo,
-      ],
+      [IDS.soloRecipes.rizSaute, IDS.soloGroup, IDS.soloMember, oneMonthAgo],
     );
 
     await client.query(
@@ -435,11 +429,7 @@ async function seed() {
        (gen_random_uuid(), $1, $3, NULL, 2),
        (gen_random_uuid(), $1, NULL, 'Carottes fraîches', 3),
        (gen_random_uuid(), $1, NULL, 'Sauce soja tamari', 4)`,
-      [
-        IDS.soloRecipes.rizSaute,
-        IDS.soloItems.rizThai,
-        IDS.soloItems.beurre,
-      ],
+      [IDS.soloRecipes.rizSaute, IDS.soloItems.rizThai, IDS.soloItems.beurre],
     );
 
     // Journal solo
