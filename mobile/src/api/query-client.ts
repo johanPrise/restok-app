@@ -61,4 +61,3 @@ function createQueryClient(): QueryClient {
  * précédent en mémoire, visible par le suivant le temps d'un refetch.
  */
 export const queryClient = createQueryClient();
-
